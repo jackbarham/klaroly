@@ -1,0 +1,40 @@
+# One ignore file for the whole repository. api/ is Laravel, app/ is Vite.
+
+# Editors and tooling
+.claude/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.zed/
+*.log
+
+# Environment files. .env.example files are committed.
+.env
+.env.*
+!.env.example
+
+# Dependencies
+vendor/
+node_modules/
+
+# Build output
+dist/
+dev-dist/
+public/build/
+public/hot
+.wrangler/
+*.tsbuildinfo
+
+# Laravel
+api/public/storage
+api/storage/*.key
+api/storage/pail
+api/.phpunit.result.cache
+api/.phpunit.cache/
+api/auth.json
+api/_ide_helper.php
+api/.phpactor.json
+
+# Committed on purpose: it holds only the public production API URL.
+!app/.env.production

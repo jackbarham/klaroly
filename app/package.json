@@ -1,0 +1,42 @@
+{
+  "name": "klaroly-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "npm@11.8.0",
+  "scripts": {
+    "dev": "VITE_TARGET=web vite",
+    "build": "VITE_TARGET=web vue-tsc --build && VITE_TARGET=web vite build",
+    "build:mobile": "VITE_TARGET=mobile vue-tsc --build && VITE_TARGET=mobile vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "ship": "npm run build && wrangler deploy"
+  },
+  "dependencies": {
+    "dexie": "^4.4.5",
+    "pinia": "^4.0.3",
+    "vue": "^3.5.42",
+    "vue-i18n": "^11.4.10",
+    "vue-router": "^5.3.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.13.3",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/tsconfig": "^0.9.1",
+    "eslint": "^10.9.1",
+    "eslint-plugin-vue": "^10.10.0",
+    "globals": "^17.12.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.69.0",
+    "vite": "^8.2.2",
+    "vite-plugin-pwa": "^1.3.0",
+    "vue-tsc": "^3.3.11",
+    "wrangler": "^4.128.0"
+  }
+}

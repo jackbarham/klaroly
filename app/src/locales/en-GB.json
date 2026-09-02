@@ -1,0 +1,18 @@
+{
+  "app": {
+    "name": "Klaroly"
+  },
+  "auth": {
+    "sign_in_title": "Sign in to Klaroly",
+    "email_label": "Email address",
+    "password_label": "Password",
+    "sign_in_action": "Sign in"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "empty_state": "Nothing to show yet."
+  },
+  "billing": {
+    "title": "Billing"
+  }
+}
