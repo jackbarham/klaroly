@@ -37,14 +37,17 @@
         :label="t('auth.username_label')"
         autocomplete="username"
         :hint="usernameHint"
+        :status="usernameStatus"
+        :status-message="usernameStatusMessage"
         :error="errors.username"
         @input="usernameTyped = true"
       />
 
-      <PasswordField
+      <TextField
         id="password"
         v-model="password"
         :label="t('auth.password_label')"
+        type="password"
         autocomplete="new-password"
         :error="errors.password"
       />
@@ -62,14 +65,24 @@
       </SubmitButton>
     </form>
 
-    <p class="text-sm">
-      <RouterLink
-        class="text-brand hover:text-brand-strong"
-        :to="{ name: 'login' }"
-      >
-        {{ t('auth.sign_in_link') }}
-      </RouterLink>
-    </p>
+    <!--
+      The rule and the link set their own spacing rather than taking the
+      card's, so that the gap above the rule can be a little larger than the
+      one below it. Text sits low in its line box, so equal gaps on either
+      side of the rule do not look equal.
+    -->
+    <div class="space-y-5 pt-1">
+      <hr class="border-t border-line">
+
+      <p class="text-center text-sm">
+        <RouterLink
+          class="font-medium text-brand hover:text-brand-strong"
+          :to="{ name: 'login' }"
+        >
+          {{ t('auth.sign_in_link') }}
+        </RouterLink>
+      </p>
+    </div>
   </AuthCard>
 </template>
 
@@ -80,7 +93,6 @@ import { RouterLink, useRouter } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
 import CheckboxField from '@/components/CheckboxField.vue'
 import FormError from '@/components/FormError.vue'
-import PasswordField from '@/components/PasswordField.vue'
 import SubmitButton from '@/components/SubmitButton.vue'
 import TextField from '@/components/TextField.vue'
 import { ApiError } from '@/lib/api'
@@ -159,17 +171,27 @@ onBeforeUnmount(() => {
 
 const usernameHint = computed(() => {
   const candidate = username.value.toLowerCase()
-  const parts: string[] = []
 
-  if (candidate !== '') {
-    parts.push(t('auth.username_hint', { username: candidate }))
+  return candidate === '' ? undefined : t('auth.username_hint', { username: candidate })
+})
+
+// A tick or a cross inside the field, which also turns the hint red when the
+// name cannot be had.
+const usernameStatus = computed(() => {
+  if (availability.value === null) {
+    return undefined
   }
 
-  if (availability.value !== null) {
-    parts.push(availabilityMessage(availability.value.reason))
+  return availability.value.available ? 'valid' as const : 'invalid' as const
+})
+
+// The same thing in words, for a screen reader.
+const usernameStatusMessage = computed(() => {
+  if (availability.value === null) {
+    return undefined
   }
 
-  return parts.length > 0 ? parts.join(' ') : undefined
+  return availabilityMessage(availability.value.reason)
 })
 
 function availabilityMessage(reason: UsernameReason): string {
@@ -190,9 +212,18 @@ async function submit(): Promise<void> {
     return
   }
 
-  pending.value = true
   errors.value = {}
   formError.value = null
+
+  if (availability.value !== null && !availability.value.available) {
+    errors.value = { username: availabilityMessage(availability.value.reason) }
+    await nextTick()
+    focusFirstInvalid(form.value)
+
+    return
+  }
+
+  pending.value = true
 
   try {
     await auth.register({

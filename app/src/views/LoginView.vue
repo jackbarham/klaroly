@@ -23,10 +23,11 @@
         :error="errors.email"
       />
 
-      <PasswordField
+      <TextField
         id="password"
         v-model="password"
         :label="t('auth.password_label')"
+        type="password"
         autocomplete="current-password"
       />
 
@@ -44,20 +45,34 @@
       </SubmitButton>
     </form>
 
-    <p class="flex justify-between text-sm">
-      <RouterLink
-        class="text-brand hover:text-brand-strong"
-        :to="{ name: 'register' }"
-      >
-        {{ t('auth.register_link') }}
-      </RouterLink>
-      <RouterLink
-        class="text-brand hover:text-brand-strong"
-        :to="{ name: 'forgot-password' }"
-      >
-        {{ t('auth.forgot_password_link') }}
-      </RouterLink>
-    </p>
+    <!--
+      The rule and the links set their own spacing rather than taking the
+      card's, so that the gap above the rule can be a little larger than the
+      one below it. Text sits low in its line box, so equal gaps on either
+      side of the rule do not look equal. Same as the register screen.
+    -->
+    <div class="space-y-5 pt-1">
+      <hr class="border-t border-line">
+
+      <div class="space-y-2 text-center text-sm">
+        <p>
+          <RouterLink
+            class="font-medium text-brand hover:text-brand-strong"
+            :to="{ name: 'forgot-password' }"
+          >
+            {{ t('auth.forgot_password_link') }}
+          </RouterLink>
+        </p>
+        <p>
+          <RouterLink
+            class="font-medium text-brand hover:text-brand-strong"
+            :to="{ name: 'register' }"
+          >
+            {{ t('auth.register_link') }}
+          </RouterLink>
+        </p>
+      </div>
+    </div>
   </AuthCard>
 </template>
 
@@ -68,7 +83,6 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
 import CheckboxField from '@/components/CheckboxField.vue'
 import FormError from '@/components/FormError.vue'
-import PasswordField from '@/components/PasswordField.vue'
 import SubmitButton from '@/components/SubmitButton.vue'
 import TextField from '@/components/TextField.vue'
 import { ApiError } from '@/lib/api'

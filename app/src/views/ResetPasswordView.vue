@@ -41,19 +41,17 @@
       novalidate
       @submit.prevent="submit"
     >
-      <TextField
-        id="email"
-        v-model="email"
-        :label="t('auth.email_label')"
-        type="email"
-        autocomplete="email"
-        readonly
-      />
+      <!--
+        The address comes from the emailed link and cannot be changed, so it
+        is shown rather than offered as a field. It is still submitted.
+      -->
+      <p>{{ email }}</p>
 
-      <PasswordField
+      <TextField
         id="password"
         v-model="password"
         :label="t('auth.new_password_label')"
+        type="password"
         autocomplete="new-password"
         :error="errors.password"
       />
@@ -73,7 +71,6 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
 import FormError from '@/components/FormError.vue'
-import PasswordField from '@/components/PasswordField.vue'
 import SubmitButton from '@/components/SubmitButton.vue'
 import TextField from '@/components/TextField.vue'
 import { ApiError } from '@/lib/api'
