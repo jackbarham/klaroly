@@ -17,7 +17,7 @@ constraints, and it is written for people as much as for tooling.
 
 | Tool | Version | Notes |
 | --- | --- | --- |
-| PHP | 8.4 | Installed by [Laravel Herd](https://herd.laravel.com). `pdo_pgsql` must be loaded; check with `php -m`. |
+| PHP | 8.5 | Installed by [Laravel Herd](https://herd.laravel.com). `pdo_pgsql` must be loaded; check with `php -m`. |
 | Composer | 2.x | Ships with Herd. |
 | Postgres | 17 or later (18 works) | [Postgres.app](https://postgresapp.com), listening on `127.0.0.1:5432`. |
 | Node | 24 | |

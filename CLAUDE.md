@@ -173,7 +173,7 @@ Hand-written routes live in `routes/api.php` under `/api`:
 
 ## API rules (`api/`)
 
-- Laravel 13 on PHP 8.4 with Postgres. Pest for tests, not PHPUnit. Pint with
+- Laravel 13 on PHP 8.5 with Postgres. Pest for tests, not PHPUnit. Pint with
   the default preset.
 - Packages in use: Fortify, Sanctum, Cashier, Resend, DomPDF,
   spatie/icalendar-generator, Sentry.
