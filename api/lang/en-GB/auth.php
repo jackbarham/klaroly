@@ -17,5 +17,6 @@ return [
     'password' => 'The provided password is incorrect.',
     'current_password_mismatch' => 'The password you entered does not match your current password.',
     'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
+    'session_not_token' => 'This request is authenticated by a session, not a token. Use the logout route to end it.',
 
 ];

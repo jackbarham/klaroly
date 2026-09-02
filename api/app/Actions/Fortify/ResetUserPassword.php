@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -13,7 +14,9 @@ class ResetUserPassword implements ResetsUserPasswords
     use PasswordValidationRules;
 
     /**
-     * Validate and reset the user's forgotten password.
+     * Validate and reset the user's forgotten password, then sign every
+     * device and browser out. There is no current session on a reset, so
+     * every session row goes (technical proposal section 5, gap 3).
      *
      * @param  array<string, string>  $input
      *
@@ -28,5 +31,9 @@ class ResetUserPassword implements ResetsUserPasswords
         $user->forceFill([
             'password' => Hash::make($input['password']),
         ])->save();
+
+        $user->tokens()->delete();
+
+        DB::table('sessions')->where('user_id', $user->id)->delete();
     }
 }

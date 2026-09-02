@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 it('rejects a booking stage that is not in the enum', function () {
     $account = actingForAccount();
@@ -52,4 +53,17 @@ it('refuses a zero payment', function () {
         'booking_id' => $booking->id,
         'amount_minor' => 0,
     ]))->toThrow(QueryException::class, 'payments_amount_minor_check');
+});
+
+it('rejects a marketing consent source that is not in the enum', function () {
+    expect(fn () => DB::table('users')->insert([
+        'uuid' => (string) Str::uuid(),
+        'name' => 'Ellie Marsh',
+        'email' => 'ellie@example.com',
+        'marketing_consent_at' => now(),
+        'marketing_consent_source' => 'billboard',
+        'notification_preferences' => '{}',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]))->toThrow(QueryException::class, 'users_marketing_consent_source_check');
 });

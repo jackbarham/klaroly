@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Account;
+use App\Models\AccountUser;
+use App\Models\User;
 use App\Support\CurrentAccount;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -27,4 +29,25 @@ function actingForAccount(array $settings = []): Account
 function currentAccount(): CurrentAccount
 {
     return app(CurrentAccount::class);
+}
+
+/**
+ * Create a user who owns an account with a settings row, the shape
+ * registration produces, without going through the registration route.
+ * The account is not bound as current; the request under test does that.
+ *
+ * @param  array<string, mixed>  $userAttributes
+ */
+function createOwner(array $userAttributes = [], ?Account $account = null): User
+{
+    $account ??= Account::factory()->withSettings()->create();
+
+    $user = User::factory()->create($userAttributes + ['last_account_id' => $account->id]);
+
+    AccountUser::factory()->owner()->create([
+        'account_id' => $account->id,
+        'user_id' => $user->id,
+    ]);
+
+    return $user;
 }

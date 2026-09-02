@@ -9,7 +9,9 @@ use App\Models\Booking;
 /**
  * The one reader of account_settings.features and bookings.feature_overrides.
  * A booking may switch a feature off (or on) for itself; otherwise the
- * account setting applies; a key that has never been set is on.
+ * account setting applies; a key that is absent from both maps is off
+ * (decision 78). Registration writes the default map from
+ * config/features.php so a new account starts with the right keys present.
  */
 class Features
 {
@@ -31,7 +33,7 @@ class Features
             return (bool) $features[$key->value];
         }
 
-        return true;
+        return false;
     }
 
     /**

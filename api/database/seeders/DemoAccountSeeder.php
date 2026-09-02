@@ -136,7 +136,7 @@ class DemoAccountSeeder extends Seeder
         $this->owner = User::create([
             'name' => 'Ellie Marsh',
             'email' => 'ellie@example.com',
-            'password' => Hash::make(env('DEMO_PASSWORD', 'password')),
+            'password' => Hash::make(config('demo.password')),
             'email_verified_at' => now(),
             'last_account_id' => $this->account->id,
         ]);

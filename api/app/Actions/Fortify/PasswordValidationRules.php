@@ -8,12 +8,13 @@ use Illuminate\Validation\Rules\Password;
 trait PasswordValidationRules
 {
     /**
-     * Get the validation rules used to validate passwords.
+     * The rules every new password must meet. The policy itself is
+     * Password::defaults() in AppServiceProvider and nothing else.
      *
      * @return array<int, Rule|array<mixed>|string>
      */
     protected function passwordRules(): array
     {
-        return ['required', 'string', Password::default(), 'confirmed'];
+        return ['required', 'string', Password::defaults(), 'confirmed'];
     }
 }

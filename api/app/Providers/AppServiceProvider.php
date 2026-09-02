@@ -7,6 +7,7 @@ use App\Support\CurrentAccount;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 use Laravel\Cashier\Cashier;
 
 class AppServiceProvider extends ServiceProvider
@@ -31,5 +32,14 @@ class AppServiceProvider extends ServiceProvider
 
         // The account, not the user, is the billable entity.
         Cashier::useCustomerModel(Account::class);
+
+        // The one password policy (technical proposal section 5, gap 5).
+        // The breach check needs the network, which the test suite does not
+        // have, so it is left off there.
+        Password::defaults(function () {
+            $rule = Password::min(10);
+
+            return $this->app->environment('testing') ? $rule : $rule->uncompromised();
+        });
     }
 }

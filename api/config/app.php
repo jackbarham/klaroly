@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Front-end URL
+    |--------------------------------------------------------------------------
+    |
+    | Where the web app lives. Every link in an email (password reset, and
+    | the page a verified user lands on) and every redirect meant for a
+    | browser points here, never at this API.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

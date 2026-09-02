@@ -67,7 +67,8 @@ These are decided. Do not revisit them in code without a conversation first.
 
 ## Authentication shape
 
-- Bearer tokens on mobile, session cookie on web, from the start.
+- Bearer tokens on mobile, session cookie on web, from the start. The
+  `sanctum` guard accepts either, so one API route serves both.
 - The API uses Fortify for the authentication routes and Sanctum for both the
   SPA cookie session and mobile personal access tokens. `statefulApi()` is on
   in `bootstrap/app.php`.
@@ -78,6 +79,79 @@ These are decided. Do not revisit them in code without a conversation first.
   `https://app.klaroly.com`, `capacitor://localhost` and the local dev app
   (`http://app.klaroly.test` under Herd, `http://localhost:5173` without).
   Never hardcode an origin in `config/cors.php`.
+- Every request from the app sends `Accept: application/json`. Fortify only
+  answers in JSON when asked to; without the header it redirects as if to a
+  Blade app.
+
+### Routes
+
+Fortify registers its routes at the root, with no prefix, inside the group
+from `config/fortify.php`: `web`, then `NormaliseEmail`, then
+`ThrottleForgotPassword`.
+
+| Method | Path | Middleware | Notes |
+| --- | --- | --- | --- |
+| POST | `/login` | guest, throttle:login | Returns `{"two_factor": false}` |
+| POST | `/logout` | auth:web | 204 |
+| POST | `/register` | guest | 201, logs the browser in |
+| POST | `/forgot-password` | guest, throttle:forgot-password | Same 200 for known and unknown addresses |
+| POST | `/reset-password` | guest | Token and email come from the emailed link |
+| GET | `/email/verify/{id}/{hash}` | auth:web, signed, throttle | The link in the verification email; redirects to `FRONTEND_URL` |
+| POST | `/email/verification-notification` | auth:web, throttle | Resend |
+| PUT | `/user/profile-information` | auth:web | |
+| PUT | `/user/password` | auth:web | Revokes every token and every other session |
+| GET | `/sanctum/csrf-cookie` | web | Sanctum; the web app calls it before its first POST |
+
+Fortify also registers the two-factor, password-confirmation and passkey
+routes because those features are configured. They are unused and no screen
+exposes them.
+
+Hand-written routes live in `routes/api.php` under `/api`:
+
+| Method | Path | Middleware | Notes |
+| --- | --- | --- | --- |
+| POST | `/api/auth/token` | NormaliseEmail, throttle:token | Email, password, device_name. Returns the plain-text token, its expiry and the same payload as `/api/me` under `me` |
+| GET | `/api/usernames/{username}` | throttle:30,1 | `{available, reason}` where reason is `invalid`, `reserved`, `taken` or null |
+| GET | `/api/me` | auth:sanctum, account | User, current account, membership and the feature map |
+| GET | `/api/auth/tokens` | auth:sanctum, account | The caller's tokens, with the current one marked |
+| DELETE | `/api/auth/tokens/{id}` | auth:sanctum, account | The caller's own only; 404 otherwise |
+| DELETE | `/api/auth/token` | auth:sanctum, account | Revokes the token making the request; 400 for a session caller |
+
+### The rules
+
+- **Every authenticated API route sits in the `['auth:sanctum', 'account']`
+  group.** `account` is `App\Http\Middleware\BindCurrentAccount`, which
+  resolves the user's account through `App\Services\AccountResolver`
+  (`last_account_id` if they still belong to it, otherwise their first
+  membership by id), binds it as `CurrentAccount` and saves `last_account_id`
+  when it changed. A user with no membership gets a 403. Nothing else binds
+  the tenant for a request.
+- **Email is normalised on the way in.** `NormaliseEmail` lowercases and trims
+  the `email` input on every Fortify route and on the token endpoint, and
+  `CreateNewUser` and `UpdateUserProfileInformation` do it again before
+  validating. The `lower(email)` index is the backstop, not the mechanism.
+- **One credential check.** `App\Services\PasswordAuthenticator` is used by
+  `Fortify::authenticateUsing` and by the token endpoint. A wrong email and a
+  wrong password get the same 422 on the `email` field.
+- **Registration is `App\Actions\Fortify\CreateNewUser`**, one transaction
+  that creates the user, the account, its settings row (features from
+  `config/features.php`), the owner membership and the username history row.
+  A username is derived from the business name when none is given.
+- **Mobile tokens** are named after the device, expire after
+  `sanctum.token_expiry_days` (365), and `sanctum.expiration` is the same
+  length in minutes so a token created anywhere still expires.
+  `sanctum:prune-expired` runs daily.
+- **Passwords**: `Password::defaults()` in `AppServiceProvider` is the only
+  policy (ten characters plus the breach check, which is off in testing).
+  Changing a password revokes every token and every other session; resetting
+  one revokes every token and every session.
+- **Email verification is sent, not enforced** (decision 83). The `verified`
+  alias goes on the authenticated group in `routes/api.php` when enforcement
+  arrives, and nowhere else.
+- **Browser-facing links point at the web app.** `app.frontend_url` (from
+  `FRONTEND_URL`) is the reset-password link, the page a verified user lands
+  on, and where a logged-out browser is sent from a Fortify route. API routes
+  never redirect; they answer 401 in JSON.
 
 ## API rules (`api/`)
 
@@ -175,7 +249,7 @@ produces the bundle Capacitor will wrap.
 
 ## Current state
 
-The database schema exists and is the first real code in the repository.
+The database schema and email-and-password authentication exist.
 `docs/database-schema.md` is the specification: when a table or column is
 in doubt, that document wins, and a change to the schema is made there
 first. Section 7 of it designs tables that are deliberately not migrated
@@ -189,7 +263,8 @@ modified in place), `accounts`, `account_settings`, `account_user`,
 `events`, `party_members`, `booking_contacts`, `booking_lines`, `quotes`,
 `invoices`, `payments`, `notes`, `message_templates`, `contract_templates`,
 `agreements`, `entitlements`, `booking_user`. A final migration adds the
-three foreign keys that could not be declared inline. Framework tables from
+three foreign keys that could not be declared inline, and a later one adds
+the `users.marketing_consent_source` check constraint. Framework tables from
 Sanctum, Fortify and the passkeys package are untouched. Cashier's own
 migrations are not published; its four columns sit on `accounts`, and the
 subscription tables arrive with the billing work.
@@ -198,26 +273,40 @@ What sits on top of the tables:
 
 - `App\Enums`: one string-backed enum per enum-like column, each with a
   `checkConstraintSql()` helper so the database constraint is generated from
-  the enum and the two cannot drift.
+  the enum and the two cannot drift. `FeatureKey` holds the nine feature
+  toggles from decision 78; a key absent from an account's map is off, so
+  registration writes the full default map from `config/features.php`.
 - `App\Support\Money` and `App\Casts\MoneyCast`: every `_minor` column
   is read and written as a value object. No float ever touches a price.
 - `App\Support\CurrentAccount` and `App\Models\Concerns\BelongsToAccount`:
   the tenancy scope. With no current account bound, scoped queries return
   nothing and creating throws. `User`, `Account`, `Identity` and
   `UsernameHistory` are not scoped. `MessageTemplate` and `ContractTemplate`
-  also show system rows with a null `account_id`.
+  also show system rows with a null `account_id`. On a request, the
+  `account` middleware does the binding (see "Authentication shape").
 - `App\Services\BookingPricing` (the only place totals are computed),
-  `App\Services\InvoiceNumbering` (the only place an invoice gets a number)
-  and `App\Services\Features` (the only reader of feature toggles).
-- `App\Rules\Username` with `config/reserved_usernames.php`.
+  `App\Services\InvoiceNumbering` (the only place an invoice gets a number),
+  `App\Services\Features` (the only reader of feature toggles),
+  `App\Services\PasswordAuthenticator` (the only credential check) and
+  `App\Services\AccountResolver` (the only place a user's account is chosen).
+- `App\Rules\Username` with `config/reserved_usernames.php`. Its
+  `reasonFor()` is the single check behind both registration and
+  `GET /api/usernames/{username}`.
+- Config that is not the framework's: `config/billing.php` (trial length),
+  `config/features.php` (the default feature map), `config/demo.php` (the
+  demo password), `config/reserved_usernames.php`. Nothing outside
+  `config/` reads `env()`.
 - Factories for every model, `SystemDefaultsSeeder` (system message and
   contract templates) and `DemoAccountSeeder` (the "Ellie Marsh Makeup"
   account, which doubles as the App Store review account; owner login
   `ellie@example.com` with the password from `DEMO_PASSWORD`).
 - Pest tests in `api/tests` run against a real Postgres database named
   `klaroly_test`, because the check constraints and partial indexes are part
-  of what is tested. Create it once with `createdb klaroly_test`.
+  of what is tested. Create it once with `createdb klaroly_test`. The
+  authentication tests live in `tests/Feature/Auth`.
 
-There is still no authentication, no routes beyond the defaults, and the only
-screens are a login placeholder and an empty dashboard behind a router
-guard. Authentication is the next piece of work.
+Not built yet: passkeys and two-factor enforcement (configured, unused),
+Sign in with Apple or Google, switching between accounts, collaborator
+invitations, account deletion, client login, and billing. The web app still
+has only a login placeholder and an empty dashboard behind a router guard;
+the authentication screens are the next piece of work.

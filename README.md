@@ -113,6 +113,40 @@ Then open http://app.klaroly.test. Add a second terminal with
 `php artisan queue:listen` from `api/` when you are working on anything
 queued.
 
+## Authentication
+
+The API signs users in two ways: a session cookie for the web app and a
+bearer token for the mobile app. Both are described in `CLAUDE.md` under
+"Authentication shape".
+
+**From the web app.** Open http://app.klaroly.test and sign in as the demo
+account, `ellie@example.com`, with the password in `DEMO_PASSWORD`
+(`password` by default). The app fetches `/sanctum/csrf-cookie` and posts
+to `/login` on the API; the session cookie is set on `.klaroly.test`, so it is
+sent to every `*.klaroly.test` host afterwards.
+
+**With curl against the token endpoint.** This is what the mobile app does.
+
+```bash
+curl -s -X POST http://api.klaroly.test/api/auth/token -H "Accept: application/json" -H "Content-Type: application/json" -d '{"email":"ellie@example.com","password":"password","device_name":"curl"}'
+```
+
+The response carries `token`, `expires_at` and `me`. Use the token on every
+later request:
+
+```bash
+curl -s http://api.klaroly.test/api/me -H "Accept: application/json" -H "Authorization: Bearer PASTE_THE_TOKEN_HERE"
+```
+
+Revoke it with `DELETE /api/auth/token` and the same header.
+
+**Where the emails go.** With `MAIL_MAILER=log`, which `.env.example` sets,
+the verification email sent at registration and the password reset email
+are written to `storage/logs/laravel.log`. Search the log for the link: the
+verification link points at the API and redirects to the web app once
+clicked; the reset link points straight at the web app's `/reset-password`
+page with the token and email in the query string.
+
 ## Where environment variables come from
 
 | Where | Local | Production |

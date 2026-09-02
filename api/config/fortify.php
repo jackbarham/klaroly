@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\NormaliseEmail;
+use App\Http\Middleware\ThrottleForgotPassword;
 use Laravel\Fortify\Features;
 
 return [
@@ -67,13 +69,14 @@ return [
     | Home Path
     |--------------------------------------------------------------------------
     |
-    | Here you may configure the path where users will get redirected during
-    | authentication or password reset when the operations are successful
-    | and the user is authenticated. You are free to change this value.
+    | Where Fortify sends a browser after a successful action, which happens
+    | in two places: after the email verification link is clicked, and for
+    | intended redirects. Both must land on the web app, not on this API,
+    | which has no pages.
     |
     */
 
-    'home' => '/',
+    'home' => env('FRONTEND_URL', 'http://localhost:5173'),
 
     /*
     |--------------------------------------------------------------------------
@@ -95,13 +98,13 @@ return [
     | Fortify Routes Middleware
     |--------------------------------------------------------------------------
     |
-    | Here you may specify which middleware Fortify will assign to the routes
-    | that it registers with the application. If necessary, you may change
-    | these middleware but typically this provided default is preferred.
+    | Every Fortify route runs the web group, then NormaliseEmail so the
+    | email input is lowercase and trimmed before Fortify reads it (decision
+    | 84), then ThrottleForgotPassword, which only acts on password.email.
     |
     */
 
-    'middleware' => ['web'],
+    'middleware' => ['web', NormaliseEmail::class, ThrottleForgotPassword::class],
 
     /*
     |--------------------------------------------------------------------------
@@ -164,7 +167,7 @@ return [
     'features' => [
         Features::registration(),
         Features::resetPasswords(),
-        // Features::emailVerification(),
+        Features::emailVerification(),
         Features::updateProfileInformation(),
         Features::updatePasswords(),
         Features::twoFactorAuthentication([

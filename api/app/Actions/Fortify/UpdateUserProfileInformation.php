@@ -20,8 +20,14 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
      */
     public function update(User $user, array $input): void
     {
+        // The NormaliseEmail middleware does this on HTTP requests. Doing it
+        // again here keeps the action safe when called from anywhere else.
+        if (is_string($input['email'] ?? null)) {
+            $input['email'] = mb_strtolower(trim($input['email']));
+        }
+
         Validator::make($input, [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:120'],
 
             'email' => [
                 'required',

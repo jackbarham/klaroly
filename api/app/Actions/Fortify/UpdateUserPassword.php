@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -13,7 +14,9 @@ class UpdateUserPassword implements UpdatesUserPasswords
     use PasswordValidationRules;
 
     /**
-     * Validate and update the user's password.
+     * Validate and update the user's password, then sign every other device
+     * and browser out. The session making the change is kept (technical
+     * proposal section 5, gap 3).
      *
      * @param  array<string, string>  $input
      *
@@ -31,5 +34,15 @@ class UpdateUserPassword implements UpdatesUserPasswords
         $user->forceFill([
             'password' => Hash::make($input['password']),
         ])->save();
+
+        $user->tokens()->delete();
+
+        // Outside an HTTP request there is no current session to keep.
+        $currentSessionId = request()->hasSession() ? request()->session()->getId() : null;
+
+        DB::table('sessions')
+            ->where('user_id', $user->id)
+            ->when($currentSessionId !== null, fn ($query) => $query->where('id', '!=', $currentSessionId))
+            ->delete();
     }
 }

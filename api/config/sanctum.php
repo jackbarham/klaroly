@@ -5,6 +5,10 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Laravel\Sanctum\Http\Middleware\AuthenticateSession;
 use Laravel\Sanctum\Sanctum;
 
+// How long a mobile token lives (decision 84). Declared once here so that
+// token_expiry_days and expiration below cannot disagree.
+$tokenExpiryDays = 365;
+
 return [
 
     /*
@@ -45,12 +49,25 @@ return [
     |--------------------------------------------------------------------------
     |
     | This value controls the number of minutes until an issued token will be
-    | considered expired. This will override any values set in the token's
-    | "expires_at" attribute, but first-party sessions are not affected.
+    | considered expired. It is the same length as token_expiry_days, so a
+    | token created anywhere without an explicit expiry still expires.
+    | First-party sessions are not affected.
     |
     */
 
-    'expiration' => null,
+    'expiration' => $tokenExpiryDays * 24 * 60,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Token Expiry Days
+    |--------------------------------------------------------------------------
+    |
+    | The expiry written to a token issued by POST /api/auth/token, in days
+    | (decision 84). The mobile app signs in again when it lapses.
+    |
+    */
+
+    'token_expiry_days' => $tokenExpiryDays,
 
     /*
     |--------------------------------------------------------------------------
