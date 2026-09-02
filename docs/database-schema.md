@@ -1,6 +1,6 @@
 # Klaroly database schema, version 1
 
-**Status:** draft for sign-off, 2 September 2026. Written for Postgres 17, Laravel 13, Cashier 16, Fortify and Sanctum. Supersedes the schema in Prompt 3 of `claude-code-prompts.md`, which will be rewritten from this document once it is signed off.
+**Status:** signed off and migrated, 2 September 2026 (Prompt 3, commit `c8213fc`). Written for Postgres 17 or later (18 locally), Laravel 13, Cashier 16, Fortify and Sanctum. Section 13 records what the first migration set found and how each point was settled; the tables below already reflect those answers.
 
 **Scope:** the first build as settled in decision 74, held to the rules in decisions 44, 55, 71, 72, 73 and 75. Section 7 designs the tables that are not migrated yet, so that the first migration set leaves room for them.
 
@@ -8,7 +8,7 @@
 
 ## 1. What this document is
 
-The single description of every table and column, what it is for, and the rules that produced it. When Prompt 3 is rewritten it is rewritten from here. When a later feature prompt adds a table, it is added here first.
+The single description of every table and column, what it is for, and the rules that produced it. Prompt 3 was written from here and the migrations match it. When a later feature prompt adds a table or a column, it is added here first.
 
 It is deliberately written as a specification rather than as migration code, because the decisions are what need reviewing. The Laravel-specific mechanics are collected in section 10 so they do not clutter the tables.
 
@@ -20,7 +20,7 @@ These are settled. The tables in sections 5 to 7 follow them without restating t
 
 **Tenancy: `account_id` on every customer-data table** (decision 44). Including tables that also carry `booking_id`. One global scope filters everything without a join. The exceptions are `accounts` itself, `users`, `identities` and the framework tables. `username_history` carries `account_id` but is not globally scoped, because the hostname lookup that reads it runs before any account context exists. A Pest test asserts that two accounts cannot see each other's bookings.
 
-**Names describe the job, never the industry** (decision 73, technical proposal 15.5a). No table, column, model, enum, route or event named `bride`, `bridal`, `wedding`, `groom`, `trial` or `makeup`. The test: would the name still make sense on a DJ's booking?
+**Names describe the job, never the industry** (decision 73, technical proposal 15.5a). No table, column, model, enum, route or event named `bride`, `bridal`, `wedding`, `groom`, `trial` or `makeup`. The test: would the name still make sense on a DJ's booking? The rule is about names, not values (decision 81): `trial` as an event type, a service `applies_to` value or a template key is data the artist sees, and a DJ's booking simply never holds it.
 
 **Money is a `bigint` integer in the currency's ISO 4217 minor unit, with a `_minor` suffix** (decision 77). Pence, cents and euro cents are all the minor unit; the column never says which country. No floats, no decimals, no exceptions. Percentages are whole-number `smallint`. Every money column sits beside a `currency` or inherits one from its booking, and the dashboard never sums across currencies (technical proposal 15.2).
 
@@ -86,7 +86,7 @@ accounts ─────────────── account_settings (1:1)
 
 ## 5. The first migration set
 
-Twenty-one tables plus framework tables. Types are Postgres types. `ts` means `timestamptz`. Every table has `created_at ts` and `updated_at ts` unless noted.
+Twenty-two tables plus framework tables. Types are Postgres types. `ts` means `timestamptz`. Every table has `created_at ts` and `updated_at ts` unless noted.
 
 ### 5.1 `accounts`
 
@@ -122,7 +122,7 @@ features                    jsonb    not null default '{}'     feature key -> bo
 deposit_type                varchar(10) not null default 'percent'   check: fixed | percent
 deposit_amount_minor        bigint   nullable                  when fixed
 deposit_percent             smallint nullable                  when percent, whole number
-deposit_due_days            smallint not null default 7        days after signature
+deposit_due_days            smallint not null default 7        days after the invoice is issued, decision 79
 balance_due_days_before     smallint not null default 28       days before the main event
 payment_instructions        text     nullable                  bank details, a link, a sentence
 invoice_prefix              varchar(10) not null default 'INV'
@@ -136,7 +136,7 @@ tax_number                  varchar(30)  nullable              VAT or equivalent
 base_postcode               varchar(12)  nullable              travel origin
 travel_charging             varchar(10) not null default 'included'   check: included | radius | per_mile | flat
 travel_free_radius_miles    smallint nullable
-travel_rate_per_mile_minor  int      nullable default 45
+travel_rate_per_mile_minor  bigint   nullable default 45        bigint like every _minor column
 travel_flat_fee_minor       bigint   nullable
 early_start_before          time     nullable                  early start supplement threshold
 business_year_start_month   smallint not null default 4        UK tax year by default
@@ -144,7 +144,7 @@ business_year_start_day     smallint not null default 6
 created_at, updated_at
 ```
 
-Notes. `features` is read only through `featureEnabled()`, decision 74. Check constraint: `deposit_type = 'fixed'` requires `deposit_amount_minor`, `'percent'` requires `deposit_percent`. Default working hours from business logic section 24 are deferred; they need a shape decision first.
+Notes. `features` is read only through `App\Services\Features::enabled()`, decision 74. The keys are the nine in `App\Enums\FeatureKey`: `enquiries`, `intake_forms`, `agreements`, `invoicing`, `payment_tracking`, `automation`, `travel_estimates`, `photos`, `feedback_requests`. A key that is absent from the map is **off** (decision 78), so `{}` is a bare account; registration writes the default map from `config/features.php` rather than relying on absence. The entitlement check inside `enabled()` returns true until the billing prompt. Check constraint: `deposit_type = 'fixed'` requires `deposit_amount_minor`, `'percent'` requires `deposit_percent`. Default working hours from business logic section 24 are deferred; they need a shape decision first.
 
 ### 5.3 `users`
 
@@ -154,7 +154,7 @@ A person with a login. Only person things live here (decision 71). Being an arti
 id                          bigint   pk
 uuid                        uuid     not null unique            Apple appAccountToken and Google obfuscatedAccountId, later
 name                        varchar(120) not null
-email                       varchar(255) not null              unique index on lower(email)
+email                       varchar(255) not null              unique index on lower(email); stored lowercase, normalised on the way in
 password                    varchar(255) nullable              nullable from day one: a future Apple user may never set one
 email_verified_at           ts       nullable
 remember_token              varchar(100) nullable
@@ -163,12 +163,12 @@ two_factor_recovery_codes   text     nullable                  Fortify
 two_factor_confirmed_at     ts       nullable                  Fortify
 notification_preferences    jsonb    not null default '{}'     per type, business logic 27
 marketing_consent_at        ts       nullable                  decision 71: a dated fact, never a bool
-marketing_consent_source    varchar(40) nullable               portal | app_signup | other
+marketing_consent_source    varchar(40) nullable               check: portal | app_signup | other (constraint added in Prompt 4)
 last_account_id             bigint   nullable fk accounts set null   which account to open on next login
 created_at, updated_at, deleted_at
 ```
 
-Notes. Face ID app lock is a device setting and never reaches the database. Never look up a user by email for provider sign-in; that goes through `identities` (decision 28).
+Notes. Face ID app lock is a device setting and never reaches the database. Never look up a user by email for provider sign-in; that goes through `identities` (decision 28). The `lower(email)` index rejects a second row that differs only in case, but Fortify's login lookup compares the column as stored, so authentication lowercases and trims email on registration, login, password reset and profile update; the index is the backstop, not the mechanism.
 
 ### 5.4 `account_user`
 
@@ -295,7 +295,7 @@ index (account_id, contact_id)
 index (source_booking_id)
 ```
 
-Notes. Enquiries are `stage in (new, in_conversation, possible, quoted)`. Bookings are `stage in (provisional, confirmed, completed, closed, cancelled)`. `lost` is archived. Soft calendar holds are `possible` and `quoted`. "Waiting on" is never a column: it is computed from the booking, its agreements and invoices and the enabled features (business logic section 6). Converting is a stage change and copies nothing. `last_touched_at` is what the clash warning shows ("last touched three months ago"). The main event's date is not denormalised onto the booking; the list query joins the `main` event, which the partial index in 5.9 makes cheap.
+Notes. Enquiries are `stage in (new, in_conversation, possible, quoted)`. Bookings are `stage in (provisional, confirmed, completed, closed, cancelled)`. `lost` is archived. Soft calendar holds are `possible` and `quoted`. "Waiting on" is never a column: it is computed from the booking, its agreements and invoices and the enabled features (business logic section 6). Converting is a stage change and copies nothing. `last_touched_at` is what the clash warning shows ("last touched three months ago"). The main event's date is not denormalised onto the booking; the list query joins the `main` event, which the partial index in 5.9 makes cheap. `pricing_mode` and `discount_type` are backed by `PricingMode` and `DiscountType` enums, which the prompt's enum list omitted and the migration added.
 
 ### 5.9 `events`
 
@@ -439,7 +439,7 @@ unique (booking_id, number)
 index (account_id, status)
 ```
 
-Notes. Copying to the clipboard creates a quote row, because that is the moment a number reached the client. Editing lines afterwards does not touch this row; the next copy creates quote 2.
+Notes. Copying to the clipboard creates a quote row, because that is the moment a number reached the client. Editing lines afterwards does not touch this row; the next copy creates quote 2. `pricing_mode` carries the same check constraint as on `bookings`.
 
 ### 5.15 `invoices`
 
@@ -477,6 +477,8 @@ index (booking_id)
 ```
 
 Notes. Numbering happens inside a transaction that locks the `account_settings` row (`select ... for update`), reads `next_invoice_number`, writes it to `sequence`, and increments. Drafts have no number, so there are no gaps (business logic 11.1). Paid state is never stored: see section 8. A voided invoice keeps its number.
+
+A draft's money columns and `lines` are zero and empty until issue; the snapshot is taken once, at issue, by `InvoiceNumbering::issue()`. A screen showing a draft shows the booking's live figures from `BookingPricing` instead, and the two are the same number until the moment of issue, after which the invoice is the record and the booking may move on (decision 80). `deposit_due_on` defaults to `issued_on` plus `deposit_due_days` and `balance_due_on` to the main event date minus `balance_due_days_before`, both overridable at issue.
 
 ### 5.16 `payments`
 
@@ -648,8 +650,10 @@ Created by the packages, listed so nothing is a surprise.
 
 | Table | From | Note |
 |---|---|---|
-| `subscriptions`, `subscription_items` | Cashier 16 | Published and pointed at `accounts` (`account_id`, not `user_id`) |
-| `personal_access_tokens` | Sanctum | One per device, named, with `expires_at` set and `sanctum:prune-expired` scheduled |
+| `subscriptions`, `subscription_items` | Cashier 16 | Not yet published. Arrive with the billing prompt, pointed at `accounts` (`account_id`, not `user_id`) |
+| `personal_access_tokens` | Sanctum | Migrated. One per device, named, with `expires_at` set and `sanctum:prune-expired` scheduled from Prompt 4 |
+| `users.two_factor_*` columns | Fortify | Migrated. `two_factor_confirmed_at` is `timestamp`, not `timestamptz`, because it is the package's migration |
+| `passkeys` | Fortify | Migrated, empty until passkeys are switched on. Uses `json`, not `jsonb`, for the same reason |
 | `sessions` | Laravel | Web sessions for the cookie path |
 | `password_reset_tokens` | Laravel | |
 | `cache`, `cache_locks` | Laravel | |
@@ -821,7 +825,13 @@ Collected here so the tables above stay readable.
 - `jsonb()`, never `json()`.
 - Money columns use a `Money` cast that exposes the minor-unit integer as a value object carrying its currency, never a float. Formatting is currency plus locale, never hard-coded symbols.
 - `access_pin` uses the `encrypted` cast.
-- Every model except `User`, `Account`, `Identity` and `UsernameHistory` uses a `BelongsToAccount` trait that applies the global scope and fills `account_id` on create from the current account context.
+- Every model except `User`, `Account`, `Identity` and `UsernameHistory` uses a `BelongsToAccount` trait that applies the global scope and fills `account_id` on create from the current account context (`App\Support\CurrentAccount`, a container singleton).
+- With no current account bound, a scoped query returns nothing and creating throws. A forgotten binding therefore leaks nothing rather than everything. Code that must work across accounts, such as the seeders and the hostname lookup, says `withoutGlobalScope('account')` explicitly.
+- `MessageTemplate` and `ContractTemplate` override the scope to show the account's own rows plus the system rows with a null `account_id`, which a plain `account_id = ?` scope would hide.
+- `MoneyCast` takes the currency from the model's own `currency` column, then from its booking, then from the account. `services` and `account_settings` have neither of the first two, so they fall back to the account's currency.
+- `Money::format()` passes one float to ICU's `formatCurrency`, because that is the only signature it has. No arithmetic happens in floating point and the value is already rounded, so the digits cannot change. The class says so in a comment.
+- Cashier's customer model is set in `AppServiceProvider` with `Cashier::useCustomerModel(Account::class)`. Without it the package assumes `User`, which has no Stripe columns.
+- The Pest suite runs against a real Postgres database, `klaroly_test`, because the check constraints and partial indexes are part of what is tested. SQLite is deliberately not used.
 - Cashier: `Cashier::useCustomerModel(Account::class)`, and the published Cashier migrations altered to add the four columns to `accounts` and to key `subscriptions` on `account_id`.
 - Enum-like columns are backed by PHP enums under `App\Enums`, and the check constraint's value list is generated from the enum in the migration so the two cannot drift.
 
@@ -849,12 +859,33 @@ For the rewrite, so nothing is lost in translation.
 
 ---
 
-## 12. To confirm before the first migration runs
+## 12. Confirmed before the first migration ran
 
-1. The six calls in section 3, taken as recommended.
-2. Whether `account_settings` stays a separate table or folds into `accounts`. Recommended separate.
-3. `deposit_percent` as a whole number. Anyone wanting 33.3 per cent gets a fixed amount instead.
-4. Which four or five `message_templates` keys are seeded for the first build.
-5. That the wedding-makeup rate card seed above is the right starting list, before Jess sees it.
+All five were taken as recommended on 2 September 2026: the six calls in section 3; `account_settings` as a separate table; `deposit_percent` as a whole number; six seeded `message_templates` keys (`enquiry_acknowledgement`, `quote`, `booking_confirmed`, `invoice_deposit_request`, `main_event_reminder`, `thank_you`); and the wedding-makeup rate card seed in 5.12, to be shown to Jess before it is called final.
 
-Once those are ticked, Prompt 3 is rewritten from this document and run.
+---
+
+## 13. What the first migration set found
+
+Prompt 3 ended by asking Claude Code to list every place this document was ambiguous, wrong, or would bite later. This section records each point and how it was settled, so the answer is not lost in a chat. The tables above already reflect these.
+
+| Finding | Settled as | Where |
+|---|---|---|
+| Header said 21 tables; section 5 numbers 22 | 22. Header corrected | Section 5 |
+| `PricingMode` and `DiscountType` were missing from the prompt's enum list though the columns are constrained | Both enums added; the `pricing_mode` check is on `quotes` as well as `bookings` | 5.8, 5.14 |
+| Feature keys were defined nowhere in the repository; Claude Code invented eight and made an unset key mean on | Decision 74's nine keys; an unset key is off; registration writes the default map from `config/features.php`. Prompt 4 renames the enum | 5.2, decision 78 |
+| Reads with no current account: the prompt only said creating must throw | Scoped queries return nothing; cross-account work says `withoutGlobalScope('account')` | Section 10 |
+| System template rows would be hidden by a plain `account_id = ?` scope | `MessageTemplate` and `ContractTemplate` show their own rows plus system rows | Section 10 |
+| `MoneyCast` currency for `services` and `account_settings`, which have no currency column and no booking | Falls back to the account's currency | Section 10 |
+| `Money::format()` cannot avoid one float, because ICU's `formatCurrency` takes nothing else | Accepted; no arithmetic in floating point; commented in the class | Section 10 |
+| `deposit_due_days` said "days after signature" but issuing an invoice has no signature date | Counts from the invoice issue date | 5.2, 5.15, decision 79 |
+| Draft invoices carry zeros until issue | By design; a draft displays the booking's live `BookingPricing` figures | 5.15, decision 80 |
+| `travel_rate_per_mile_minor` was `int` against the bigint rule | `bigint` | 5.2 |
+| `marketing_consent_source` listed values but had no check | Check constraint and enum added in Prompt 4 | 5.3 |
+| Fortify's `two_factor_confirmed_at` is `timestamp` and the passkeys table uses `json` | Package migrations, left as they are | Section 6 |
+| Decision 73 bans `trial` as a name, yet it appears as an enum value | The rule is about names, not values | Section 2, decision 81 |
+| Cashier's customer model | `Cashier::useCustomerModel(Account::class)` in `AppServiceProvider` | Section 10 |
+| `users.email` is not lowercased on write, and Fortify's lookup is case-sensitive | Authentication normalises email on the way in; the index is the backstop | 5.3, Prompt 4 |
+| Postgres is 18 locally, not 17 | Documents corrected; no effect on the schema | Status line, README |
+| Agreements seeded as signed on completed and closed bookings too, contacts reused across bookings, real venue names with postcodes believed correct | Accepted as demo data; spot-check the postcodes before the App Store review account goes live | Seeder |
+| Tests need a `klaroly_test` database | Created once with `createdb klaroly_test`; documented in README and CLAUDE.md | Section 10 |

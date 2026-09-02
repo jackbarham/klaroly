@@ -1,6 +1,6 @@
 # Klaroly: Claude Code Prompts
 
-**Date:** 1 September 2026, Prompt 3 rewritten 2 September 2026
+**Date:** 1 September 2026. Prompt 3 rewritten and Prompt 4 written 2 September 2026
 **Where this file lives:** `claude-code-prompts.md` at the root of the `klaroly` repository is
 the working copy, alongside `docs/database-schema.md`. The copy in the Dropbox project
 folder mirrors it.
@@ -24,11 +24,19 @@ referenced rather than repeated:
 > this project applies only to Cowork, whose shell is a Linux VM and would write
 > Linux binaries into `node_modules`. It does not apply to you.)
 >
+> **Do not commit and do not push.** Leave every change unstaged. I review the
+> changed files in my Git browser, then commit and push myself. When a prompt
+> ends, list the files that changed and stop.
+>
 > **Do not name any script `deploy`.** Use `ship`. It reads the same and avoids a
 > collision with a reserved command if the package manager ever changes.
 >
+> **Do not commit or push.** From Prompt 4 on, every change is left unstaged so Jack
+> can review each file in his Git browser before committing himself (decision 82).
+> A prompt ends with "tell me it is done", never with a commit.
+>
 > **Local environment already in place:** Laravel Herd with PHP 8.4, and
-> Postgres 17 via Postgres.app on `127.0.0.1:5432`. Do not install PHP, a web
+> Postgres 18 via Postgres.app on `127.0.0.1:5432`. Do not install PHP, a web
 > server or a database, and do not add Docker or Laravel Sail.
 
 ---
@@ -526,14 +534,281 @@ look like a real business, and read step 7 carefully. Anything it flags gets fol
 
 ---
 
-## Prompt 4: authentication
+## Prompt 4: authentication, API only
 
-**When:** evenings 6 and 7. Written out when you get there, because it should be
-written against the schema that actually exists rather than the one specified above.
-The five Fortify gaps from section 5 of the technical proposal are the part not to
-lose: uniform forgot-password response, Sanctum token expiry plus pruning, revoke
-tokens on password change, rate limit the mobile token endpoint, and
-Password::uncompromised(). Two things the repository already has that the prompt
-should not redo: Fortify's two-factor columns and the passkeys table are migrated,
-and the billable model is `Account`, not `User`, so Cashier's published migrations
-will need altering when the billing prompt arrives.
+**When:** now, 2 September 2026, once the Prompt 3 commit is pushed and the tree is clean.
+**Where:** open Claude Code at `~/Code/klaroly/klaroly`. It works in `api/`.
+**Before you start:** decisions 78 to 84 in `decision-log.md` are what this prompt is
+written from; the schema document's section 13 records what Prompt 3 found. The Vue
+screens are Prompt 5, deliberately, so that this set of changed files is reviewable on
+its own and the screens are written against endpoints that exist.
+
+Two things the repository already has that this prompt must not redo: Fortify is
+installed with its two-factor columns and passkeys table migrated and its stock
+actions in `app/Actions/Fortify`, and Sanctum's `statefulApi()` is already on in
+`bootstrap/app.php`.
+
+```
+Build authentication for the Klaroly API. Work in api/. Read CLAUDE.md,
+docs/database-schema.md sections 2, 5.1 to 5.6, 10 and 13, and the existing code in
+app/Support/CurrentAccount.php, app/Models/Concerns/BelongsToAccount.php,
+app/Models/User.php, app/Models/Account.php, app/Providers/FortifyServiceProvider.php,
+app/Actions/Fortify/, config/fortify.php and config/sanctum.php before writing
+anything. Where this prompt and the schema document disagree, the document wins, and
+you tell me where they disagreed at the end.
+
+FIRST, BEFORE ANY CODE
+Having read all of that, list every route this prompt will register (method, path,
+middleware, and whether Fortify or you provides it), every file you will create or
+change, and every new config key and environment variable. Then stop and wait for me
+to confirm. Do not write code until I say go.
+
+HOUSE RULES
+Two-space indentation, except PHP at four spaces because Pint's default preset
+enforces PSR-12. British English in comments and in every translation string. No
+emoji. Plain code over clever code. No user-facing string may be a literal; keys in
+lang/en-GB/ only, named for meaning rather than content.
+
+DO NOT COMMIT. Do not stage, commit or push anything. Leave every change unstaged so
+I can review each file in my Git browser. Tell me when the work is done and I will
+commit.
+
+SCOPE
+The API side of email-and-password authentication for artists, serving both the web
+app (session cookie) and the mobile app (bearer token), plus the tenancy binding
+that makes the scoped models return rows. Nothing in app/. No Blade views; every
+response is JSON. Not in this prompt, and the columns and tables already exist so
+nothing is blocked: passkeys, two-factor enforcement, Sign in with Apple or Google,
+switching between accounts, collaborator invitations, account deletion, client
+login.
+
+FORTIFY
+- Features: registration, resetPasswords, emailVerification, updateProfileInformation,
+  updatePasswords. Leave the twoFactorAuthentication and passkeys entries exactly as
+  they are; they are configured, unused and not exposed. views stays false.
+- Every Fortify response must be JSON. Set config fortify.home to the FRONTEND_URL
+  so the two places Fortify redirects a browser (after email verification, and
+  intended redirects) land on the web app rather than the API. In bootstrap/app.php
+  set Authenticate::redirectUsing to FRONTEND_URL plus /login, so a browser that
+  hits a protected API route while logged out is sent to the web app's login page
+  rather than to a route that does not exist.
+- Email normalisation, decision 84. One middleware, App\Http\Middleware\NormaliseEmail,
+  that lowercases and trims the email input on the request. Apply it to the Fortify
+  route group through config fortify.middleware (web plus this middleware) and to
+  the mobile token endpoint below. Do the same inside CreateNewUser and
+  UpdateUserProfileInformation before validation, so the actions are safe when
+  called from somewhere other than an HTTP request. The lower(email) index is the
+  backstop, not the mechanism.
+- Fortify::authenticateUsing: look the user up by lowercased email, check the
+  password with Hash::check, and return null otherwise. Never reveal which of the
+  two was wrong.
+- Uniform forgot-password response, technical proposal section 5 gap 1. Bind
+  Laravel\Fortify\Contracts\FailedPasswordResetLinkRequestResponse to a class that
+  returns exactly the same JSON body and status as the successful response, so an
+  unknown address is indistinguishable from a known one. Add a test.
+- Password reset emails link to the web app, not the API:
+  ResetPassword::createUrlUsing pointing at FRONTEND_URL/reset-password with the
+  token and email as query parameters. The reset itself is POST /reset-password on
+  the API, as Fortify provides.
+- Email verification: the User model implements MustVerifyEmail. The verification
+  link is Fortify's signed API route and, once verified, the browser is redirected
+  to fortify.home. No route in this prompt uses the verified middleware; decision 83
+  says sent, not enforced. Add a comment in routes/api.php saying where the alias
+  goes when enforcement arrives.
+- Password rules, gap 5. In AppServiceProvider set Password::defaults to a minimum
+  of ten characters plus uncompromised(), except in the testing environment where
+  uncompromised() is left off because the suite has no network. PasswordValidationRules
+  uses Password::defaults() and nothing else.
+- Revoke on password change, gap 3. In UpdateUserPassword and ResetUserPassword,
+  after the new password is saved: delete every personal access token the user
+  has, and delete every row in the sessions table for that user other than the
+  current session (on reset, every row, since there is no current session). Add a
+  test for each.
+
+REGISTRATION, decision 84
+Replace the stock CreateNewUser. The request carries:
+  business_name   required, max 120, becomes accounts.name
+  name            required, max 120, the person
+  email           required, email, unique case-insensitively
+  password        Password::defaults(), confirmed
+  username        optional; when absent derive it from business_name: lowercase,
+                  keep only a-z and 0-9, drop leading digits, and if the result is
+                  shorter than three characters, reserved, or already in
+                  username_history, append a number starting at 2 until it passes.
+                  Either way it goes through App\Rules\Username
+  marketing_consent  optional boolean
+Everything happens in one DB::transaction: the user (uuid is set by the model),
+the account (name, username, defaults for vertical, country GB, locale en-GB,
+currency GBP, timezone Europe/London, trial_ends_at now plus
+config('billing.trial_days')), the account_settings row with features set to
+config('features.defaults'), the account_user row with role owner and every
+can_* toggle true and accepted_at now, and users.last_account_id set to the new
+account. When marketing_consent is true, set marketing_consent_at to now and
+marketing_consent_source to app_signup. If anything fails, nothing is written;
+test that a rejected username leaves no user behind. Do not create an
+entitlements row; that is the billing prompt.
+
+Create config/billing.php with trial_days (30) and config/features.php with a
+defaults map keyed by FeatureKey value: enquiries, agreements, invoicing and
+payment_tracking true; intake_forms, automation, travel_estimates, photos and
+feedback_requests false. A comment explains that this moves to the business logic
+21.2 shape (enquiries only) when the settings toggles screen ships, per decision 78.
+
+FEATURE KEYS, decision 78
+Rename the cases in App\Enums\FeatureKey to exactly these nine, snake_case values:
+enquiries, intake_forms, agreements, invoicing, payment_tracking, automation,
+travel_estimates, photos, feedback_requests. In App\Services\Features, a key absent
+from both maps is now off, not on; update the class comment. The demo seeder already
+sets every case true and needs no change beyond whatever the rename breaks. Fix any
+test that assumed the old default.
+
+MARKETING CONSENT SOURCE
+Add App\Enums\MarketingConsentSource with portal, app_signup and other, and a new
+migration adding the check constraint users_marketing_consent_source_check from
+the enum, the same way every other check constraint is built. Cast the column on
+the User model.
+
+TENANCY BINDING, decision 84
+App\Http\Middleware\BindCurrentAccount, applied after auth:sanctum on every
+authenticated API route. It resolves the account in this order: the user's
+last_account_id if they still have an account_user row for it, otherwise their
+only membership, otherwise their first membership by id. It calls
+CurrentAccount::set() and, if the resolved account differs from last_account_id,
+saves the new value. A user with no membership at all gets a 403 with a translation
+key, not an exception. Register an alias for it in bootstrap/app.php and put the
+authenticated routes in one group: ['auth:sanctum', 'account'].
+
+MOBILE TOKENS, decision 84 and gaps 2 and 4
+Hand-written, outside Fortify, under /api/auth:
+  POST   /api/auth/token        email, password, device_name (required, max 80).
+                                Validates the credentials the same way
+                                authenticateUsing does, creates a personal access
+                                token named after the device with an expiry of
+                                config('sanctum.token_expiry_days') days, and
+                                returns the plain-text token, its expiry and the
+                                same payload as GET /api/me. Unauthenticated.
+                                Throttled by a named limiter, five per minute
+                                keyed on lowercased email plus IP, so Fortify's
+                                login limiter has a twin here.
+  GET    /api/auth/tokens       the caller's tokens: id, name, last_used_at,
+                                expires_at, created_at, and which one is current.
+  DELETE /api/auth/tokens/{id}  revoke one, the caller's own only.
+  DELETE /api/auth/token        revoke the token that made the request. For a
+                                session-cookie caller this is a 400 with a key
+                                saying to use /logout.
+Set config sanctum.expiration to the same number of days expressed in minutes, so
+a token created anywhere without an explicit expiry still expires, and add a
+token_expiry_days key to config/sanctum.php (365) with a comment referencing
+decision 84. Schedule sanctum:prune-expired --hours=24 daily in routes/console.php.
+
+ME
+Replace the placeholder GET /api/user with GET /api/me, behind the authenticated
+group, returning: the user (id, uuid, name, email, email_verified_at,
+notification_preferences, marketing_consent_at), the current account (id, name,
+username, vertical, country, locale, currency, timezone, profile_enabled,
+trial_ends_at), the membership (role and the four can_* toggles) and features: the
+map of every FeatureKey to the result of Features::enabled() for the account. Use
+an API resource class rather than an array in a closure, and use the same resource
+from the token endpoint.
+
+USERNAME AVAILABILITY
+GET /api/usernames/{username}, unauthenticated, throttled thirty per minute by IP.
+Returns { available: bool, reason: null | invalid | reserved | taken }, where
+taken covers both a live account and username_history. The reasons are codes for
+the app to translate, not sentences. It runs the same App\Rules\Username as
+registration, so the two cannot disagree.
+
+RATE LIMITERS
+All in FortifyServiceProvider next to the existing login limiter: token (above) and
+forgot-password at three per minute keyed on lowercased email plus IP. Fortify's
+verification routes already carry their own limiter from config, so leave those.
+Apply the forgot-password limiter to Fortify's password.email route in whatever way
+is plainest; if that is a small middleware matched on route name, that is fine. Say
+what you chose.
+
+TRANSLATION KEYS
+Every message this prompt produces lives in lang/en-GB/auth.php or a new
+lang/en-GB/account.php: the 403 for no membership, the 400 for revoking a session
+with the token endpoint, validation messages that are not Laravel's own. Keep
+Laravel's default validation messages in en-GB as they are.
+
+ENVIRONMENT
+FRONTEND_URL already exists in .env.example and .env; make sure config/app.php
+exposes it as app.frontend_url and that nothing reads env() outside config/.
+Uncomment CASHIER_MODEL=App\Models\Account in .env.example and delete the stale
+comment above it, since the Account model exists and AppServiceProvider already sets
+the customer model. Add any new variable to .env.example with a one-line comment,
+and add nothing that can live in config instead.
+
+TESTS, Pest 5, against klaroly_test as the existing suite does
+- Registration: creates one user, one account, one account_settings row with
+  config('features.defaults') as its features map, one owner account_user row with
+  every toggle true, one username_history row, and sets last_account_id. A derived
+  username from "Ellie Marsh Makeup" is elliemarshmakeup; from a name that
+  collides, a number is appended; from a reserved word, it is not the reserved
+  word. A rejected username rolls the whole thing back. marketing_consent true sets
+  both consent columns, false or absent sets neither.
+- Email case: register with Mixed@Example.com, the stored value is lowercase, and
+  logging in as MIXED@EXAMPLE.COM succeeds on both the web login and the token
+  endpoint.
+- Web login: with the demo seed loaded, POST /login as ellie@example.com returns
+  success, GET /api/me returns her account and username elliemarsh, and after that
+  request CurrentAccount::id() equals her account id and Booking::count() equals the
+  number of bookings the seeder created for her.
+- Tenancy through auth: two accounts, each with bookings, created directly in the
+  test. Log in as the owner of A and call GET /api/me. B's bookings are invisible
+  through the Booking model, and A's are visible. Then log in as B's owner and
+  assert the reverse. Then a user with no membership gets a 403.
+- Token endpoint: a valid request returns a token that authenticates GET /api/me;
+  a wrong password returns 422 with no hint which field was wrong; the sixth
+  attempt in a minute returns 429; the token's expires_at is 365 days out; a
+  session-cookie caller hitting DELETE /api/auth/token gets a 400.
+- Device list: two tokens for one user; the list shows both and marks the current
+  one; revoking the other leaves one; revoking a token belonging to a different
+  user is a 404.
+- Forgot password: known and unknown addresses produce byte-identical JSON and the
+  same status; the fourth request in a minute is 429; a known address does send
+  the notification (Notification::fake) and an unknown one does not.
+- Password change and reset: both delete every token the user has, and the reset
+  clears every session row for the user.
+- Feature keys: Features::enabled() returns false for a key absent from both maps,
+  true when the account map says so, and the booking override wins in both
+  directions.
+- Username availability: invalid, reserved, taken by a live account, taken by
+  history, and available.
+- The marketing_consent_source check rejects an invalid value with a
+  QueryException.
+
+FINALLY
+1. composer lint.
+2. php artisan migrate:fresh --seed against the local database, so the new
+   constraint migration is proven against real rows.
+3. Run the whole test suite, including the Prompt 3 tests.
+4. Update the "Current state" and "Authentication shape" sections of the repository
+   CLAUDE.md: what exists, the route list, the two credential types, the binding
+   middleware and the rule that every authenticated route sits in the account group.
+5. Add an "Authentication" section to README.md: how to log in locally as the demo
+   account from the web app and with curl against the token endpoint, and where the
+   verification and reset emails land (the log) when MAIL_MAILER=log.
+6. Do NOT commit. Tell me it is done and list every file you created or changed.
+7. Then tell me every place this prompt or the schema document was ambiguous, wrong,
+   or would cause a problem later, and what you did about each. In particular, say
+   what Prompt 5 (the Vue screens) needs to know about these endpoints that is not
+   obvious from the route list.
+```
+
+**Check before you move on:** the route list it shows you first has nothing in it you
+did not expect (say "go" only when it does), every test passes including the Prompt 3
+suite, `git status` shows changes and no new commit, and read step 7. Anything it
+flags gets folded into the schema document and the decision log before Prompt 5.
+Then review, commit and push.
+
+---
+
+## Prompt 5: the authentication screens
+
+**When:** after Prompt 4 is committed. Written out when you get there, against the
+endpoints Prompt 4 actually registered and whatever its step 7 said the screens need
+to know. It covers login, register, forgot and reset password, the verification
+banner, and wiring `src/lib/api.ts` to `/sanctum/csrf-cookie` on web and to the token
+endpoint on mobile, all in `app/`.
