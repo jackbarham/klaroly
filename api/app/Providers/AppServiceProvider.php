@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Support\CurrentAccount;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Cashier\Cashier;
@@ -32,6 +33,9 @@ class AppServiceProvider extends ServiceProvider
 
         // The account, not the user, is the billable entity.
         Cashier::useCustomerModel(Account::class);
+
+        // Replies reach the routed inbox, not the sending subdomain.
+        Mail::alwaysReplyTo('hello@klaroly.com', 'Klaroly');
 
         // The one password policy (technical proposal section 5, gap 5).
         // The breach check needs the network, which the test suite does not
