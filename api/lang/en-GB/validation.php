@@ -171,6 +171,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Username Rule
+    |--------------------------------------------------------------------------
+    |
+    | Messages for App\Rules\Username. A username becomes a hostname, so the
+    | wording explains the shape rather than quoting the regular expression.
+    |
+    */
+
+    'username' => [
+        'format' => 'The :attribute must be 3 to 63 characters, start with a letter, and use only lower-case letters and numbers.',
+        'reserved' => 'That :attribute is reserved and cannot be used.',
+        'taken' => 'That :attribute has already been used.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Custom Validation Language Lines
     |--------------------------------------------------------------------------
     |

@@ -52,8 +52,12 @@ cd api
 composer install
 cp .env.example .env
 php artisan key:generate
-php artisan migrate
+php artisan migrate --seed
 ```
+
+`--seed` loads the system message and contract templates and one demo
+account, "Ellie Marsh Makeup", whose owner logs in as `ellie@example.com`
+with the password in `DEMO_PASSWORD` (`password` by default).
 
 `.env.example` lists every variable with a comment. The defaults point at the
 local Postgres above and log emails to `storage/logs/laravel.log` instead of
@@ -135,7 +139,15 @@ yet; do not add it until there is a working login screen and one list view.
 
 ## Tests and linting
 
-API, from `api/`:
+The API tests run against a real Postgres database, not SQLite, because the
+check constraints and partial indexes are part of what is tested. Create it
+once:
+
+```bash
+createdb klaroly_test
+```
+
+Then, from `api/`:
 
 ```bash
 php artisan test

@@ -45,8 +45,12 @@ These are decided. Do not revisit them in code without a conversation first.
 - The account is the tenant. Every customer-data table carries `account_id`,
   including tables that also carry `booking_id`. A user is never a tenant;
   users belong to accounts.
-- All money is stored as bigint pence in columns with a `_pence` suffix.
-  Never float, never decimal, never a currency string.
+- All money is stored as a bigint integer in the currency's ISO 4217 minor
+  unit, in columns with a `_minor` suffix (decision 77). Pence, cents and
+  euro cents are all the minor unit; the column never says which. Never
+  float, never decimal, never a currency string. Every money column sits
+  beside a `currency` column or inherits one from its booking or account,
+  and `App\Casts\MoneyCast` exposes it as an `App\Support\Money`.
 - Event dates and times are stored as local wall clock plus an IANA timezone
   name, never as UTC. A wedding at 2pm in Manchester is `14:00` plus
   `Europe/London`.
@@ -171,7 +175,49 @@ produces the bundle Capacitor will wrap.
 
 ## Current state
 
-Structure only. There is no business logic, no migrations have been run, and
-the only screens are a login placeholder and an empty dashboard behind a
-router guard. The database schema is a separate piece of work that changes
-the stock users migration, so leave `database/migrations` alone until then.
+The database schema exists and is the first real code in the repository.
+`docs/database-schema.md` is the specification: when a table or column is
+in doubt, that document wins, and a change to the schema is made there
+first. Section 7 of it designs tables that are deliberately not migrated
+yet (`scheduled_messages`, `client_links`, `signing_events`, `intake_forms`,
+`intake_questions`, `feedback_responses`, `media`, `push_tokens`,
+`activities`, `booking_transfers`).
+
+The 22 tables migrated, in dependency order: `users` (the stock migration,
+modified in place), `accounts`, `account_settings`, `account_user`,
+`identities`, `username_history`, `contacts`, `services`, `bookings`,
+`events`, `party_members`, `booking_contacts`, `booking_lines`, `quotes`,
+`invoices`, `payments`, `notes`, `message_templates`, `contract_templates`,
+`agreements`, `entitlements`, `booking_user`. A final migration adds the
+three foreign keys that could not be declared inline. Framework tables from
+Sanctum, Fortify and the passkeys package are untouched. Cashier's own
+migrations are not published; its four columns sit on `accounts`, and the
+subscription tables arrive with the billing work.
+
+What sits on top of the tables:
+
+- `App\Enums`: one string-backed enum per enum-like column, each with a
+  `checkConstraintSql()` helper so the database constraint is generated from
+  the enum and the two cannot drift.
+- `App\Support\Money` and `App\Casts\MoneyCast`: every `_minor` column
+  is read and written as a value object. No float ever touches a price.
+- `App\Support\CurrentAccount` and `App\Models\Concerns\BelongsToAccount`:
+  the tenancy scope. With no current account bound, scoped queries return
+  nothing and creating throws. `User`, `Account`, `Identity` and
+  `UsernameHistory` are not scoped. `MessageTemplate` and `ContractTemplate`
+  also show system rows with a null `account_id`.
+- `App\Services\BookingPricing` (the only place totals are computed),
+  `App\Services\InvoiceNumbering` (the only place an invoice gets a number)
+  and `App\Services\Features` (the only reader of feature toggles).
+- `App\Rules\Username` with `config/reserved_usernames.php`.
+- Factories for every model, `SystemDefaultsSeeder` (system message and
+  contract templates) and `DemoAccountSeeder` (the "Ellie Marsh Makeup"
+  account, which doubles as the App Store review account; owner login
+  `ellie@example.com` with the password from `DEMO_PASSWORD`).
+- Pest tests in `api/tests` run against a real Postgres database named
+  `klaroly_test`, because the check constraints and partial indexes are part
+  of what is tested. Create it once with `createdb klaroly_test`.
+
+There is still no authentication, no routes beyond the defaults, and the only
+screens are a login placeholder and an empty dashboard behind a router
+guard. Authentication is the next piece of work.

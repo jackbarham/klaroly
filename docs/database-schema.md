@@ -1,0 +1,860 @@
+# Klaroly database schema, version 1
+
+**Status:** draft for sign-off, 2 September 2026. Written for Postgres 17, Laravel 13, Cashier 16, Fortify and Sanctum. Supersedes the schema in Prompt 3 of `claude-code-prompts.md`, which will be rewritten from this document once it is signed off.
+
+**Scope:** the first build as settled in decision 74, held to the rules in decisions 44, 55, 71, 72, 73 and 75. Section 7 designs the tables that are not migrated yet, so that the first migration set leaves room for them.
+
+---
+
+## 1. What this document is
+
+The single description of every table and column, what it is for, and the rules that produced it. When Prompt 3 is rewritten it is rewritten from here. When a later feature prompt adds a table, it is added here first.
+
+It is deliberately written as a specification rather than as migration code, because the decisions are what need reviewing. The Laravel-specific mechanics are collected in section 10 so they do not clutter the tables.
+
+---
+
+## 2. Rules that apply to every table
+
+These are settled. The tables in sections 5 to 7 follow them without restating them.
+
+**Tenancy: `account_id` on every customer-data table** (decision 44). Including tables that also carry `booking_id`. One global scope filters everything without a join. The exceptions are `accounts` itself, `users`, `identities` and the framework tables. `username_history` carries `account_id` but is not globally scoped, because the hostname lookup that reads it runs before any account context exists. A Pest test asserts that two accounts cannot see each other's bookings.
+
+**Names describe the job, never the industry** (decision 73, technical proposal 15.5a). No table, column, model, enum, route or event named `bride`, `bridal`, `wedding`, `groom`, `trial` or `makeup`. The test: would the name still make sense on a DJ's booking?
+
+**Money is a `bigint` integer in the currency's ISO 4217 minor unit, with a `_minor` suffix** (decision 77). Pence, cents and euro cents are all the minor unit; the column never says which country. No floats, no decimals, no exceptions. Percentages are whole-number `smallint`. Every money column sits beside a `currency` or inherits one from its booking, and the dashboard never sums across currencies (technical proposal 15.2).
+
+**Two models of time, on purpose** (technical proposal 15.4). Events are local wall clock plus an IANA zone: `event_date date`, `start_time time`, `timezone varchar`. Anything that fires, and every audit, signature or financial timestamp, is `timestamptz` in UTC. Laravel's `created_at` and `updated_at` are `timestamptz` throughout. A comment at the top of the events migration explains the split.
+
+**Enum-like columns are `varchar` with a check constraint**, never a Postgres enum type, each backed by a PHP enum. Values are `snake_case`.
+
+**Primary keys are `bigint`** via `$table->id()`. Random tokens exist only where a URL leaves the app (section 7, `client_links`), and those are UUIDv4 or raw random bytes, never UUIDv7 (decision 22). Offline capture is protected by an idempotency key on the create request, which is a header, not a column.
+
+**Soft deletes only where a record has a life after deletion**: `accounts`, `users`, `contacts`, `bookings`, `services`. Everything else is a hard delete, recorded by the activity trail when that exists. Payments in particular are hard-deleted, because "reversible" means the row goes and the balance recalculates (decision 27).
+
+**JSONB for shapes that vary or that are snapshots**, never for data that is queried across accounts: feature toggles, line snapshots on quotes and invoices, template variants, notification preferences.
+
+**Foreign key actions.** `account_id` cascades. `booking_id` cascades to its children (events, party members, contacts, lines) because a booking is only ever soft-deleted in practice and the cascade exists for the genuine delete of a dead enquiry. Rate card references (`service_id`) set null, because a deleted service must not orphan a booking. `contact_id` on bookings restricts, because a contact with bookings cannot be deleted.
+
+**Structure now, screen later** (decision 75). Settled columns for later features are present and unused. Whole tables for unsettled features are designed in section 7 and not migrated.
+
+---
+
+## 3. Open calls, taken as recommended
+
+Six calls from earlier in the thread were not explicitly answered. This document takes the recommendation for each. Any of them can be changed before the first migration runs.
+
+| Call | Taken |
+|---|---|
+| Contacts or clients | `contacts`. Matches the business logic doc and avoids colliding with Stripe's and Sanctum's use of "client" |
+| One invoice or two | One invoice per booking by default, carrying a deposit amount and two due dates. A second invoice can be raised manually |
+| Where the price lives | Live, editable `booking_lines` on the booking; `quotes` is an immutable snapshot with an outcome |
+| Party and lines | Independent. A one-tap action builds lines from the party; a line can also be added without a member |
+| Primary keys | `bigint`, per section 2 |
+| Where the artist goes | One `location_type` and one address per event, which travel is computed to; nullable `venue_name` and `venue_address` for when the occasion's venue differs |
+
+---
+
+## 4. The map
+
+```
+accounts ─────────────── account_settings (1:1)
+ │  ├── account_user ─── users ─── identities
+ │  ├── username_history
+ │  ├── services                     the rate card
+ │  ├── message_templates            account overrides (account_id set, booking_id null)
+ │  ├── contract_templates           account overrides (account_id set)
+ │  ├── entitlements
+ │  └── contacts ─── (user_id, later: the client's own login)
+ │        └── bookings               enquiry through to closed, one table
+ │              ├── events           main, trial, consultation, ...
+ │              ├── party_members
+ │              ├── booking_contacts
+ │              ├── booking_lines    the live price
+ │              ├── quotes           immutable snapshots with an outcome
+ │              ├── invoices ─── payments
+ │              ├── agreements       versions, never edited once signed
+ │              ├── notes
+ │              ├── message_templates   per-booking overrides (booking_id set)
+ │              └── booking_user     collaborators on this booking (empty in v1)
+ │
+ ├── system rows: message_templates and contract_templates with account_id null
+ └── framework: subscriptions, subscription_items, personal_access_tokens, sessions, jobs
+```
+
+---
+
+## 5. The first migration set
+
+Twenty-one tables plus framework tables. Types are Postgres types. `ts` means `timestamptz`. Every table has `created_at ts` and `updated_at ts` unless noted.
+
+### 5.1 `accounts`
+
+The business. The tenant. One per artist today; a user may belong to several later.
+
+```
+id                  bigint      pk
+name                varchar(120) not null            the business name shown to clients
+username            varchar(63)  not null unique     lowercase, ^[a-z][a-z0-9]{2,62}$, check constraint
+vertical            varchar(40)  not null default 'wedding_makeup'
+country             char(2)      not null default 'GB'      ISO 3166-1 alpha-2
+locale              varchar(10)  not null default 'en-GB'   BCP 47
+currency            char(3)      not null default 'GBP'     ISO 4217
+timezone            varchar(64)  not null default 'Europe/London'   IANA, for reminder arithmetic
+profile_enabled     bool         not null default false     decision 55: off means 302 to www, on means render
+stripe_id           varchar(255) nullable unique            Cashier
+pm_type             varchar(255) nullable                   Cashier
+pm_last_four        varchar(4)   nullable                   Cashier
+trial_ends_at       ts           nullable                   Cashier
+created_at, updated_at, deleted_at
+```
+
+Notes. `username` is stored lowercase and validated against the reserved list in `config/reserved_usernames.php`, against `username_history`, and against the regex, in that order. `country` and `locale` are both needed and are different things (technical proposal 15.1). The Cashier columns are here rather than on `users` because the account is the billable entity: `Cashier::useCustomerModel(Account::class)` and the published Cashier migration targets `accounts`. Postgres compares `stripe_id` case-sensitively by default, which is what Stripe wants. `trial_ends_at` is Cashier's own column name and is the one exception to the naming rule in decision 73, tolerated because renaming it means patching the package.
+
+### 5.2 `account_settings`
+
+One row per account, created with it. Everything the artist sets once and overrides per booking. Kept off `accounts` so that identity and tenancy stay small and settings can grow.
+
+```
+id                          bigint   pk
+account_id                  bigint   not null unique, fk accounts cascade
+features                    jsonb    not null default '{}'     feature key -> bool, decision 74
+deposit_type                varchar(10) not null default 'percent'   check: fixed | percent
+deposit_amount_minor        bigint   nullable                  when fixed
+deposit_percent             smallint nullable                  when percent, whole number
+deposit_due_days            smallint not null default 7        days after signature
+balance_due_days_before     smallint not null default 28       days before the main event
+payment_instructions        text     nullable                  bank details, a link, a sentence
+invoice_prefix              varchar(10) not null default 'INV'
+next_invoice_number         int      not null default 1        incremented under row lock at issue
+legal_name                  varchar(160) nullable              on invoices and agreements
+address_line_1              varchar(120) nullable
+address_line_2              varchar(120) nullable
+city                        varchar(80)  nullable
+postcode                    varchar(12)  nullable
+tax_number                  varchar(30)  nullable              VAT or equivalent, shown on invoices if set
+base_postcode               varchar(12)  nullable              travel origin
+travel_charging             varchar(10) not null default 'included'   check: included | radius | per_mile | flat
+travel_free_radius_miles    smallint nullable
+travel_rate_per_mile_minor  int      nullable default 45
+travel_flat_fee_minor       bigint   nullable
+early_start_before          time     nullable                  early start supplement threshold
+business_year_start_month   smallint not null default 4        UK tax year by default
+business_year_start_day     smallint not null default 6
+created_at, updated_at
+```
+
+Notes. `features` is read only through `featureEnabled()`, decision 74. Check constraint: `deposit_type = 'fixed'` requires `deposit_amount_minor`, `'percent'` requires `deposit_percent`. Default working hours from business logic section 24 are deferred; they need a shape decision first.
+
+### 5.3 `users`
+
+A person with a login. Only person things live here (decision 71). Being an artist is an `account_user` row; being a client is a `contacts.user_id` link.
+
+```
+id                          bigint   pk
+uuid                        uuid     not null unique            Apple appAccountToken and Google obfuscatedAccountId, later
+name                        varchar(120) not null
+email                       varchar(255) not null              unique index on lower(email)
+password                    varchar(255) nullable              nullable from day one: a future Apple user may never set one
+email_verified_at           ts       nullable
+remember_token              varchar(100) nullable
+two_factor_secret           text     nullable                  Fortify
+two_factor_recovery_codes   text     nullable                  Fortify
+two_factor_confirmed_at     ts       nullable                  Fortify
+notification_preferences    jsonb    not null default '{}'     per type, business logic 27
+marketing_consent_at        ts       nullable                  decision 71: a dated fact, never a bool
+marketing_consent_source    varchar(40) nullable               portal | app_signup | other
+last_account_id             bigint   nullable fk accounts set null   which account to open on next login
+created_at, updated_at, deleted_at
+```
+
+Notes. Face ID app lock is a device setting and never reaches the database. Never look up a user by email for provider sign-in; that goes through `identities` (decision 28).
+
+### 5.4 `account_user`
+
+Membership. One owner per account, any number of collaborators later.
+
+```
+id                  bigint   pk
+account_id          bigint   not null fk accounts cascade
+user_id             bigint   not null fk users cascade
+role                varchar(20) not null       check: owner | collaborator
+can_edit            bool     not null default false
+can_see_prices      bool     not null default false
+can_see_invoices    bool     not null default false
+can_see_contacts    bool     not null default true
+invited_by_user_id  bigint   nullable fk users set null
+invited_at          ts       nullable
+accepted_at         ts       nullable
+created_at, updated_at
+unique (account_id, user_id)
+partial unique (account_id) where role = 'owner'
+```
+
+Notes. Whether a collaborator is an assistant or a second artist is a matter of which toggles are on, not a different role (business logic 20.2). The owner row has every toggle true by convention and policies short-circuit on `role = 'owner'`.
+
+### 5.5 `identities`
+
+Sits empty until Sign in with Apple and Google arrive together.
+
+```
+id                  bigint   pk
+user_id             bigint   not null fk users cascade
+provider            varchar(20) not null       check: apple | google
+provider_user_id    varchar(255) not null      Apple sub, Google sub
+provider_email      varchar(255) nullable
+email_is_private    bool     not null default false    Apple Hide My Email
+created_at, updated_at
+unique (provider, provider_user_id)
+```
+
+### 5.6 `username_history`
+
+Every username an account has ever held, including the current one. Never reclaimable by anyone else.
+
+```
+id              bigint   pk
+account_id      bigint   not null fk accounts cascade
+username        varchar(63) not null unique
+claimed_at      ts       not null
+released_at     ts       nullable      null means current
+```
+
+Notes. No `updated_at`. The unique constraint across all history is what enforces "nothing released is ever reclaimable" (business logic 4.7). A released username on the artist hostname redirects with a 302 to the account's current one (decision 55).
+
+### 5.7 `contacts`
+
+The person who books and pays. Name, email, phone, address, and nothing else. Reusable across bookings when the same family books again.
+
+```
+id              bigint   pk
+account_id      bigint   not null fk accounts cascade
+user_id         bigint   nullable fk users set null     decision 71, unused in v1
+first_name      varchar(80)  not null
+last_name       varchar(80)  nullable
+email           varchar(255) nullable
+phone           varchar(30)  nullable
+address_line_1  varchar(120) nullable
+address_line_2  varchar(120) nullable
+city            varchar(80)  nullable
+postcode        varchar(12)  nullable
+country         char(2)      nullable
+created_at, updated_at, deleted_at
+index (account_id, last_name, first_name)
+index (account_id, email)
+```
+
+Notes. First and last name are separate because merge fields need the first name on its own. No dates of birth anywhere in the schema, for anyone (business logic 4.2). Contact rows are never a marketing list (decision 71).
+
+### 5.8 `bookings`
+
+One table from first enquiry to closed. Every stage lives here; the interface shows enquiries and bookings as two lists filtered on `stage`.
+
+```
+id                          bigint   pk
+account_id                  bigint   not null fk accounts cascade
+contact_id                  bigint   not null fk contacts restrict
+stage                       varchar(20) not null default 'new'
+                              check: new | in_conversation | possible | quoted |
+                                     provisional | confirmed | completed | closed |
+                                     lost | cancelled
+source                      varchar(30) nullable
+                              check: manual | web_form | forwarded_email | voice_note |
+                                     captured_at_event | other
+source_booking_id           bigint   nullable fk bookings set null    captured at which job
+enquiry_message             text     nullable                          the original message, if any
+lost_reason                 varchar(40) nullable
+lost_at                     ts       nullable
+converted_at                ts       nullable        enquiry became provisional
+confirmed_at                ts       nullable        signed and deposited
+cancelled_at                ts       nullable
+cancellation_reason         text     nullable
+hold_expires_at             date     nullable        provisional hold, "not held" after this
+last_touched_at             ts       not null        any change, note or message on the booking
+currency                    char(3)  not null        defaults from the account in the model, never in the schema
+pricing_mode                varchar(10) not null default 'itemised'   check: itemised | fixed
+fixed_price_minor           bigint   nullable        when fixed
+fixed_price_description     varchar(200) nullable
+discount_type               varchar(10) nullable    check: amount | percent
+discount_value              int      nullable        minor units when amount, whole number when percent
+discount_reason             varchar(120) nullable
+deposit_override_minor      bigint   nullable        overrides the account rule for this booking
+deposit_override_percent    smallint nullable
+photo_consent               varchar(20) nullable    check: none | private | social    business logic 9.2, unused in v1
+photo_consent_recorded_at   ts       nullable
+gallery_url                 varchar(500) nullable   decision 73 rename
+gallery_received_on         date     nullable
+access_pin                  varchar(255) nullable   encrypted cast, decision 72
+access_pin_changed_at       ts       nullable
+feature_overrides           jsonb    not null default '{}'    only explicitly overridden keys
+created_by_user_id          bigint   nullable fk users set null
+created_at, updated_at, deleted_at
+index (account_id, stage)
+index (account_id, last_touched_at)
+index (account_id, contact_id)
+index (source_booking_id)
+```
+
+Notes. Enquiries are `stage in (new, in_conversation, possible, quoted)`. Bookings are `stage in (provisional, confirmed, completed, closed, cancelled)`. `lost` is archived. Soft calendar holds are `possible` and `quoted`. "Waiting on" is never a column: it is computed from the booking, its agreements and invoices and the enabled features (business logic section 6). Converting is a stage change and copies nothing. `last_touched_at` is what the clash warning shows ("last touched three months ago"). The main event's date is not denormalised onto the booking; the list query joins the `main` event, which the partial index in 5.9 makes cheap.
+
+### 5.9 `events`
+
+Anything that touches a date. Normally two rows per booking, `trial` and `main`.
+
+```
+id                   bigint   pk
+account_id           bigint   not null fk accounts cascade
+booking_id           bigint   not null fk bookings cascade
+type                 varchar(20) not null
+                       check: main | trial | consultation | shoot | setup |
+                              delivery | collection | other
+label                varchar(60)  nullable       custom display name, otherwise the locale string for the type
+event_date           date     not null            local wall clock
+start_time           time     nullable            the call time
+end_time             time     nullable
+ready_by_time        time     nullable
+timezone             varchar(64) not null default 'Europe/London'   IANA
+location_type        varchar(10) nullable         check: base | client | venue
+address_line_1       varchar(120) nullable         where the work happens; travel is computed to this
+address_line_2       varchar(120) nullable
+city                 varchar(80)  nullable
+postcode             varchar(12)  nullable
+country              char(2)      nullable
+latitude             numeric(9,6) nullable
+longitude            numeric(9,6) nullable
+venue_name           varchar(120) nullable         the occasion's venue when it differs from the address above
+venue_address        text         nullable
+travel_distance_m    int      nullable             unused in v1, decision 74
+travel_duration_s    int      nullable
+travel_estimated_at  ts       nullable
+sort_order           smallint not null default 0
+created_at, updated_at
+index (account_id, event_date)
+index (account_id, type, event_date)
+index (booking_id)
+partial unique (booking_id) where type = 'main'
+```
+
+Notes. The calendar, the clash warning and "next up" all query this table by `(account_id, event_date)`, which is the index decision 44 intended and could not put on `bookings`. At most one `main` event per booking. `location_type = 'base'` means the artist's own premises, and the address columns may then be empty because the base address lives in settings. `timezone` defaults to the account's zone; when an event's address country differs from the account's country the app sets the zone from the address and tells the artist, so a job abroad is never left on `Europe/London`. The clash warning compares `event_date` values, not instants, so a UK job and a Polish job on the same day still warn each other.
+
+### 5.10 `party_members`
+
+Who is being served, each with a service from the rate card. No ages, no dates of birth.
+
+```
+id              bigint   pk
+account_id      bigint   not null fk accounts cascade
+booking_id      bigint   not null fk bookings cascade
+event_id        bigint   nullable fk events set null     which event, null means the main one
+name            varchar(120) nullable
+service_id      bigint   nullable fk services set null
+service_name    varchar(80)  nullable                    snapshot, survives a deleted service
+sort_order      smallint not null default 0
+created_at, updated_at
+index (booking_id)
+```
+
+### 5.11 `booking_contacts`
+
+Everyone else on the day who is not the contact: partner, planner, venue coordinator, emergency contact.
+
+```
+id              bigint   pk
+account_id      bigint   not null fk accounts cascade
+booking_id      bigint   not null fk bookings cascade
+role            varchar(30) not null      check: partner | planner | venue_coordinator | emergency | other
+name            varchar(120) not null
+email           varchar(255) nullable
+phone           varchar(30)  nullable
+note            varchar(255) nullable
+created_at, updated_at
+index (booking_id)
+```
+
+### 5.12 `services`
+
+The rate card. Rows, never an enum. Seeded per vertical, all editable, all deletable.
+
+```
+id              bigint   pk
+account_id      bigint   not null fk accounts cascade
+name            varchar(80)  not null
+description     varchar(255) nullable       the plain-English definition, e.g. "under 16"
+kind            varchar(10)  not null default 'service'   check: service | expense | travel
+applies_to      varchar(10)  not null default 'both'      check: main | trial | both
+price_minor     bigint   not null default 0
+sort_order      smallint not null default 0
+active          bool     not null default true
+created_at, updated_at, deleted_at
+partial unique (account_id, name) where deleted_at is null
+```
+
+Notes. The wedding-makeup seed is: Bride, Bridesmaid, Mother of the bride, Senior, Child, Gentleman, Bridal trial, Additional trial, Early start supplement, Travel, Accommodation, Parking, Congestion or clean air charge, Other expense. Those are data and the artist can rename every one of them (decision 73). Whether a trial is included in a price is expressed by a zero price on that row; a dedicated toggle is deferred.
+
+### 5.13 `booking_lines`
+
+The live, editable price on the booking. Description and unit price are snapshotted the moment a line is added (business logic 4.6), with a visible "update to current prices" action.
+
+```
+id                bigint   pk
+account_id        bigint   not null fk accounts cascade
+booking_id        bigint   not null fk bookings cascade
+service_id        bigint   nullable fk services set null
+kind              varchar(10) not null default 'service'   check: service | expense | travel | custom
+description       varchar(120) not null                    snapshot
+quantity          smallint not null default 1
+unit_price_minor  bigint   not null
+sort_order        smallint not null default 0
+created_at, updated_at
+index (booking_id)
+```
+
+Notes. Line total is `quantity * unit_price_minor`, computed, never stored. Booking subtotal, discount and total are computed in one place in PHP and never stored on the booking. In fixed-price mode the lines are kept but ignored for totals, so switching back loses nothing.
+
+### 5.14 `quotes`
+
+An immutable record of a written quote that was copied, sent or downloaded, with an outcome. This is what makes the enquiry funnel measurable (business logic section 28).
+
+```
+id              bigint   pk
+account_id      bigint   not null fk accounts cascade
+booking_id      bigint   not null fk bookings cascade
+number          smallint not null                 1, 2, 3 per booking
+currency        char(3)  not null
+pricing_mode    varchar(10) not null              itemised | fixed
+lines           jsonb    not null                 snapshot of booking_lines at that moment
+subtotal_minor  bigint   not null
+discount_minor  bigint   not null default 0
+total_minor     bigint   not null
+deposit_minor   bigint   nullable
+rendered_text   text     not null                 exactly what was copied or sent
+status          varchar(10) not null default 'sent'   check: sent | accepted | declined | expired
+sent_at         ts       not null
+sent_via        varchar(10) not null default 'copy'    check: copy | email | pdf
+responded_at    ts       nullable
+valid_until     date     nullable
+created_by_user_id bigint nullable fk users set null
+created_at, updated_at
+unique (booking_id, number)
+index (account_id, status)
+```
+
+Notes. Copying to the clipboard creates a quote row, because that is the moment a number reached the client. Editing lines afterwards does not touch this row; the next copy creates quote 2.
+
+### 5.15 `invoices`
+
+One per booking by default, numbered at issue, carrying the deposit and both due dates. A second can be raised manually.
+
+```
+id                        bigint   pk
+account_id                bigint   not null fk accounts cascade
+booking_id                bigint   not null fk bookings cascade
+status                    varchar(10) not null default 'draft'   check: draft | issued | void
+sequence                  int      nullable                       assigned at issue from account_settings
+number                    varchar(24) nullable                    prefix plus zero-padded sequence, e.g. INV-0042
+currency                  char(3)  not null
+issued_on                 date     nullable
+lines                     jsonb    not null                       snapshot at issue
+subtotal_minor            bigint   not null
+discount_minor            bigint   not null default 0
+total_minor               bigint   not null
+deposit_minor             bigint   not null default 0             the part due first; 0 means no deposit stage
+deposit_due_on            date     nullable
+balance_due_on            date     nullable
+payment_instructions      text     nullable                       snapshot from settings at issue
+notes                     text     nullable                       shown on the invoice
+reminders_snoozed_until   date     nullable                       decision 27, separate from recording a payment
+pdf_path                  varchar(255) nullable
+voided_at                 ts       nullable
+void_reason               varchar(200) nullable
+created_by_user_id        bigint   nullable fk users set null
+created_at, updated_at
+unique (account_id, sequence)
+unique (account_id, number)
+index (account_id, status, balance_due_on)
+index (account_id, status, deposit_due_on)
+index (booking_id)
+```
+
+Notes. Numbering happens inside a transaction that locks the `account_settings` row (`select ... for update`), reads `next_invoice_number`, writes it to `sequence`, and increments. Drafts have no number, so there are no gaps (business logic 11.1). Paid state is never stored: see section 8. A voided invoice keeps its number.
+
+### 5.16 `payments`
+
+Rows, never a boolean. Negative amounts are refunds.
+
+```
+id                    bigint   pk
+account_id            bigint   not null fk accounts cascade
+booking_id            bigint   not null fk bookings cascade
+invoice_id            bigint   not null fk invoices cascade
+amount_minor          bigint   not null           negative for a refund; check amount_minor <> 0
+paid_on               date     not null
+method                varchar(20) not null default 'bank_transfer'
+                        check: bank_transfer | cash | card | stripe | other
+reference             varchar(80)  nullable
+note                  varchar(255) nullable       required by the interface when amount is negative
+external_id           varchar(255) nullable       Stripe payment intent, later
+recorded_by_user_id   bigint   nullable fk users set null
+created_at, updated_at
+index (invoice_id)
+index (account_id, paid_on)
+```
+
+Notes. `booking_id` is redundant with `invoice_id` and deliberate: "what has this booking paid" is the commonest money query and should not join. Hard delete on misclick.
+
+### 5.17 `notes`
+
+The dated stream. One row per note, newest first, private, never merged into a template.
+
+```
+id              bigint   pk
+account_id      bigint   not null fk accounts cascade
+booking_id      bigint   nullable fk bookings cascade
+contact_id      bigint   nullable fk contacts cascade
+user_id         bigint   nullable fk users set null    author
+body            text     not null
+remind_at       ts       nullable                      UTC instant, unused in v1
+reminded_at     ts       nullable
+created_at, updated_at
+check (booking_id is not null or contact_id is not null)
+index (booking_id, created_at)
+partial index (account_id, remind_at) where remind_at is not null
+```
+
+### 5.18 `message_templates`
+
+One table, three tiers. `account_id` null is a system default; `account_id` set is the artist's override; `booking_id` set is a per-booking override. Resolution is booking, then account, then system.
+
+```
+id              bigint   pk
+account_id      bigint   nullable fk accounts cascade
+booking_id      bigint   nullable fk bookings cascade
+key             varchar(40) not null
+                  enquiry_acknowledgement | introduction | introduction_follow_up | quote |
+                  details_form_request | details_form_reminder | agreement_to_sign |
+                  agreement_reminder | booking_confirmed | invoice_deposit_request |
+                  deposit_reminder | trial_reminder | trial_follow_up | balance_due |
+                  main_event_reminder | thank_you | feedback_request | gallery_request
+locale          varchar(10) not null default 'en-GB'
+vertical        varchar(40) nullable                    system rows only
+name            varchar(80)  not null
+subject         varchar(200) not null
+body            text         not null                   merge fields in {{double_braces}}
+variants        jsonb        nullable                   location blocks: base | client | venue
+enabled         bool     not null default true
+mode            varchar(10) not null default 'copy'    check: copy | send | automate
+trigger         jsonb    nullable                       {event_type, offset_days, at_time}; unused in v1
+sort_order      smallint not null default 0
+created_at, updated_at
+unique nulls not distinct (account_id, booking_id, key, locale)
+check (booking_id is null or account_id is not null)
+```
+
+Notes. The keys are held in a PHP enum; the list above is the full menu from business logic 15.4 and the first build seeds four or five of them. `mode` and `trigger` are the automation columns, structured now and unread in v1 (decision 75). Merge fields are rendered against a booking by one service so that copy, preview and, later, send all produce the same text.
+
+### 5.19 `contract_templates`
+
+Versioned wording, by market and vertical. `account_id` null is the system default.
+
+```
+id              bigint   pk
+account_id      bigint   nullable fk accounts cascade
+market          char(2)  not null              the country whose law the wording assumes
+vertical        varchar(40) not null
+version         int      not null
+name            varchar(80) not null
+body            text     not null              plain text with merge fields, never rich text
+effective_from  date     not null
+retired_at      date     nullable
+created_at, updated_at
+unique nulls not distinct (account_id, market, vertical, version)
+```
+
+Notes. Not a file in the repository, because a signed agreement must be able to reference the exact row (technical proposal 15.7). The GB wedding-makeup system default carries the cancellation clause on by default per decision 23, pending the solicitor. Editing an account's template creates a new version row; the previous one is retired, not changed.
+
+### 5.20 `agreements`
+
+One row per version per booking. A signed agreement is never edited. In the first build an agreement is generated, downloaded as a PDF and marked as signed by the artist; the signing link arrives later and writes the same columns.
+
+```
+id                       bigint   pk
+account_id               bigint   not null fk accounts cascade
+booking_id               bigint   not null fk bookings cascade
+contract_template_id     bigint   nullable fk contract_templates set null
+version                  smallint not null                 1, 2, 3 per booking
+status                   varchar(12) not null default 'draft'
+                           check: draft | sent | signed | superseded | void
+rendered_body            text     not null                 the exact text, not template plus data
+rendered_sha256          char(64) not null
+pdf_path                 varchar(255) nullable
+total_minor              bigint   not null                 snapshot, for the record
+deposit_minor            bigint   not null default 0
+sent_at                  ts       nullable
+first_viewed_at          ts       nullable                 analytics, never evidence
+signed_at                ts       nullable
+signed_method            varchar(10) nullable              check: link | manual
+signed_name              varchar(120) nullable
+signed_ip                inet     nullable
+signed_user_agent        text     nullable
+signed_note              varchar(255) nullable             manual: "signed copy received by email"
+superseded_by_id         bigint   nullable fk agreements set null
+created_by_user_id       bigint   nullable fk users set null
+created_at, updated_at
+unique (booking_id, version)
+index (account_id, status)
+```
+
+Notes. Tokens are not on this table. When the signing link is built they live in `client_links` (section 7.2), so that intake forms, invoices and feedback use the same mechanism. "The agreement in force" is the highest-version row with `status = 'signed'`. A booking is `confirmed` when such a row exists and the deposit is covered (business logic 4.4).
+
+### 5.21 `entitlements`
+
+Who is allowed in, separately from who paid. Populated from Cashier's webhooks. Read only through `hasActiveEntitlement()`.
+
+```
+id                  bigint   pk
+account_id          bigint   not null fk accounts cascade
+source              varchar(10) not null      check: stripe | apple | google | manual
+external_id         varchar(255) nullable     subscription id
+plan_key            varchar(40)  nullable     early_access_monthly, early_access_annual, ...
+status              varchar(12) not null      check: trialing | active | past_due | paused | cancelled | expired
+current_period_end  ts       nullable
+created_at, updated_at
+index (account_id, status)
+```
+
+Notes. `manual` exists so that Jess, the App Store review account and any comped artist can be let in without a Stripe object. Pause (business logic 26.3) is `status = 'paused'`: read-only app, automation stopped, data untouched.
+
+### 5.22 `booking_user`
+
+Which collaborators are on which booking. Empty in the first build; the shape is settled so it is created now.
+
+```
+id              bigint   pk
+account_id      bigint   not null fk accounts cascade
+booking_id      bigint   not null fk bookings cascade
+user_id         bigint   not null fk users cascade
+added_by_user_id bigint  nullable fk users set null
+created_at, updated_at
+unique (booking_id, user_id)
+```
+
+Notes. Permissions are on `account_user`, not here. This table only answers "is this person on this job".
+
+---
+
+## 6. Framework tables
+
+Created by the packages, listed so nothing is a surprise.
+
+| Table | From | Note |
+|---|---|---|
+| `subscriptions`, `subscription_items` | Cashier 16 | Published and pointed at `accounts` (`account_id`, not `user_id`) |
+| `personal_access_tokens` | Sanctum | One per device, named, with `expires_at` set and `sanctum:prune-expired` scheduled |
+| `sessions` | Laravel | Web sessions for the cookie path |
+| `password_reset_tokens` | Laravel | |
+| `cache`, `cache_locks` | Laravel | |
+| `jobs`, `job_batches`, `failed_jobs` | Laravel | On Laravel Cloud the managed queue replaces `jobs`; the migration is harmless |
+
+---
+
+## 7. Designed, not migrated
+
+Each of these is a new table pointing at an existing one, so adding it later is the cheap kind of change (decision 75). They are here so the first migration set leaves the right hooks, and so nobody designs them twice.
+
+### 7.1 `scheduled_messages` (with messaging automation)
+
+```
+id, account_id, booking_id, event_id nullable, template_key, template_id nullable,
+to_email, to_name, subject, body (rendered at materialisation), send_at ts (UTC),
+status: pending | sent | cancelled | failed, hand_edited bool, sent_at ts,
+provider_message_id, delivery_status: queued | delivered | bounced | complained,
+delivery_updated_at, error text, created_at, updated_at
+index (account_id, status, send_at), index (booking_id)
+```
+
+`send_at` is computed from the event's local time and zone into UTC, and recomputed when the event moves. "Regenerate from template" re-renders rows where `hand_edited` is false.
+
+### 7.2 `client_links` (with the first client page)
+
+One table for every tokenised URL the client receives.
+
+```
+id, account_id, booking_id, purpose: agreement_sign | agreement_receipt | intake_form |
+invoice_view | feedback | enquiry_form, subject_type, subject_id, token varchar(64) unique
+(UUIDv4 or 32 random bytes, hex), expires_at ts nullable, revoked_at ts nullable,
+first_viewed_at ts, view_count int, pin_failures int, pin_locked_until ts,
+created_at, updated_at
+index (token), index (booking_id, purpose)
+```
+
+GET renders, POST acts, tokens are multi-use within their window, `410 Gone` when dead (decision 22). The PIN from decision 72 is checked here before rendering anything.
+
+### 7.3 `signing_events` (with signing by link)
+
+Hash-chained, append-only, never pruned, retained six years past the main event (business logic 26.4).
+
+```
+id, account_id, agreement_id, event: sent | delivered | viewed | pin_passed |
+consented | signed | receipt_viewed, occurred_at ts, ip inet, user_agent text,
+payload jsonb, previous_hash char(64) nullable, hash char(64)
+index (agreement_id, id)
+```
+
+No `updated_at`. Separate from the artist's activity trail (7.9) because this one can never be edited and that one can.
+
+### 7.4 `intake_forms` and `intake_questions` (with the intake form)
+
+```
+intake_forms: id, account_id, booking_id, status: draft | sent | returned | reviewed |
+taken_by_phone, sections_enabled jsonb, answers jsonb, submitted_answers jsonb
+(what the client sent, before review), sent_at, returned_at, reviewed_at,
+created_at, updated_at, unique (booking_id)
+
+intake_questions: id, account_id, label, type: short_text | long_text | yes_no | choice,
+options jsonb, sort_order, active, created_at, updated_at
+```
+
+Five custom questions maximum, enforced in the application. Never a form builder.
+
+### 7.5 `feedback_responses` (with private feedback)
+
+```
+id, account_id, booking_id, client_link_id nullable, is_primary_contact bool
+(the contact's own link, distinguishable per business logic 12.1), ratings jsonb,
+comment text, submitted_at ts, created_at
+```
+
+### 7.6 `media` (when object storage is ruled back in)
+
+```
+id, account_id, booking_id, label: inspiration | trial | main, disk, path,
+original_name, mime, size_bytes, width, height, uploaded_by_user_id nullable,
+created_at, updated_at
+```
+
+Consent is read from `bookings.photo_consent`, not stored here.
+
+### 7.7 `push_tokens` (with push)
+
+```
+id, user_id, platform: ios | android, token varchar(255) unique, app_version,
+last_seen_at ts, created_at, updated_at
+```
+
+Person-level, not account-level: a user in two accounts has one phone.
+
+### 7.8 `activities` (with the booking activity trail)
+
+```
+id, account_id, booking_id nullable, contact_id nullable, user_id nullable,
+event varchar(40), subject_type, subject_id, changes jsonb, created_at ts
+index (booking_id, created_at)
+```
+
+The artist's "what did I do and when". Prunable. The events are named for the job (`stage_changed`, `payment_recorded`, `agreement_signed`), never the industry.
+
+### 7.9 `booking_transfers` (with transfer)
+
+```
+id, from_account_id, to_account_id, booking_id, initiated_by_user_id,
+to_email, status: pending | accepted | declined | cancelled, accepted_at,
+keep_read_access bool, created_at, updated_at
+```
+
+Transfer changes `bookings.account_id` in one transaction and rewrites `account_id` on every child row, which is the one operation the redundancy in section 2 makes expensive and which is rare enough to accept.
+
+### 7.10 Per-vertical extension tables (when a vertical needs one)
+
+`booking_<vertical>` keyed to `booking_id`, named for the data it holds. None designed. Decision 73.
+
+---
+
+## 8. Values that are computed, never stored
+
+Storing any of these creates a second source of truth that drifts.
+
+| Value | Computed from |
+|---|---|
+| Line total | `quantity * unit_price_minor` |
+| Booking subtotal, discount, total | `booking_lines` plus `pricing_mode`, `fixed_price_minor`, `discount_*`, in one PHP service |
+| Deposit amount for a booking | account rule, overridden by the booking's `deposit_override_*` |
+| Invoice paid, deposit received, balance outstanding | `sum(payments.amount_minor)` against `deposit_minor` and `total_minor` |
+| Reminders due | outstanding balance past `balance_due_on` or `deposit_due_on`, unless `reminders_snoozed_until` is in the future, unless invoicing is toggled off |
+| Waiting on | stage, latest agreement status, invoice state, `hold_expires_at`, `last_touched_at`, and the enabled features, per business logic section 6 |
+| Calendar mark strength | `confirmed` solid, `provisional` outlined, `possible` or `quoted` a count |
+| Agreement in force | highest-version `agreements` row with `status = 'signed'` |
+| Owed to you | past-date `main` events on bookings with an outstanding balance, grouped by currency |
+| Money tiles | always grouped by `currency` or filtered to the account currency, never a bare `SUM` |
+
+---
+
+## 9. Indexes and the queries they serve
+
+| Query | Table and index |
+|---|---|
+| Calendar month, clash warning, next up | `events (account_id, event_date)` |
+| Bookings list sorted by main event date | `events (account_id, type, event_date)` plus the `main` partial unique |
+| Enquiries list, bookings list | `bookings (account_id, stage)` |
+| Cold enquiries, "last touched" in the warning | `bookings (account_id, last_touched_at)` |
+| Overdue balances, home money figure | `invoices (account_id, status, balance_due_on)` |
+| Overdue deposits | `invoices (account_id, status, deposit_due_on)` |
+| What has this booking paid | `payments (invoice_id)`, `payments.booking_id` |
+| Contact search | `contacts (account_id, last_name, first_name)`, `contacts (account_id, email)` |
+| Login | `users` unique on `lower(email)` |
+| Provider sign-in | `identities (provider, provider_user_id)` |
+| Hostname to account | `accounts.username` unique, then `username_history.username` unique for redirects |
+| Note reminders due | partial `notes (account_id, remind_at)` |
+
+Every composite index leads with `account_id`. None leads with `user_id`.
+
+---
+
+## 10. Laravel mechanics
+
+Collected here so the tables above stay readable.
+
+- `$table->id()` produces `bigserial` on Postgres. Acceptable; identity columns are not worth a raw statement.
+- Laravel has no check-constraint API. Each one is a `DB::statement('alter table ... add constraint ... check (...)')` in the same migration, named `<table>_<column>_check` so it can be dropped when widened.
+- `unique nulls not distinct` (Postgres 15 and later) is also a raw statement. It is what lets `message_templates` and `contract_templates` hold system rows with a null `account_id` and still be unique.
+- The case-insensitive unique on `users.email` is `create unique index users_email_lower_unique on users (lower(email))`, again raw.
+- `timestampsTz()` for `created_at` and `updated_at`; `timestampTz()` for every other instant; `date` and `time` for wall clock.
+- `jsonb()`, never `json()`.
+- Money columns use a `Money` cast that exposes the minor-unit integer as a value object carrying its currency, never a float. Formatting is currency plus locale, never hard-coded symbols.
+- `access_pin` uses the `encrypted` cast.
+- Every model except `User`, `Account`, `Identity` and `UsernameHistory` uses a `BelongsToAccount` trait that applies the global scope and fills `account_id` on create from the current account context.
+- Cashier: `Cashier::useCustomerModel(Account::class)`, and the published Cashier migrations altered to add the four columns to `accounts` and to key `subscriptions` on `account_id`.
+- Enum-like columns are backed by PHP enums under `App\Enums`, and the check constraint's value list is generated from the enum in the migration so the two cannot drift.
+
+---
+
+## 11. What changes from Prompt 3
+
+For the rewrite, so nothing is lost in translation.
+
+| Prompt 3 | This document |
+|---|---|
+| Separate `enquiries` table | Gone. A stage on `bookings` |
+| `clients` | `contacts`, with `user_id` |
+| Venue, coordinates, travel on `bookings` | On `events`, with `location_type`, `venue_name`, `venue_address` |
+| `booking_services` | `booking_lines`, with `kind` and `sort_order` |
+| Stage values `possibility`, `won` | The ten values in 5.8 |
+| `photographer_gallery_url` | `gallery_url` |
+| Event type `wedding` | `main`; list per decision 73 |
+| `attachments` | Not migrated; `media` designed in 7.6 |
+| One hash-chained `audit_events` | `activities` (7.8) and `signing_events` (7.3), both deferred |
+| Tokens on `agreements` | On `client_links` (7.2), deferred |
+| Reserved usernames as a table | A config file; `username_history` remains a table |
+| `account_user.role` owner, artist, assistant | owner, collaborator, with `can_see_contacts` added |
+| Missing | `account_settings`, `party_members`, `booking_contacts`, `quotes`, `message_templates`, PIN columns, consent columns, `features` and `feature_overrides`, `marketing_consent_*`, `last_touched_at`, `source_booking_id`, `hold_expires_at` |
+
+---
+
+## 12. To confirm before the first migration runs
+
+1. The six calls in section 3, taken as recommended.
+2. Whether `account_settings` stays a separate table or folds into `accounts`. Recommended separate.
+3. `deposit_percent` as a whole number. Anyone wanting 33.3 per cent gets a fixed amount instead.
+4. Which four or five `message_templates` keys are seeded for the first build.
+5. That the wedding-makeup rate card seed above is the right starting list, before Jess sees it.
+
+Once those are ticked, Prompt 3 is rewritten from this document and run.
