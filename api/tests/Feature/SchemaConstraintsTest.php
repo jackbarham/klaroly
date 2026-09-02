@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Account;
 use App\Models\Booking;
 use App\Models\Event;
 use App\Models\Invoice;
@@ -66,4 +67,19 @@ it('rejects a marketing consent source that is not in the enum', function () {
         'created_at' => now(),
         'updated_at' => now(),
     ]))->toThrow(QueryException::class, 'users_marketing_consent_source_check');
+});
+
+it('accepts an account_settings row with only an account_id', function () {
+    $account = Account::factory()->create();
+
+    DB::table('account_settings')->insert([
+        'account_id' => $account->id,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $settings = DB::table('account_settings')->where('account_id', $account->id)->sole();
+
+    expect($settings->deposit_type)->toBe('percent')
+        ->and($settings->deposit_percent)->toBe(25);
 });

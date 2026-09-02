@@ -42,6 +42,8 @@ it('creates the user, account, settings, membership and history in one go', func
         ->and($account->trial_ends_at->toDateString())->toBe(now()->addDays(config('billing.trial_days'))->toDateString())
         ->and($settings->account_id)->toBe($account->id)
         ->and($settings->features)->toEqualCanonicalizing(config('features.defaults'))
+        ->and($settings->deposit_type->value)->toBe('percent')
+        ->and($settings->deposit_percent)->toBe(25)
         ->and($membership->account_id)->toBe($account->id)
         ->and($membership->user_id)->toBe($user->id)
         ->and($membership->role)->toBe(AccountRole::Owner)

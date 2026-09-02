@@ -67,7 +67,14 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($this->emailAndIpKey($request));
         });
 
-        // Applied to Fortify's password.email route by ThrottleForgotPassword.
+        // The mobile registration twin, keyed on IP alone because there is
+        // no account to key on yet. Fortify's /register has no limiter.
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+
+        // Applied to Fortify's password.email route by ThrottleForgotPassword
+        // and directly to the mobile forgot-password twin.
         RateLimiter::for('forgot-password', function (Request $request) {
             return Limit::perMinute(3)->by($this->emailAndIpKey($request));
         });

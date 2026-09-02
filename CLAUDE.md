@@ -111,11 +111,15 @@ Hand-written routes live in `routes/api.php` under `/api`:
 | Method | Path | Middleware | Notes |
 | --- | --- | --- | --- |
 | POST | `/api/auth/token` | NormaliseEmail, throttle:token | Email, password, device_name. Returns the plain-text token, its expiry and the same payload as `/api/me` under `me` |
+| POST | `/api/auth/register` | NormaliseEmail, throttle:register | Everything `/register` accepts plus device_name. 201 with the token endpoint's shape; no session |
+| POST | `/api/auth/forgot-password` | NormaliseEmail, throttle:forgot-password | Email. Same 200 body as `/forgot-password`, known or unknown |
+| POST | `/api/auth/reset-password` | NormaliseEmail | Token, email, password, password_confirmation. 200 `{message}`; a bad token is a 422 on `email`. Issues no token |
 | GET | `/api/usernames/{username}` | throttle:30,1 | `{available, reason}` where reason is `invalid`, `reserved`, `taken` or null |
 | GET | `/api/me` | auth:sanctum, account | User, current account, membership and the feature map |
 | GET | `/api/auth/tokens` | auth:sanctum, account | The caller's tokens, with the current one marked |
 | DELETE | `/api/auth/tokens/{id}` | auth:sanctum, account | The caller's own only; 404 otherwise |
 | DELETE | `/api/auth/token` | auth:sanctum, account | Revokes the token making the request; 400 for a session caller |
+| POST | `/api/auth/email/verification-notification` | auth:sanctum, account, throttle:6,1 | 202 and the email is sent; 204 if already verified |
 
 ### The rules
 
@@ -130,6 +134,20 @@ Hand-written routes live in `routes/api.php` under `/api`:
   the `email` input on every Fortify route and on the token endpoint, and
   `CreateNewUser` and `UpdateUserProfileInformation` do it again before
   validating. The `lower(email)` index is the backstop, not the mechanism.
+- **Four Fortify routes have stateless JSON twins under `/api/auth`**
+  (decision 87): register, forgot-password, reset-password and
+  email/verification-notification. Fortify's routes sit in the `web` group
+  and need the CSRF cookie, which a bearer-token caller and a Capacitor
+  WebView cannot supply. The twins run outside the `web` group, start no
+  session, and reuse Fortify's actions (`CreateNewUser`,
+  `ResetUserPassword`), the password broker and Fortify's response
+  bindings, so the two paths answer identically. Fortify's own routes are
+  unchanged and remain what the web app uses. Login has no twin because
+  `POST /api/auth/token` is the mobile login. Profile and password update
+  twins arrive with the settings screen.
+- **One place mints a token.** `App\Services\TokenIssuer` sets the device
+  name, abilities and expiry, and builds the `{token, expires_at, me}`
+  payload. The token endpoint and the register twin both call it.
 - **One credential check.** `App\Services\PasswordAuthenticator` is used by
   `Fortify::authenticateUsing` and by the token endpoint. A wrong email and a
   wrong password get the same 422 on the `email` field.
@@ -249,7 +267,9 @@ produces the bundle Capacitor will wrap.
 
 ## Current state
 
-The database schema and email-and-password authentication exist.
+The database schema, email-and-password authentication and the mobile
+twins of Fortify's registration, password reset and verification routes
+exist.
 `docs/database-schema.md` is the specification: when a table or column is
 in doubt, that document wins, and a change to the schema is made there
 first. Section 7 of it designs tables that are deliberately not migrated
@@ -263,8 +283,10 @@ modified in place), `accounts`, `account_settings`, `account_user`,
 `events`, `party_members`, `booking_contacts`, `booking_lines`, `quotes`,
 `invoices`, `payments`, `notes`, `message_templates`, `contract_templates`,
 `agreements`, `entitlements`, `booking_user`. A final migration adds the
-three foreign keys that could not be declared inline, and a later one adds
-the `users.marketing_consent_source` check constraint. Framework tables from
+three foreign keys that could not be declared inline, a later one adds
+the `users.marketing_consent_source` check constraint, and another gives
+`account_settings.deposit_percent` a default of 25 so a bare insert passes
+the deposit rule check (decision 90). Framework tables from
 Sanctum, Fortify and the passkeys package are untouched. Cashier's own
 migrations are not published; its four columns sit on `accounts`, and the
 subscription tables arrive with the billing work.
@@ -287,8 +309,9 @@ What sits on top of the tables:
 - `App\Services\BookingPricing` (the only place totals are computed),
   `App\Services\InvoiceNumbering` (the only place an invoice gets a number),
   `App\Services\Features` (the only reader of feature toggles),
-  `App\Services\PasswordAuthenticator` (the only credential check) and
-  `App\Services\AccountResolver` (the only place a user's account is chosen).
+  `App\Services\PasswordAuthenticator` (the only credential check),
+  `App\Services\AccountResolver` (the only place a user's account is chosen)
+  and `App\Services\TokenIssuer` (the only place a token is minted).
 - `App\Rules\Username` with `config/reserved_usernames.php`. Its
   `reasonFor()` is the single check behind both registration and
   `GET /api/usernames/{username}`.

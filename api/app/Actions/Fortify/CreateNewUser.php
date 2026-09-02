@@ -34,14 +34,6 @@ class CreateNewUser implements CreatesNewUsers
     private const FALLBACK_USERNAME = 'artist';
 
     /**
-     * Deposit percentage a new account starts with. The account_settings
-     * column defaults say "percent" but give no percentage, and the check
-     * constraint insists on one, so registration has to choose. The artist
-     * changes it on the settings screen.
-     */
-    private const DEFAULT_DEPOSIT_PERCENT = 25;
-
-    /**
      * @param  array<string, mixed>  $input
      *
      * @throws ValidationException
@@ -81,10 +73,10 @@ class CreateNewUser implements CreatesNewUsers
                 'trial_ends_at' => now()->addDays(config('billing.trial_days')),
             ]);
 
+            // deposit_percent is left to the column default (decision 90).
             AccountSettings::create([
                 'account_id' => $account->id,
                 'features' => config('features.defaults'),
-                'deposit_percent' => self::DEFAULT_DEPOSIT_PERCENT,
             ]);
 
             $user = User::create([

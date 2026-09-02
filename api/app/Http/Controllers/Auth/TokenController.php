@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\IssueTokenRequest;
-use App\Http\Resources\MeResource;
 use App\Http\Resources\TokenResource;
 use App\Services\AccountResolver;
 use App\Services\PasswordAuthenticator;
+use App\Services\TokenIssuer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -32,6 +32,7 @@ class TokenController extends Controller
         IssueTokenRequest $request,
         PasswordAuthenticator $authenticator,
         AccountResolver $resolver,
+        TokenIssuer $issuer,
     ): JsonResponse {
         $user = $authenticator->attempt($request->input('email'), $request->input('password'));
 
@@ -45,17 +46,9 @@ class TokenController extends Controller
             return response()->json(['message' => __('account.no_membership')], 403);
         }
 
-        $token = $user->createToken(
-            $request->input('device_name'),
-            ['*'],
-            now()->addDays(config('sanctum.token_expiry_days')),
-        );
+        $token = $issuer->issue($user, $request->input('device_name'));
 
-        return response()->json([
-            'token' => $token->plainTextToken,
-            'expires_at' => $token->accessToken->expires_at,
-            'me' => MeResource::make($user)->resolve($request),
-        ]);
+        return response()->json($issuer->payload($token, $user, $request));
     }
 
     /**

@@ -1,6 +1,6 @@
 # Klaroly: Claude Code Prompts
 
-**Date:** 1 September 2026. Prompt 3 rewritten and Prompt 4 written 2 September 2026
+**Date:** 1 September 2026. Prompt 3 rewritten and Prompts 4, 5 and 6 written 2 September 2026
 **Where this file lives:** `claude-code-prompts.md` at the root of the `klaroly` repository is
 the working copy, alongside `docs/database-schema.md`. The copy in the Dropbox project
 folder mirrors it.
@@ -805,10 +805,447 @@ Then review, commit and push.
 
 ---
 
-## Prompt 5: the authentication screens
+## Prompt 5: mobile authentication routes, API only
 
-**When:** after Prompt 4 is committed. Written out when you get there, against the
-endpoints Prompt 4 actually registered and whatever its step 7 said the screens need
-to know. It covers login, register, forgot and reset password, the verification
-banner, and wiring `src/lib/api.ts` to `/sanctum/csrf-cookie` on web and to the token
-endpoint on mobile, all in `app/`.
+**When:** after the Prompt 4 commit is pushed and the tree is clean.
+**Where:** open Claude Code at `~/Code/klaroly/klaroly`. It works in `api/`.
+**Before you start:** decisions 87 and 90 in `decision-log.md` are what this prompt is
+written from; the schema document's section 14 records what Prompt 4 found. This is a
+short prompt on purpose. It exists because Prompt 4 found that a bearer-token caller
+cannot register, reset a password or resend the verification email, and the screens
+in Prompt 6 are written against routes that exist.
+
+```
+Add the mobile authentication routes to the Klaroly API. Work in api/. Read CLAUDE.md
+(all of "Authentication shape"), docs/database-schema.md sections 5.2, 5.3 and 14,
+routes/api.php, app/Http/Controllers/Auth/TokenController.php,
+app/Http/Requests/Auth/IssueTokenRequest.php, app/Http/Resources/MeResource.php,
+app/Http/Responses/UniformPasswordResetLinkResponse.php,
+app/Http/Middleware/ThrottleForgotPassword.php, app/Actions/Fortify/CreateNewUser.php,
+app/Actions/Fortify/ResetUserPassword.php, app/Providers/FortifyServiceProvider.php
+and every test in tests/Feature/Auth/ before writing anything. Where this prompt and
+the schema document disagree, the document wins, and you tell me where they
+disagreed at the end.
+
+FIRST, BEFORE ANY CODE
+Having read all of that, list every route this prompt will register (method, path,
+middleware), every file you will create or change, and every new config key,
+translation key and environment variable. Then stop and wait for me to confirm. Do
+not write code until I say go.
+
+HOUSE RULES
+Two-space indentation, except PHP at four spaces because Pint's default preset
+enforces PSR-12. British English in comments and in every translation string. No
+emoji. Plain code over clever code. No user-facing string may be a literal; keys in
+lang/en-GB/ only, named for meaning rather than content.
+
+DO NOT COMMIT. Do not stage, commit or push anything. Leave every change unstaged so
+I can review each file in my Git browser. Tell me when the work is done and I will
+commit.
+
+WHY THIS PROMPT EXISTS, decision 87
+Fortify's /register, /forgot-password, /reset-password and
+/email/verification-notification routes sit in the web middleware group, so they
+demand the CSRF cookie and, for the resend, a session. A bearer-token caller cannot
+use any of them, and a Capacitor WebView posting from capacitor://localhost cannot
+be relied on to hold the API's session cookie at all. This prompt adds four JSON
+twins under /api/auth: stateless, outside the web group, no session and no CSRF.
+They reuse Fortify's own actions and responses so the two paths cannot drift.
+Fortify's routes are not changed in any way; they remain what the web app uses.
+Profile and password update twins are NOT in this prompt; they arrive with the
+settings screen.
+
+SCOPE
+Four routes, one migration, the tests, and the documentation for them. Nothing in
+app/. Not in this prompt: profile and password update twins, passkeys, two-factor,
+social sign-in, account switching, invitations, account deletion, client login.
+
+ROUTES, all in routes/api.php
+Unauthenticated, each with NormaliseEmail:
+
+  POST /api/auth/register
+    Throttled by a new named limiter, register, five per minute keyed on IP,
+    defined in FortifyServiceProvider next to the others. The body is everything
+    POST /register accepts (business_name, name, email, password,
+    password_confirmation, username, marketing_consent) plus device_name, required,
+    max 80, validated the same way IssueTokenRequest validates it. Run the existing
+    CreateNewUser action unchanged, fire Illuminate\Auth\Events\Registered so the
+    verification email goes exactly as Fortify sends it, do NOT log anyone into a
+    session, bind the new account as the current account so MeResource can read it,
+    issue a personal access token exactly as POST /api/auth/token does (device name,
+    expiry from config), and return the token endpoint's shape, {token, expires_at,
+    me}, with a 201. Validation failures are Laravel's standard 422. Move the
+    token-issuing code out of TokenController into one place both controllers
+    call, so there is one place a token is minted; a small service under
+    App\Services is fine. Say what you named it.
+
+  POST /api/auth/forgot-password
+    Throttled by the existing forgot-password limiter, applied directly as route
+    middleware rather than through the route-name matcher (leave that middleware in
+    place for Fortify's route). Body: email. Send the reset link through the password
+    broker the way Fortify's PasswordResetLinkController does, and return exactly the
+    body and status the web route returns, whether or not the address is known.
+    Reuse UniformPasswordResetLinkResponse or whatever it wraps; do not write a
+    second message.
+
+  POST /api/auth/reset-password
+    No limiter beyond the platform's, matching Fortify's own reset route; say if you
+    think it needs one. Body: token, email, password, password_confirmation. Reset
+    through the password broker with the existing ResetUserPassword action, which
+    already revokes every token and every session. Success is 200 with the same
+    {message} body as the web route. A bad or expired token is a 422 with the error on
+    email, the same as the web route. It does not log anyone in and issues no token;
+    the phone signs in again with the new password, as the web does.
+
+Inside the existing ['auth:sanctum', 'account'] group:
+
+  POST /api/auth/email/verification-notification
+    Throttled six per minute like Fortify's. If the user is already verified, 204
+    with no body. Otherwise send the verification notification and return 202 with
+    no body. Both match Fortify's JSON responses.
+
+Update the comment at the top of routes/api.php so it says which flows have twins
+and why.
+
+DEPOSIT PERCENT DEFAULT, decision 90
+A new migration gives account_settings.deposit_percent a default of 25, so a bare
+insert passes the deposit rule check. Remove the named constant in CreateNewUser
+and let the database default apply. The existing test that a fresh account has 25
+percent must still pass; add one that inserts an account_settings row with only
+account_id and asserts it is accepted.
+
+TRANSLATION KEYS
+Add any new message to lang/en-GB/auth.php. There should be almost none; the twins
+return Fortify's existing messages.
+
+TESTS, Pest, against klaroly_test as the existing suite does
+- Register twin: a valid request returns 201 with a token that authenticates
+  GET /api/me, me matches what GET /api/me returns for the new user, the response
+  sets no session cookie, exactly one user, account, account_settings,
+  account_user and username_history row exist, and the verification notification
+  was sent (Notification::fake). A missing device_name is a 422. The sixth attempt
+  in a minute is a 429. Mixed@Example.com is stored lowercase. A rejected username
+  rolls everything back and no token exists.
+- Forgot-password twin: known and unknown addresses produce byte-identical JSON and
+  the same status, and that JSON is byte-identical to what POST /forgot-password
+  returns. The fourth request in a minute is 429. A known address sends the
+  notification and an unknown one does not.
+- Reset-password twin: with a real token from the broker, 200, the password is
+  changed, every token the user had is gone and every session row is gone. A wrong
+  token is a 422 on email. The response contains no token.
+- Resend twin: an unverified bearer caller gets 202 and the notification is sent; a
+  verified one gets 204 and nothing is sent; a session-cookie caller gets the same
+  answers.
+- Both controllers mint tokens through the same service: one test that the token
+  from the register twin has the same name and expiry as one from the token endpoint
+  for the same device_name.
+- deposit_percent: the bare insert test above.
+
+FINALLY
+1. composer lint.
+2. php artisan migrate:fresh --seed against the local database, so the new default
+   migration is proven against real rows.
+3. Run the whole test suite, including the Prompt 3 and Prompt 4 suites.
+4. Update the route tables and "The rules" in the repository CLAUDE.md, and the
+   Authentication section of README.md with a curl example for the register twin.
+5. Do NOT commit. Tell me it is done and list every file you created or changed.
+6. Then tell me every place this prompt or the schema document was ambiguous, wrong,
+   or would cause a problem later, and what you did about each. In particular, say
+   what Prompt 6 (the Vue screens) needs to know about these four routes that is not
+   obvious from the route list.
+```
+
+**Check before you move on:** the route list it shows you first has exactly the four
+routes and nothing else (say "go" only when it does), every test passes including the
+earlier suites, `git status` shows changes and no new commit, and read step 6. Anything
+it flags gets folded into the schema document and the decision log before Prompt 6.
+Then review, commit and push.
+
+---
+
+## Prompt 6: the authentication screens
+
+**When:** after the Prompt 5 commit is pushed and the tree is clean.
+**Where:** open Claude Code at `~/Code/klaroly/klaroly`. It works in `app/`.
+**Before you start:** decisions 84, 87, 88 and 89 are what this prompt is written
+from, and it is written against the routes the API actually registers. Herd must be
+serving `api.klaroly.test` and proxying `app.klaroly.test` to Vite, and the local
+database must be seeded, so the live check at the end can run. The mobile target is
+built and tested but cannot be run on a device yet; Capacitor arrives once these
+screens and one list view exist.
+
+```
+Build the authentication screens for the Klaroly web app. Work in app/. Read
+CLAUDE.md fully, especially "Authentication shape", "App rules" and the route tables,
+then every file under app/src (it is small), app/package.json, app/vite.config.ts,
+app/eslint.config.js and the Authentication section of README.md, before writing
+anything. The API is the authority on every path, field and status code; where this
+prompt and the API disagree, the API wins, and you tell me where they disagreed at
+the end.
+
+FIRST, BEFORE ANY CODE
+Having read all of that, list every app route you will add, every file you will
+create or change, every package you will add, and every new locale key. Then stop
+and wait for me to confirm. Do not write code until I say go.
+
+HOUSE RULES
+Two-space indentation. No semicolons. British English in every string and comment.
+No emoji. Plain code over clever code. Single-file component block order is
+template, then script, then style. Every user-facing string is a key in
+src/locales/en-GB.json, named for meaning rather than content. Every colour, font,
+size and radius comes from the @theme block in src/assets/app.css; no hardcoded
+values, and do not invent brand colours, the placeholders stay until the brand work
+lands. No UI component framework. Nothing outside src/lib/platform.ts inspects the
+platform; other code imports its booleans. Nothing outside src/lib/api.ts calls
+fetch. The API base URL is import.meta.env.VITE_API_URL and is never derived from
+window.location.
+
+DO NOT COMMIT. Do not stage, commit or push anything. Leave every change unstaged so
+I can review each file in my Git browser. Tell me when the work is done and I will
+commit.
+
+SCOPE
+Sign in, register, forgot password, reset password, sign out, the verification
+banner with resend, the verified landing, and session restore when the app loads,
+on both build targets. Nothing in api/. Not in this prompt: the device list, profile
+and password change, two-factor, passkeys, Sign in with Apple or Google, account
+switching, invitations, account deletion, an app shell or navigation, and
+persistent token storage on native (see below).
+
+HOW THE API BEHAVES, so nothing here is guessed
+Every request sends Accept: application/json; without it Fortify redirects instead
+of answering. On web every request sends credentials: include, and every non-GET
+sends X-XSRF-TOKEN read from the XSRF-TOKEN cookie, URL-decoded, read fresh on
+every request because the token rotates after login and register. GET
+/sanctum/csrf-cookie must be called once before the first non-GET. On native there
+is no cookie; the Authorization: Bearer header carries the token.
+
+Web routes, session cookie, Fortify:
+  POST /login              email, password, optional remember (boolean). 200 with
+                           {"two_factor": false}. Wrong credentials: 422 with an
+                           error on email only, never password. Sixth attempt in a
+                           minute: 429.
+  POST /register           business_name, name, email, password,
+                           password_confirmation, optional username, optional
+                           boolean marketing_consent. 201 with an empty body and the
+                           browser is already signed in. Validation errors are
+                           Laravel's {message, errors} shape; password minimum is
+                           ten characters and, outside testing, must not appear in a
+                           known breach, so a password error can arrive from the API
+                           for a value the app thought was fine.
+  POST /logout             204.
+  POST /forgot-password    email. Always 200 with {message}, known or unknown, so
+                           the screen shows one confirmation regardless. Fourth
+                           request in a minute: 429.
+  POST /reset-password     token, email, password, password_confirmation. 200 with
+                           {message}. A bad or expired token: 422 on email. A reset
+                           does not sign the person in.
+  POST /email/verification-notification   202 sent, 204 already verified, 429 on
+                           the seventh in a minute.
+Native routes, bearer token, hand-written; same bodies, same statuses, except:
+  POST /api/auth/token     email, password, device_name. 200 with {token,
+                           expires_at, me}. Replaces /login.
+  POST /api/auth/register  the /register body plus device_name. 201 with {token,
+                           expires_at, me}. Replaces /register.
+  DELETE /api/auth/token   204. Replaces /logout.
+  POST /api/auth/forgot-password, POST /api/auth/reset-password and
+  POST /api/auth/email/verification-notification replace their web twins.
+Both targets:
+  GET /api/me              200 with {data: {user, account, membership, features}}.
+                           401 means signed out. 403 with {message} means the user
+                           belongs to no account. user.notification_preferences is
+                           an empty array when the stored map is empty, so treat it
+                           as object-or-empty-array and normalise it to an object.
+  GET /api/usernames/{username}   {available, reason} where reason is null,
+                           invalid, reserved or taken. Thirty per minute. The rule
+                           accepts only lowercase, so lowercase before sending.
+Links in emails: the reset link is FRONTEND_URL/reset-password?token=...&email=...
+and the verification link lands on FRONTEND_URL/?verified=1.
+
+PACKAGES
+Add vitest and happy-dom as dev dependencies, and a "test": "vitest run" script.
+Nothing else. No component testing library, no HTTP mocking library; vi.fn on
+globalThis.fetch is enough.
+
+src/lib/api.ts
+Keep its shape and its rules. Add:
+- On web, before any non-GET, call ensureCsrfCookie() if the XSRF-TOKEN cookie is
+  absent. If a non-GET on web comes back 419, fetch the cookie once and retry the
+  request once. Never retry anything else.
+- A way for the auth store to hear about a 401 from an authenticated call:
+  onUnauthenticated(handler), one handler, called after the ApiError is built and
+  before it is thrown. Keep it plain.
+- ApiError gains validationErrors(): a map of field to first message for a 422, and
+  an empty map otherwise, so screens do not dig through the body.
+- The bearer token comes from src/lib/tokenStorage.ts, not from a module variable.
+
+src/lib/tokenStorage.ts
+get(), set(token), clear(). The implementation is in memory. A comment at the top
+says that on a device the token must survive a relaunch, that this file is replaced
+by Capacitor's secure storage when Capacitor is added, and that nothing else in the
+codebase changes when it is. Until then a mobile build forgets its login on reload,
+and that is accepted.
+
+src/lib/platform.ts
+Add deviceName(): a short human label for the device list, isIOS ? 'iPhone or iPad'
+: isAndroid ? 'Android' : 'Mobile'. It is the one string in the app that is not a
+locale key, because it is stored by the API and shown back on every device, so it
+must not change with the viewer's language. Say so in a comment. Capacitor's Device
+plugin replaces the body later.
+
+src/lib/auth.ts
+The one module that knows web signs in with a session and native signs in with a
+token. It imports isNative and deviceName from platform.ts and is the only file
+besides api.ts that may branch on the platform; add that sentence to CLAUDE.md.
+It exports:
+  signIn(email, password, remember)   web: POST /login then GET /api/me.
+                                      native: POST /api/auth/token, store the
+                                      token, return me from the response.
+  register(fields)                    web: POST /register then GET /api/me.
+                                      native: POST /api/auth/register with
+                                      device_name, store the token, return me.
+                                      Sends password_confirmation equal to
+                                      password (decision 88).
+  signOut()                           web: POST /logout. native: DELETE
+                                      /api/auth/token, then clear the token.
+                                      Either way, clear local state even if the
+                                      request fails.
+  fetchMe()                           GET /api/me, normalising
+                                      notification_preferences.
+  forgotPassword(email), resetPassword(token, email, password),
+  resendVerification()                each choosing the web or native path.
+  checkUsername(username)             GET /api/usernames/{username}.
+Every function returns typed data from src/types/auth.ts (Me, User, Account,
+Membership, FeatureKey and the feature map) and throws ApiError on failure. No
+screen imports api.ts directly; screens call the store, the store calls this.
+
+src/stores/auth.ts
+Replace the placeholder. State: me (Me | null) and status, one of unknown,
+signed_out, signed_in, plus notice, an optional locale key for a message the login
+screen should show once (used for "no account" and for "you are signed out"). Has:
+  bootstrap()   called once, before the first navigation. Calls fetchMe(). 200
+                sets signed_in. 401 sets signed_out. 403 signs out through
+                signOut() and sets notice to account.no_membership. On native with
+                no stored token it sets signed_out without a request. Any other
+                failure sets signed_out and rethrows nothing; the app must still
+                load.
+  signIn, register, signOut, refresh   thin wrappers that set me and status.
+Register api.onUnauthenticated so a 401 anywhere sets signed_out and clears me;
+the router guard then does the redirect.
+
+src/router/index.ts
+Routes, all listed by hand: /login, /register, /forgot-password and /reset-password
+with guestOnly; / (dashboard) with requiresAuth; /billing web-only exactly as it is
+now. The guard awaits auth.bootstrap() the first time it runs and never again.
+Unauthenticated on a requiresAuth route: go to login with redirect set to the full
+path, as now. Signed in on a guestOnly route: go to the dashboard. After a
+successful sign-in or registration follow the redirect query only when it is a
+relative path (starts with a single slash, not two); otherwise go to the dashboard.
+Say why in a comment.
+
+SCREENS, all under src/views, using small shared components under src/components
+(a text field with label, hint and error; a password field with a show-password
+toggle; a submit button that disables while pending; a form-level error line; the
+centred card that wraps every auth screen). Every field has a label, autocomplete
+set correctly (email, current-password, new-password, organization for the business
+name, name, username), aria-invalid and aria-describedby wired to its error, and the
+first field with an error receives focus after a failed submit. Enter submits. A
+form submits once while pending. Layout works from phone width up with no
+breakpoint-specific markup; it is one column either way (decision 10).
+
+LoginView. Email, password, on web a "keep me signed in" checkbox ticked by default
+which sends remember, links to register and forgot password. Shows store.notice
+once and clears it. 422: the email error under the email field, and clear the
+password field. 429: auth.too_many_attempts, a locale key, not the API's sentence.
+Any other failure: auth.request_failed.
+
+RegisterView. Business name, your name, email, username, password (one field,
+show-password toggle), marketing consent checkbox unticked by default, submit, link
+to sign in. Username: as the person types the business name and has not typed in
+the username field, show the derived name (lowercase, keep a-z and 0-9, drop
+leading digits) as the field's value, in a helper under src/lib/username.ts with
+a comment that the API's CreateNewUser is the authority and this is a preview. A
+hint under the field shows what it becomes, which is the username followed by
+.klaroly.com. Once the username has three characters, check availability 300 ms
+after the last keystroke and show the result as a locale key per reason
+(auth.username_available, auth.username_invalid, auth.username_reserved,
+auth.username_taken); ignore a stale response that arrives after a newer
+request. Always lowercase what is sent. Send username only when it is non-empty.
+On success go to the dashboard; the verification banner shows there. 422: each
+error under its field, including a password error from the breach check.
+
+ForgotPasswordView. Email, submit. On 200 replace the form with a confirmation
+(auth.reset_link_sent) that does not say whether the address was known. 429:
+auth.too_many_attempts.
+
+ResetPasswordView. Reads token and email from the query. If either is missing,
+show auth.reset_link_invalid with a link to forgot password and no form. Otherwise
+show the email read-only, one new-password field with the toggle, submit. On 200
+show auth.password_reset_done with a link to sign in; the person is not signed in.
+422 on email means the token is bad or expired: show auth.reset_link_invalid with
+the forgot-password link. Any other error under the password field.
+
+VerificationBanner (component). Shown on the dashboard when me.user.email_verified_at
+is null. Says the address is unverified, with a resend button. Resend: 202 shows
+auth.verification_sent; 204 refreshes me and the banner disappears; 429 shows
+auth.too_many_attempts.
+
+DashboardView. Keep the empty state. Add the banner, a greeting that uses
+me.account.name, and a sign-out button that calls store.signOut() and goes to
+login. If the route has ?verified=1, refresh me, show auth.email_verified once, and
+replace the query so a reload does not show it again.
+
+TESTS, Vitest with happy-dom, under src with a .test.ts suffix beside the file they
+test. Mock fetch with vi.fn on globalThis. To test the native branch, vi.mock
+'@/lib/platform' in that test file; that is the approved way and the only way.
+- api.ts: every request carries Accept: application/json. On web: credentials
+  include, X-XSRF-TOKEN is the URL-decoded cookie, a non-GET with no cookie fetches
+  /sanctum/csrf-cookie first, a 419 on a non-GET fetches the cookie and retries
+  exactly once, a 419 on the retry throws. On native: Authorization Bearer from
+  tokenStorage, credentials omit, no CSRF call ever. 204 resolves to null. A non-ok
+  response throws ApiError with the parsed body, and validationErrors() maps a 422.
+  A 401 calls the onUnauthenticated handler before throwing.
+- auth.ts: on web signIn posts /login then gets /api/me; on native it posts
+  /api/auth/token with device_name, stores the token and returns me from the
+  response. register sends password_confirmation equal to password on both. signOut
+  clears the token on native even when the request fails. fetchMe turns an empty
+  array notification_preferences into an empty object. checkUsername lowercases.
+- stores/auth.ts: bootstrap sets signed_in on 200, signed_out on 401, signed_out
+  with notice account.no_membership on 403 and calls signOut; on native with no
+  token it makes no request.
+- router: waits for bootstrap once, sends an unauthenticated visitor to login with
+  redirect, sends a signed-in visitor away from guest-only routes, follows a
+  relative redirect and refuses //evil.example.
+- username.ts: "Ellie Marsh Makeup" gives elliemarshmakeup, "123 Studio" gives
+  studio, an empty result stays empty.
+
+FINALLY
+1. npm run lint, npm run typecheck, npm run build and npm run build:mobile all
+   clean. Confirm the mobile bundle contains no billing chunk, as before.
+2. npm test passes.
+3. Live check against Herd, with the API seeded: sign in as ellie@example.com and
+   land on the dashboard with no banner (the demo account is verified); sign out;
+   register a new account with a fresh address and see the banner; resend and find
+   the email in api/storage/logs/laravel.log; open the verification link in the
+   same browser and see the verified message; sign out; forgot password for the
+   new address, take the link from the log, reset, sign in with the new password;
+   sign in with a wrong password and see the error on the email field; visit
+   /billing while signed out and be returned there after signing in. Report each
+   step's result.
+4. Update the repository CLAUDE.md: "App rules" gains src/lib/auth.ts,
+   src/lib/tokenStorage.ts and the testing rule (vi.mock on platform.ts), and
+   "Current state" describes what the app now has. Update README.md "App setup"
+   with npm test and the flow for signing in locally.
+5. Do NOT commit. Tell me it is done and list every file you created or changed.
+6. Then tell me every place this prompt, CLAUDE.md or the API was ambiguous, wrong,
+   or would cause a problem later, and what you did about each. In particular, say
+   what the Capacitor prompt needs to know about tokenStorage.ts, deviceName() and
+   the verification link, and what the first list view needs to know about the
+   store, the guard and the 401 handling.
+```
+
+**Check before you move on:** the file list it shows you first has nothing in it you
+did not expect (say "go" only when it does), lint, typecheck, both builds and the tests
+pass, the live check in step 3 reports every step, `git status` shows changes and no
+new commit, and read step 6. Anything it flags gets folded into the decision log before
+the next prompt. Then review, commit and push.

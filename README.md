@@ -140,6 +140,19 @@ curl -s http://api.klaroly.test/api/me -H "Accept: application/json" -H "Authori
 
 Revoke it with `DELETE /api/auth/token` and the same header.
 
+**Registering from the mobile app.** Fortify's `/register` needs the CSRF
+cookie, so the mobile app uses the stateless twin at `/api/auth/register`.
+It takes the same fields plus `device_name` and answers exactly as the
+token endpoint does, with a 201:
+
+```bash
+curl -s -X POST http://api.klaroly.test/api/auth/register -H "Accept: application/json" -H "Content-Type: application/json" -d '{"business_name":"Nina Okoro Makeup","name":"Nina Okoro","email":"nina@example.com","password":"correct-horse-battery","password_confirmation":"correct-horse-battery","device_name":"curl"}'
+```
+
+The other twins are `/api/auth/forgot-password`, `/api/auth/reset-password`
+and `/api/auth/email/verification-notification`. Each mirrors the Fortify
+route of the same name; see the route tables in `CLAUDE.md`.
+
 **Where the emails go.** With `MAIL_MAILER=log`, which `.env.example` sets,
 the verification email sent at registration and the password reset email
 are written to `storage/logs/laravel.log`. Search the log for the link: the

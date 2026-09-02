@@ -1,6 +1,6 @@
 # Klaroly database schema, version 1
 
-**Status:** signed off and migrated, 2 September 2026 (Prompt 3, commit `c8213fc`). Written for Postgres 17 or later (18 locally), Laravel 13, Cashier 16, Fortify and Sanctum. Section 13 records what the first migration set found and how each point was settled; the tables below already reflect those answers.
+**Status:** signed off and migrated, 2 September 2026 (Prompt 3, commit `c8213fc`). Written for Postgres 17 or later (18 locally), Laravel 13, Cashier 16, Fortify and Sanctum. Section 13 records what the first migration set found and how each point was settled, and section 14 does the same for the authentication prompt (Prompt 4, 2 September 2026); the tables below already reflect those answers.
 
 **Scope:** the first build as settled in decision 74, held to the rules in decisions 44, 55, 71, 72, 73 and 75. Section 7 designs the tables that are not migrated yet, so that the first migration set leaves room for them.
 
@@ -121,7 +121,7 @@ account_id                  bigint   not null unique, fk accounts cascade
 features                    jsonb    not null default '{}'     feature key -> bool, decision 74
 deposit_type                varchar(10) not null default 'percent'   check: fixed | percent
 deposit_amount_minor        bigint   nullable                  when fixed
-deposit_percent             smallint nullable                  when percent, whole number
+deposit_percent             smallint nullable default 25       when percent, whole number; default from decision 90
 deposit_due_days            smallint not null default 7        days after the invoice is issued, decision 79
 balance_due_days_before     smallint not null default 28       days before the main event
 payment_instructions        text     nullable                  bank details, a link, a sentence
@@ -144,7 +144,7 @@ business_year_start_day     smallint not null default 6
 created_at, updated_at
 ```
 
-Notes. `features` is read only through `App\Services\Features::enabled()`, decision 74. The keys are the nine in `App\Enums\FeatureKey`: `enquiries`, `intake_forms`, `agreements`, `invoicing`, `payment_tracking`, `automation`, `travel_estimates`, `photos`, `feedback_requests`. A key that is absent from the map is **off** (decision 78), so `{}` is a bare account; registration writes the default map from `config/features.php` rather than relying on absence. The entitlement check inside `enabled()` returns true until the billing prompt. Check constraint: `deposit_type = 'fixed'` requires `deposit_amount_minor`, `'percent'` requires `deposit_percent`. Default working hours from business logic section 24 are deferred; they need a shape decision first.
+Notes. `features` is read only through `App\Services\Features::enabled()`, decision 74. The keys are the nine in `App\Enums\FeatureKey`: `enquiries`, `intake_forms`, `agreements`, `invoicing`, `payment_tracking`, `automation`, `travel_estimates`, `photos`, `feedback_requests`. A key that is absent from the map is **off** (decision 78), so `{}` is a bare account; registration writes the default map from `config/features.php` rather than relying on absence. The entitlement check inside `enabled()` returns true until the billing prompt. Check constraint: `deposit_type = 'fixed'` requires `deposit_amount_minor`, `'percent'` requires `deposit_percent`. Because `percent` is the default type, `deposit_percent` carries a default of 25 so that a bare insert passes the check (decision 90; the default migration rides in Prompt 5, and until it lands registration writes the value itself). Default working hours from business logic section 24 are deferred; they need a shape decision first.
 
 ### 5.3 `users`
 
@@ -168,7 +168,7 @@ last_account_id             bigint   nullable fk accounts set null   which accou
 created_at, updated_at, deleted_at
 ```
 
-Notes. Face ID app lock is a device setting and never reaches the database. Never look up a user by email for provider sign-in; that goes through `identities` (decision 28). The `lower(email)` index rejects a second row that differs only in case, but Fortify's login lookup compares the column as stored, so authentication lowercases and trims email on registration, login, password reset and profile update; the index is the backstop, not the mechanism.
+Notes. Face ID app lock is a device setting and never reaches the database. Never look up a user by email for provider sign-in; that goes through `identities` (decision 28). The `lower(email)` index rejects a second row that differs only in case, but Fortify's login lookup compares the column as stored, so authentication lowercases and trims email on registration, login, password reset and profile update; the index is the backstop, not the mechanism. A soft-deleted user's email cannot be reused at registration, because both the unique validation and the index see deleted rows; decision 91 defers the answer to the account deletion work.
 
 ### 5.4 `account_user`
 
@@ -889,3 +889,21 @@ Prompt 3 ended by asking Claude Code to list every place this document was ambig
 | Postgres is 18 locally, not 17 | Documents corrected; no effect on the schema | Status line, README |
 | Agreements seeded as signed on completed and closed bookings too, contacts reused across bookings, real venue names with postcodes believed correct | Accepted as demo data; spot-check the postcodes before the App Store review account goes live | Seeder |
 | Tests need a `klaroly_test` database | Created once with `createdb klaroly_test`; documented in README and CLAUDE.md | Section 10 |
+
+---
+
+## 14. What the authentication prompt found
+
+Prompt 4 ended the same way as Prompt 3. Each point, how it was settled, and where the answer lives.
+
+| Finding | Settled as | Where |
+|---|---|---|
+| `account_settings` defaults violate the table's own check: `deposit_type` defaults to `percent` but `deposit_percent` had no default, so a bare insert failed | `deposit_percent` defaults to 25; the migration rides in Prompt 5 and registration stops writing the value | 5.2, decision 90 |
+| The demo seeder read `env()` directly for the demo password | Reads `demo.password` from `config/demo.php` | Section 10 rule: nothing outside `config/` reads `env()` |
+| Fortify's register, forgot-password, reset-password and resend-verification routes need the CSRF cookie, and profile and password update run under `auth:web`, so a bearer-token caller cannot use them; a Capacitor WebView may not hold the API's session cookie at all | JSON twins under `/api/auth` in Prompt 5; profile and password twins with the settings screen | Decision 87 |
+| Two-factor, passkey and confirm-password routes answer requests because the features stay configured | Accepted; configured, unused, nothing links to them | Decision 84 |
+| The verification link loses the intended URL when the browser is logged out, and on a phone opens a browser with no session | Accepted under decision 83; revisit when enforcement arrives | Decision 92 |
+| A soft-deleted user's email cannot be reused at registration | Deferred to the account deletion prompt | 5.3, decision 91 |
+| The token endpoint refuses a user with no membership with the same 403 as the middleware and issues no token | Accepted; it is decision 84's rule applied one step earlier | Decision 84 |
+| Fortify's password broker looks the user up by plain equality on `email`, so it does not use the functional index | Harmless because every stored value is lowercase; the index is the backstop | 5.3 |
+| The test client keeps the Sanctum guard and the tenant singleton across requests within one test, which real requests do not | The tenancy test resets both and says why | `tests/Feature/Auth` |
