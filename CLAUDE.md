@@ -67,11 +67,13 @@ These are decided. Do not revisit them in code without a conversation first.
 - The API uses Fortify for the authentication routes and Sanctum for both the
   SPA cookie session and mobile personal access tokens. `statefulApi()` is on
   in `bootstrap/app.php`.
-- Session cookie: `SESSION_DOMAIN` is `localhost` locally and `.klaroly.com`
-  in production. `SameSite=Lax` always. Secure in production only.
+- Session cookie: `SESSION_DOMAIN` is `.klaroly.test` locally and
+  `.klaroly.com` in production. `SameSite=Lax` always. Secure in production
+  only.
 - CORS allows exactly three origins, read from `CORS_ALLOWED_ORIGINS`:
-  `https://app.klaroly.com`, `capacitor://localhost` and
-  `http://localhost:5173`. Never hardcode an origin in `config/cors.php`.
+  `https://app.klaroly.com`, `capacitor://localhost` and the local dev app
+  (`http://app.klaroly.test` under Herd, `http://localhost:5173` without).
+  Never hardcode an origin in `config/cors.php`.
 
 ## API rules (`api/`)
 
@@ -113,6 +115,10 @@ These are decided. Do not revisit them in code without a conversation first.
   same naming rule as the API.
 - Never derive the API base URL from `window.location`. It is always
   `import.meta.env.VITE_API_URL`.
+- Local hosts are served by Laravel Herd: the API at `api.klaroly.test`
+  (and any `*.klaroly.test`), the app at `app.klaroly.test`, which Herd
+  proxies to the Vite dev server. Both sit under one parent domain so the
+  session cookie works exactly as it does in production.
 
 ### `src/lib/platform.ts`
 

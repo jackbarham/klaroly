@@ -65,8 +65,13 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      // Herd proxies http://app.klaroly.test to 127.0.0.1:5173, so bind to
+      // that exact address (not localhost, which can mean IPv6 only) and
+      // accept the proxied hostname, which Vite would otherwise refuse.
+      host: '127.0.0.1',
       port: 5173,
       strictPort: true,
+      allowedHosts: ['app.klaroly.test'],
     },
   }
 })

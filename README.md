@@ -23,8 +23,9 @@ constraints, and it is written for people as much as for tooling.
 | Node | 24 | |
 | npm | 11 | Pinned in `app/package.json` under `packageManager`. Do not use pnpm or yarn. |
 
-Herd does not put `php` on the PATH by default. Either enable that in Herd's
-settings or add this to your shell profile:
+Herd does not put `php`, `composer` or `herd` on the PATH unless you switch
+that on in Herd's settings. Either do that, or add this to your shell
+profile:
 
 ```bash
 export PATH="$HOME/Library/Application Support/Herd/bin:$PATH"
@@ -58,15 +59,15 @@ php artisan migrate
 local Postgres above and log emails to `storage/logs/laravel.log` instead of
 sending them.
 
-Run the API on `localhost:8000`:
+Serve the API with Herd. Run this once, from `api/`:
 
 ```bash
-php artisan serve
+herd link klaroly
 ```
 
-Use `artisan serve` rather than a Herd `.test` domain for local work. The app
-runs on `localhost:5173`, and the session cookie is `SameSite=Lax`, so the two
-must be the same site (`localhost`) for cookie authentication to work.
+Herd then serves the API at http://api.klaroly.test, and at every other
+`*.klaroly.test` subdomain, which mirrors production. There is nothing to
+start: Herd is always running.
 
 Queued jobs use the database queue. When you need them processed locally, run a
 worker in another terminal:
@@ -84,23 +85,29 @@ cp .env.example .env
 npm run dev
 ```
 
-The dev server is on http://localhost:5173 and talks to the API at the
-`VITE_API_URL` in `.env`, which defaults to `http://localhost:8000`.
+Have Herd give the dev server a hostname under the same parent domain as
+the API. Run this once:
+
+```bash
+herd proxy app.klaroly http://127.0.0.1:5173
+```
+
+The app is then at http://app.klaroly.test whenever `npm run dev` is running.
+The shared parent domain matters: the session cookie is `SameSite=Lax`, so the
+app and the API must be the same site for cookie sign-in to work, locally as
+in production.
 
 ## Running both together
 
-Two terminals, from the repository root:
-
-```bash
-cd api && php artisan serve
-```
+Herd serves the API on its own. Start the app:
 
 ```bash
 cd app && npm run dev
 ```
 
-Then open http://localhost:5173. Add a third terminal with
-`php artisan queue:listen` when you are working on anything queued.
+Then open http://app.klaroly.test. Add a second terminal with
+`php artisan queue:listen` from `api/` when you are working on anything
+queued.
 
 ## Where environment variables come from
 
