@@ -15,3 +15,20 @@ export const isIOS: boolean = isNative && /iPhone|iPad|iPod/.test(userAgent)
 export const isAndroid: boolean = isNative && /Android/.test(userAgent)
 
 export const isWeb: boolean = !isNative
+
+// A short human label for the device, sent as device_name when a token is
+// issued and shown back in the device list. This is the one string in the
+// app that is not a locale key: the API stores it and every device shows it,
+// so it must not change with the viewer's language. Capacitor's Device plugin
+// replaces the body of this function later.
+export function deviceName(): string {
+  if (isIOS) {
+    return 'iPhone or iPad'
+  }
+
+  if (isAndroid) {
+    return 'Android'
+  }
+
+  return 'Mobile'
+}

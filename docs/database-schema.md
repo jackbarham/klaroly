@@ -1,6 +1,6 @@
 # Klaroly database schema, version 1
 
-**Status:** signed off and migrated, 2 September 2026 (Prompt 3, commit `c8213fc`). Written for Postgres 17 or later (18 locally), Laravel 13, Cashier 16, Fortify and Sanctum. Section 13 records what the first migration set found and how each point was settled, and section 14 does the same for the authentication prompt (Prompt 4, 2 September 2026); the tables below already reflect those answers.
+**Status:** signed off and migrated, 2 September 2026 (Prompt 3, commit `c8213fc`). Written for Postgres 17 or later (18 locally), Laravel 13, Cashier 16, Fortify and Sanctum. Section 13 records what the first migration set found and how each point was settled, section 14 does the same for the authentication prompt (Prompt 4, 2 September 2026), and section 15 for the mobile authentication routes (Prompt 5, 2 September 2026); the tables below already reflect those answers.
 
 **Scope:** the first build as settled in decision 74, held to the rules in decisions 44, 55, 71, 72, 73 and 75. Section 7 designs the tables that are not migrated yet, so that the first migration set leaves room for them.
 
@@ -144,7 +144,7 @@ business_year_start_day     smallint not null default 6
 created_at, updated_at
 ```
 
-Notes. `features` is read only through `App\Services\Features::enabled()`, decision 74. The keys are the nine in `App\Enums\FeatureKey`: `enquiries`, `intake_forms`, `agreements`, `invoicing`, `payment_tracking`, `automation`, `travel_estimates`, `photos`, `feedback_requests`. A key that is absent from the map is **off** (decision 78), so `{}` is a bare account; registration writes the default map from `config/features.php` rather than relying on absence. The entitlement check inside `enabled()` returns true until the billing prompt. Check constraint: `deposit_type = 'fixed'` requires `deposit_amount_minor`, `'percent'` requires `deposit_percent`. Because `percent` is the default type, `deposit_percent` carries a default of 25 so that a bare insert passes the check (decision 90; the default migration rides in Prompt 5, and until it lands registration writes the value itself). Default working hours from business logic section 24 are deferred; they need a shape decision first.
+Notes. `features` is read only through `App\Services\Features::enabled()`, decision 74. The keys are the nine in `App\Enums\FeatureKey`: `enquiries`, `intake_forms`, `agreements`, `invoicing`, `payment_tracking`, `automation`, `travel_estimates`, `photos`, `feedback_requests`. A key that is absent from the map is **off** (decision 78), so `{}` is a bare account; registration writes the default map from `config/features.php` rather than relying on absence. The entitlement check inside `enabled()` returns true until the billing prompt. Check constraint: `deposit_type = 'fixed'` requires `deposit_amount_minor`, `'percent'` requires `deposit_percent`. Because `percent` is the default type, `deposit_percent` carries a default of 25 so that a bare insert passes the check (decision 90; the default migration landed in Prompt 5 and registration no longer writes the value). Default working hours from business logic section 24 are deferred; they need a shape decision first.
 
 ### 5.3 `users`
 
@@ -907,3 +907,20 @@ Prompt 4 ended the same way as Prompt 3. Each point, how it was settled, and whe
 | The token endpoint refuses a user with no membership with the same 403 as the middleware and issues no token | Accepted; it is decision 84's rule applied one step earlier | Decision 84 |
 | Fortify's password broker looks the user up by plain equality on `email`, so it does not use the functional index | Harmless because every stored value is lowercase; the index is the backstop | 5.3 |
 | The test client keeps the Sanctum guard and the tenant singleton across requests within one test, which real requests do not | The tenancy test resets both and says why | `tests/Feature/Auth` |
+
+---
+
+## 15. What the mobile authentication routes found
+
+Prompt 5 ended the same way. Nothing here changes a table; two points are about the gap between a model and its row, and the rest are recorded so the app prompts do not rediscover them.
+
+| Finding | Settled as | Where |
+|---|---|---|
+| No test asserted the 25 percent default the prompt said must still pass | The registration test asserts it, and a bare `account_settings` insert is tested in the constraints test | 5.2, decision 90 |
+| A model returned by a create action does not carry the database defaults: `notification_preferences` was null on the fresh user while the row held `{}`, so the register twin's `me` differed from `GET /api/me` | The controller refreshes the user before building the payload; any response that returns a user straight after a write must read it back first | 5.3, decision 95 |
+| Fortify's response classes redirect when the request does not send `Accept: application/json`, so the reset and verification twins would redirect too | Accepted; the app sends the header on every request, and Prompt 6 tests that it does | Decision 96 |
+| The register twin validates `device_name` before the registration fields, so a client that omits it sees that error alone | Accepted; the app always sets `device_name` itself | Decision 96 |
+| The register limiter is keyed on IP alone, five a minute, which a shared network could hit | Accepted for launch; the first limit to loosen | Decision 93 |
+| The reset-password twin has no limiter, matching Fortify's route | Accepted; tokens expire and the broker's check is constant-time. A limiter on email plus IP is cheap when wanted | Decision 94 |
+| The reset link in the email points at the web app, so a phone opens it in a browser, and a reset on mobile issues no token | Accepted; the screen sends the person to the login screen. Deep links are a Capacitor decision | Decision 92, Prompt 6 |
+

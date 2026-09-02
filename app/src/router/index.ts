@@ -1,7 +1,10 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import DashboardView from '@/views/DashboardView.vue'
+import ForgotPasswordView from '@/views/ForgotPasswordView.vue'
 import LoginView from '@/views/LoginView.vue'
+import RegisterView from '@/views/RegisterView.vue'
+import ResetPasswordView from '@/views/ResetPasswordView.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -16,6 +19,24 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'login',
     component: LoginView,
+    meta: { guestOnly: true },
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: RegisterView,
+    meta: { guestOnly: true },
+  },
+  {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: ForgotPasswordView,
+    meta: { guestOnly: true },
+  },
+  {
+    path: '/reset-password',
+    name: 'reset-password',
+    component: ResetPasswordView,
     meta: { guestOnly: true },
   },
   {
@@ -45,8 +66,18 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
+// The store finds out whether a session or token is still good exactly once,
+// before the first navigation. Later navigations use what the store knows.
+let bootstrapped: Promise<void> | null = null
+
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
+
+  if (bootstrapped === null) {
+    bootstrapped = auth.bootstrap()
+  }
+
+  await bootstrapped
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
@@ -58,5 +89,17 @@ router.beforeEach((to) => {
 
   return true
 })
+
+// Where to go after signing in or registering. The redirect query is
+// followed only when it is a path inside this app: one leading slash and
+// not two. A value such as //evil.example or https://evil.example would
+// otherwise send the person, and any token in the URL, to another site.
+export function destinationAfterSignIn(redirect: unknown): string {
+  if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
+    return redirect
+  }
+
+  return '/'
+}
 
 export default router

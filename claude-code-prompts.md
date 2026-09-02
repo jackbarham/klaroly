@@ -967,8 +967,9 @@ Then review, commit and push.
 
 **When:** after the Prompt 5 commit is pushed and the tree is clean.
 **Where:** open Claude Code at `~/Code/klaroly/klaroly`. It works in `app/`.
-**Before you start:** decisions 84, 87, 88 and 89 are what this prompt is written
-from, and it is written against the routes the API actually registers. Herd must be
+**Before you start:** decisions 84, 87, 88, 89 and 93 to 97 are what this prompt is
+written from, and it is written against the routes the API actually registers, as
+checked after Prompt 5 ran. Herd must be
 serving `api.klaroly.test` and proxying `app.klaroly.test` to Vite, and the local
 database must be seeded, so the live check at the end can run. The mobile target is
 built and tested but cannot be run on a device yet; Capacitor arrives once these
@@ -1046,7 +1047,12 @@ Native routes, bearer token, hand-written; same bodies, same statuses, except:
   POST /api/auth/token     email, password, device_name. 200 with {token,
                            expires_at, me}. Replaces /login.
   POST /api/auth/register  the /register body plus device_name. 201 with {token,
-                           expires_at, me}. Replaces /register.
+                           expires_at, me}. Replaces /register. Sixth attempt in a
+                           minute from one address: 429 (the web route has no
+                           limiter). A missing device_name is reported on its own
+                           before the other fields are validated, so always send it.
+  In both, me is identical to GET /api/me's data, so one Me type covers all
+  three, and it is at the top level, not under data.
   DELETE /api/auth/token   204. Replaces /logout.
   POST /api/auth/forgot-password, POST /api/auth/reset-password and
   POST /api/auth/email/verification-notification replace their web twins.
@@ -1055,7 +1061,9 @@ Both targets:
                            401 means signed out. 403 with {message} means the user
                            belongs to no account. user.notification_preferences is
                            an empty array when the stored map is empty, so treat it
-                           as object-or-empty-array and normalise it to an object.
+                           as object-or-empty-array and normalise it to an object,
+                           wherever me arrives: here, the token response and the
+                           register response.
   GET /api/usernames/{username}   {available, reason} where reason is null,
                            invalid, reserved or taken. Thirty per minute. The rule
                            accepts only lowercase, so lowercase before sending.
@@ -1100,7 +1108,8 @@ besides api.ts that may branch on the platform; add that sentence to CLAUDE.md.
 It exports:
   signIn(email, password, remember)   web: POST /login then GET /api/me.
                                       native: POST /api/auth/token, store the
-                                      token, return me from the response.
+                                      token, return me from the response through
+                                      the same normalisation as fetchMe.
   register(fields)                    web: POST /register then GET /api/me.
                                       native: POST /api/auth/register with
                                       device_name, store the token, return me.
@@ -1111,7 +1120,8 @@ It exports:
                                       Either way, clear local state even if the
                                       request fails.
   fetchMe()                           GET /api/me, normalising
-                                      notification_preferences.
+                                      notification_preferences in one helper that
+                                      the token and register paths share.
   forgotPassword(email), resetPassword(token, email, password),
   resendVerification()                each choosing the web or native path.
   checkUsername(username)             GET /api/usernames/{username}.
@@ -1172,7 +1182,8 @@ after the last keystroke and show the result as a locale key per reason
 auth.username_taken); ignore a stale response that arrives after a newer
 request. Always lowercase what is sent. Send username only when it is non-empty.
 On success go to the dashboard; the verification banner shows there. 422: each
-error under its field, including a password error from the breach check.
+error under its field, including a password error from the breach check. 429:
+auth.too_many_attempts. Any other failure: auth.request_failed.
 
 ForgotPasswordView. Email, submit. On 200 replace the form with a confirmation
 (auth.reset_link_sent) that does not say whether the address was known. 429:
@@ -1209,7 +1220,8 @@ test. Mock fetch with vi.fn on globalThis. To test the native branch, vi.mock
   /api/auth/token with device_name, stores the token and returns me from the
   response. register sends password_confirmation equal to password on both. signOut
   clears the token on native even when the request fails. fetchMe turns an empty
-  array notification_preferences into an empty object. checkUsername lowercases.
+  array notification_preferences into an empty object, and so do the native signIn
+  and register paths. checkUsername lowercases.
 - stores/auth.ts: bootstrap sets signed_in on 200, signed_out on 401, signed_out
   with notice account.no_membership on 403 and calls signOut; on native with no
   token it makes no request.

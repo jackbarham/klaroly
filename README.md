@@ -101,6 +101,23 @@ The shared parent domain matters: the session cookie is `SameSite=Lax`, so the
 app and the API must be the same site for cookie sign-in to work, locally as
 in production.
 
+Run the app's unit tests with:
+
+```bash
+npm test
+```
+
+**Signing in locally.** With the API seeded (`php artisan db:seed`), open
+http://app.klaroly.test/login and sign in as `ellie@example.com` with the
+password in the API's `DEMO_PASSWORD` (`password` by default). The demo
+account is already verified, so the dashboard shows no banner. To see the
+whole flow, use "Create an account" with a fresh address: the dashboard then
+shows the verification banner, and the verification email, like the
+password reset email, is written to `api/storage/logs/laravel.log`. Copy the
+link out of the log into the same browser. The verification link goes to the
+API and comes back to the app with `?verified=1`; the reset link opens the
+app's `/reset-password` page directly.
+
 ## Running both together
 
 Herd serves the API on its own. Start the app:

@@ -227,9 +227,45 @@ target.
 ### `src/lib/api.ts`
 
 The single wrapper around `fetch`. On web it sends the session cookie and the
-CSRF header. On native it sends a bearer token. Callers pass a path and get
-JSON back; they never know which kind of credential was sent, and they never
-call `fetch` themselves.
+CSRF header, fetches `/sanctum/csrf-cookie` before a non-GET when the
+`XSRF-TOKEN` cookie is absent, and retries a non-GET exactly once after a
+419. On native it sends the bearer token from `src/lib/tokenStorage.ts`.
+Callers pass a path and get JSON back; they never know which kind of
+credential was sent, and they never call `fetch` themselves. A non-2xx
+answer throws `ApiError`, whose `validationErrors()` maps a 422 to field
+names. A 401 from any request calls the one handler registered with
+`onUnauthenticated()`, which the auth store uses to mark the person signed
+out.
+
+### `src/lib/auth.ts`
+
+The one module that knows web signs in with a session and native signs in
+with a token. It imports `isNative` and `deviceName` from `platform.ts` and
+is the only file besides `api.ts` that may branch on the platform. It
+exports `signIn`, `register`, `signOut`, `fetchMe`, `forgotPassword`,
+`resetPassword`, `resendVerification` and `checkUsername`, each choosing the
+Fortify route or its `/api/auth` twin. Every `Me` that arrives, from
+`/api/me` or embedded in a token response, goes through one helper that
+turns an empty-array `notification_preferences` into an object. Screens
+never import it: they call the Pinia store in `src/stores/auth.ts`, and the
+store calls this.
+
+### `src/lib/tokenStorage.ts`
+
+`get()`, `set(token)` and `clear()` for the native bearer token. The
+implementation is in memory, so a mobile build forgets its login on reload,
+which is accepted until Capacitor arrives. When it does, this file is
+replaced with Capacitor's secure storage and nothing else changes.
+
+### Testing
+
+Vitest with happy-dom. Test files sit beside the file they test with a
+`.test.ts` suffix and run with `npm test`. `fetch` is mocked with `vi.fn` on
+`globalThis`; there is no HTTP mocking library and no component testing
+library. To test the native branch, `vi.mock('@/lib/platform')` in that
+test file, which is the approved way and the only way. `vitest.config.ts`
+is separate from `vite.config.ts` because the latter insists on a build
+target.
 
 ### The two build targets
 
@@ -328,8 +364,18 @@ What sits on top of the tables:
   of what is tested. Create it once with `createdb klaroly_test`. The
   authentication tests live in `tests/Feature/Auth`.
 
+The app has its authentication screens: sign in, register (with a live
+username preview and availability check), forgot password, reset password,
+sign out, the verification banner with resend, the verified landing on the
+dashboard, and session restore on load. The router guard awaits
+`auth.bootstrap()` once before the first navigation, sends a signed-out
+visitor to `/login?redirect=` and follows that redirect after sign-in only
+when it is a relative path. The dashboard is still an empty state with a
+greeting, the banner and a sign-out button; there is no app shell or
+navigation yet. The device list, profile and password change screens are
+not built.
+
 Not built yet: passkeys and two-factor enforcement (configured, unused),
 Sign in with Apple or Google, switching between accounts, collaborator
-invitations, account deletion, client login, and billing. The web app still
-has only a login placeholder and an empty dashboard behind a router guard;
-the authentication screens are the next piece of work.
+invitations, account deletion, client login, billing, and persistent token
+storage on native (see `src/lib/tokenStorage.ts`).

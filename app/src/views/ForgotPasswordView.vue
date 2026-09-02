@@ -1,19 +1,24 @@
 <template>
-  <AuthCard :title="t('auth.sign_in_title')">
+  <AuthCard :title="t('auth.forgot_password_title')">
     <p
-      v-if="notice"
-      class="text-sm text-ink-muted"
+      v-if="sent"
+      class="text-sm"
       role="status"
     >
-      {{ t(notice) }}
+      {{ t('auth.reset_link_sent') }}
     </p>
 
     <form
+      v-else
       ref="form"
       class="space-y-4"
       novalidate
       @submit.prevent="submit"
     >
+      <p class="text-sm text-ink-muted">
+        {{ t('auth.forgot_password_intro') }}
+      </p>
+
       <TextField
         id="email"
         v-model="email"
@@ -23,39 +28,19 @@
         :error="errors.email"
       />
 
-      <PasswordField
-        id="password"
-        v-model="password"
-        :label="t('auth.password_label')"
-        autocomplete="current-password"
-      />
-
-      <CheckboxField
-        v-if="isWeb"
-        id="remember"
-        v-model="remember"
-        :label="t('auth.remember_label')"
-      />
-
       <FormError :message="formError" />
 
       <SubmitButton :pending="pending">
-        {{ t('auth.sign_in_action') }}
+        {{ t('auth.send_reset_link_action') }}
       </SubmitButton>
     </form>
 
-    <p class="flex justify-between text-sm">
+    <p class="text-sm">
       <RouterLink
         class="text-brand hover:text-brand-strong"
-        :to="{ name: 'register' }"
+        :to="{ name: 'login' }"
       >
-        {{ t('auth.register_link') }}
-      </RouterLink>
-      <RouterLink
-        class="text-brand hover:text-brand-strong"
-        :to="{ name: 'forgot-password' }"
-      >
-        {{ t('auth.forgot_password_link') }}
+        {{ t('auth.sign_in_link') }}
       </RouterLink>
     </p>
   </AuthCard>
@@ -64,35 +49,25 @@
 <script setup lang="ts">
 import { nextTick, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { RouterLink } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
-import CheckboxField from '@/components/CheckboxField.vue'
 import FormError from '@/components/FormError.vue'
-import PasswordField from '@/components/PasswordField.vue'
 import SubmitButton from '@/components/SubmitButton.vue'
 import TextField from '@/components/TextField.vue'
 import { ApiError } from '@/lib/api'
 import { focusFirstInvalid } from '@/lib/form'
-import { isWeb } from '@/lib/platform'
-import { destinationAfterSignIn } from '@/router'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
-const route = useRoute()
-const router = useRouter()
 const auth = useAuthStore()
 
 const form = useTemplateRef<HTMLFormElement>('form')
 
 const email = ref('')
-const password = ref('')
-const remember = ref(true)
 const pending = ref(false)
+const sent = ref(false)
 const errors = ref<Record<string, string>>({})
 const formError = ref<string | null>(null)
-
-// A message left by the store, shown once and then forgotten.
-const notice = ref(auth.takeNotice())
 
 async function submit(): Promise<void> {
   if (pending.value) {
@@ -102,17 +77,15 @@ async function submit(): Promise<void> {
   pending.value = true
   errors.value = {}
   formError.value = null
-  notice.value = null
 
   try {
-    await auth.signIn(email.value, password.value, remember.value)
-    await router.push(destinationAfterSignIn(route.query.redirect))
+    // The API answers the same way for a known and an unknown address, and
+    // so does this screen.
+    await auth.forgotPassword(email.value)
+    sent.value = true
   } catch (error) {
     if (error instanceof ApiError && error.status === 422) {
       errors.value = error.validationErrors()
-      password.value = ''
-    } else if (error instanceof ApiError && error.status === 403) {
-      notice.value = auth.takeNotice()
     } else if (error instanceof ApiError && error.status === 429) {
       formError.value = t('auth.too_many_attempts')
     } else {

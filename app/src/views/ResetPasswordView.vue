@@ -1,14 +1,41 @@
 <template>
-  <AuthCard :title="t('auth.sign_in_title')">
-    <p
-      v-if="notice"
-      class="text-sm text-ink-muted"
-      role="status"
-    >
-      {{ t(notice) }}
-    </p>
+  <AuthCard :title="t('auth.reset_password_title')">
+    <template v-if="done">
+      <p
+        class="text-sm"
+        role="status"
+      >
+        {{ t('auth.password_reset_done') }}
+      </p>
+      <p class="text-sm">
+        <RouterLink
+          class="text-brand hover:text-brand-strong"
+          :to="{ name: 'login' }"
+        >
+          {{ t('auth.sign_in_link') }}
+        </RouterLink>
+      </p>
+    </template>
+
+    <template v-else-if="linkInvalid">
+      <p
+        class="text-sm text-danger"
+        role="alert"
+      >
+        {{ t('auth.reset_link_invalid') }}
+      </p>
+      <p class="text-sm">
+        <RouterLink
+          class="text-brand hover:text-brand-strong"
+          :to="{ name: 'forgot-password' }"
+        >
+          {{ t('auth.forgot_password_link') }}
+        </RouterLink>
+      </p>
+    </template>
 
     <form
+      v-else
       ref="form"
       class="space-y-4"
       novalidate
@@ -20,79 +47,55 @@
         :label="t('auth.email_label')"
         type="email"
         autocomplete="email"
-        :error="errors.email"
+        readonly
       />
 
       <PasswordField
         id="password"
         v-model="password"
-        :label="t('auth.password_label')"
-        autocomplete="current-password"
-      />
-
-      <CheckboxField
-        v-if="isWeb"
-        id="remember"
-        v-model="remember"
-        :label="t('auth.remember_label')"
+        :label="t('auth.new_password_label')"
+        autocomplete="new-password"
+        :error="errors.password"
       />
 
       <FormError :message="formError" />
 
       <SubmitButton :pending="pending">
-        {{ t('auth.sign_in_action') }}
+        {{ t('auth.reset_password_action') }}
       </SubmitButton>
     </form>
-
-    <p class="flex justify-between text-sm">
-      <RouterLink
-        class="text-brand hover:text-brand-strong"
-        :to="{ name: 'register' }"
-      >
-        {{ t('auth.register_link') }}
-      </RouterLink>
-      <RouterLink
-        class="text-brand hover:text-brand-strong"
-        :to="{ name: 'forgot-password' }"
-      >
-        {{ t('auth.forgot_password_link') }}
-      </RouterLink>
-    </p>
   </AuthCard>
 </template>
 
 <script setup lang="ts">
 import { nextTick, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
-import CheckboxField from '@/components/CheckboxField.vue'
 import FormError from '@/components/FormError.vue'
 import PasswordField from '@/components/PasswordField.vue'
 import SubmitButton from '@/components/SubmitButton.vue'
 import TextField from '@/components/TextField.vue'
 import { ApiError } from '@/lib/api'
 import { focusFirstInvalid } from '@/lib/form'
-import { isWeb } from '@/lib/platform'
-import { destinationAfterSignIn } from '@/router'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
 const route = useRoute()
-const router = useRouter()
 const auth = useAuthStore()
 
 const form = useTemplateRef<HTMLFormElement>('form')
 
-const email = ref('')
+// Both come from the link in the reset email.
+const token = typeof route.query.token === 'string' ? route.query.token : ''
+const email = ref(typeof route.query.email === 'string' ? route.query.email : '')
+
+const linkInvalid = ref(token === '' || email.value === '')
+const done = ref(false)
 const password = ref('')
-const remember = ref(true)
 const pending = ref(false)
 const errors = ref<Record<string, string>>({})
 const formError = ref<string | null>(null)
-
-// A message left by the store, shown once and then forgotten.
-const notice = ref(auth.takeNotice())
 
 async function submit(): Promise<void> {
   if (pending.value) {
@@ -102,17 +105,22 @@ async function submit(): Promise<void> {
   pending.value = true
   errors.value = {}
   formError.value = null
-  notice.value = null
 
   try {
-    await auth.signIn(email.value, password.value, remember.value)
-    await router.push(destinationAfterSignIn(route.query.redirect))
+    await auth.resetPassword(token, email.value, password.value)
+    done.value = true
   } catch (error) {
     if (error instanceof ApiError && error.status === 422) {
-      errors.value = error.validationErrors()
-      password.value = ''
-    } else if (error instanceof ApiError && error.status === 403) {
-      notice.value = auth.takeNotice()
+      const fieldErrors = error.validationErrors()
+
+      // An error on the email field means the token is bad or expired.
+      if (fieldErrors.email) {
+        linkInvalid.value = true
+      } else {
+        errors.value = {
+          password: fieldErrors.password ?? fieldErrors.token ?? t('auth.request_failed'),
+        }
+      }
     } else if (error instanceof ApiError && error.status === 429) {
       formError.value = t('auth.too_many_attempts')
     } else {
