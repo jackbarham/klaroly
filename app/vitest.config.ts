@@ -13,6 +13,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // The PWA plugin's virtual module only exists in a Vite build, so the
+      // test run gets a stub, which updates.test.ts mocks.
+      'virtual:pwa-register': fileURLToPath(new URL('./src/lib/pwaRegisterStub.ts', import.meta.url)),
     },
   },
   test: {

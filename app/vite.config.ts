@@ -28,13 +28,14 @@ export default defineConfig(({ mode }) => {
   const plugins = [vue(), tailwindcss()]
 
   if (isWebTarget) {
-    // The service worker exists only on the web target. The plugin injects
-    // its own registration script into index.html, so nothing in src/ refers
-    // to it and there is nothing to strip from the mobile build.
+    // The service worker exists only on the web target. It is registered by
+    // src/lib/updates.ts, which main.ts loads inside `if (__WEB_TARGET__)`,
+    // so the mobile bundle never contains it. In prompt mode a newer worker
+    // waits until the person chooses to reload from the update bar.
     plugins.push(
       VitePWA({
-        registerType: 'autoUpdate',
-        injectRegister: 'script-defer',
+        registerType: 'prompt',
+        injectRegister: null,
         manifest: {
           name: 'Klaroly',
           short_name: 'Klaroly',

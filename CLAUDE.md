@@ -288,9 +288,13 @@ chunk is never emitted. A static top-level import would keep the code in the
 mobile binary, which is the thing being avoided. Follow the same pattern for
 anything else that is web-only.
 
-The service worker is registered by a script the PWA plugin injects into
-`index.html`, so no code in `src/` mentions it and the mobile build has
-nothing to strip.
+The service worker is registered by `src/lib/updates.ts`, the one file in
+`src/` that mentions it. `main.ts` loads it, and `App.vue` loads the
+`UpdateBar` component, with the dynamic-import pattern above, so the mobile
+bundle contains neither. The plugin runs in `prompt` mode: a newer build
+installs and waits, the module checks for one hourly and when the tab comes
+back into view, and the bar offers a reload rather than reloading under
+someone mid-form.
 
 ### Cloudflare
 

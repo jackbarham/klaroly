@@ -50,5 +50,9 @@
   },
   "billing": {
     "title": "Billing"
+  },
+  "updates": {
+    "available": "A new version of Klaroly is available.",
+    "reload_action": "Reload"
   }
 }
