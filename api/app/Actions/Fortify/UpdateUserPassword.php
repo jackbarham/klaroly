@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Notifications\PasswordChanged;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -44,5 +45,7 @@ class UpdateUserPassword implements UpdatesUserPasswords
             ->where('user_id', $user->id)
             ->when($currentSessionId !== null, fn ($query) => $query->where('id', '!=', $currentSessionId))
             ->delete();
+
+        $user->notify(new PasswordChanged);
     }
 }

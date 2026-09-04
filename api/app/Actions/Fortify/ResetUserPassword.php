@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Notifications\PasswordChanged;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -35,5 +36,7 @@ class ResetUserPassword implements ResetsUserPasswords
         $user->tokens()->delete();
 
         DB::table('sessions')->where('user_id', $user->id)->delete();
+
+        $user->notify(new PasswordChanged);
     }
 }

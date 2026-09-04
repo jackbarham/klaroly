@@ -1,23 +1,6 @@
 <template>
   <AuthCard :title="t('auth.reset_password_title')">
-    <template v-if="done">
-      <p
-        class="text-sm"
-        role="status"
-      >
-        {{ t('auth.password_reset_done') }}
-      </p>
-      <p class="text-sm">
-        <RouterLink
-          class="text-brand hover:text-brand-strong"
-          :to="{ name: 'login' }"
-        >
-          {{ t('auth.sign_in_link') }}
-        </RouterLink>
-      </p>
-    </template>
-
-    <template v-else-if="linkInvalid">
+    <template v-if="linkInvalid">
       <p
         class="text-sm text-danger"
         role="alert"
@@ -68,7 +51,7 @@
 <script setup lang="ts">
 import { nextTick, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
 import FormError from '@/components/FormError.vue'
 import SubmitButton from '@/components/SubmitButton.vue'
@@ -79,6 +62,7 @@ import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 
 const form = useTemplateRef<HTMLFormElement>('form')
@@ -88,7 +72,6 @@ const token = typeof route.query.token === 'string' ? route.query.token : ''
 const email = ref(typeof route.query.email === 'string' ? route.query.email : '')
 
 const linkInvalid = ref(token === '' || email.value === '')
-const done = ref(false)
 const password = ref('')
 const pending = ref(false)
 const errors = ref<Record<string, string>>({})
@@ -105,7 +88,9 @@ async function submit(): Promise<void> {
 
   try {
     await auth.resetPassword(token, email.value, password.value)
-    done.value = true
+    await signInWithNewPassword()
+
+    return
   } catch (error) {
     if (error instanceof ApiError && error.status === 422) {
       const fieldErrors = error.validationErrors()
@@ -129,5 +114,27 @@ async function submit(): Promise<void> {
   } finally {
     pending.value = false
   }
+}
+
+// The password has been changed, so the person is signed in with it
+// straight away rather than being sent to the login screen to type it
+// again. If that sign-in fails for any reason, the login screen is the
+// fallback, with a notice saying the change itself succeeded.
+async function signInWithNewPassword(): Promise<void> {
+  try {
+    await auth.signIn(email.value, password.value, true)
+  } catch {
+    // The store may already have left a notice (for example a login that
+    // belongs to no account). Only set ours when it has not.
+    if (auth.notice === null) {
+      auth.notice = 'auth.password_reset_done'
+    }
+
+    await router.push({ name: 'login' })
+
+    return
+  }
+
+  await router.push({ name: 'dashboard' })
 }
 </script>

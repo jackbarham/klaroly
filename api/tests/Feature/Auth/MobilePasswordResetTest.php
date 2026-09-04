@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Notifications\PasswordChanged;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -48,6 +49,7 @@ it('throttles the fourth forgot-password request in a minute', function () {
 });
 
 it('resets the password and signs every device and browser out without issuing a token', function () {
+    Notification::fake();
     $user = createOwner(['email' => 'ellie@example.com']);
     $user->createToken('Phone');
     $user->createToken('Tablet');
@@ -68,6 +70,8 @@ it('resets the password and signs every device and browser out without issuing a
         ->and($user->tokens()->count())->toBe(0)
         ->and(DB::table('sessions')->where('user_id', $user->id)->count())->toBe(0)
         ->and(auth()->guard('web')->check())->toBeFalse();
+
+    Notification::assertSentTo($user, PasswordChanged::class);
 });
 
 it('rejects a wrong token on the email field', function () {

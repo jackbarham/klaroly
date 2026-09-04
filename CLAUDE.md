@@ -162,7 +162,10 @@ Hand-written routes live in `routes/api.php` under `/api`:
 - **Passwords**: `Password::defaults()` in `AppServiceProvider` is the only
   policy (ten characters plus the breach check, which is off in testing).
   Changing a password revokes every token and every other session; resetting
-  one revokes every token and every session.
+  one revokes every token and every session. Both send the queued
+  `App\Notifications\PasswordChanged` email from inside the action, so the
+  web routes and the mobile twins cannot differ. Its strings live in
+  `lang/en-GB/mail.php`, one group per notification class.
 - **Email verification is sent, not enforced** (decision 83). The `verified`
   alias goes on the authenticated group in `routes/api.php` when enforcement
   arrives, and nowhere else.
