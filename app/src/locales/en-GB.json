@@ -2,6 +2,32 @@
   "app": {
     "name": "Klaroly"
   },
+  "common": {
+    "back": "Back",
+    "save": "Save changes",
+    "cancel": "Cancel",
+    "not_built_yet": "This section is not built yet.",
+    "reference": "Reference {id}"
+  },
+  "nav": {
+    "primary_label": "Main",
+    "skip_to_content": "Skip to content",
+    "home": "Home",
+    "bookings": "Bookings",
+    "enquiries": "Enquiries",
+    "contacts": "Contacts",
+    "more": "More",
+    "settings": "Settings",
+    "account": "My account",
+    "help": "Help",
+    "create": "New"
+  },
+  "create": {
+    "title": "Create",
+    "enquiry": "New enquiry",
+    "booking": "New booking",
+    "contact": "New contact"
+  },
   "auth": {
     "sign_in_title": "Sign in to Klaroly",
     "email_label": "Email address",
@@ -41,12 +67,64 @@
     "sign_out_action": "Sign out"
   },
   "account": {
+    "title": "My account",
     "no_membership": "This login does not belong to any account."
   },
-  "dashboard": {
-    "title": "Dashboard",
+  "home": {
+    "title": "Home",
     "greeting": "Welcome, {account}",
     "empty_state": "Nothing to show yet."
+  },
+  "bookings": {
+    "title": "Bookings",
+    "detail_title": "Booking"
+  },
+  "enquiries": {
+    "title": "Enquiries",
+    "detail_title": "Enquiry"
+  },
+  "contacts": {
+    "title": "Contacts",
+    "detail_title": "Contact"
+  },
+  "more": {
+    "title": "More"
+  },
+  "help": {
+    "title": "Help"
+  },
+  "settings": {
+    "title": "Settings",
+    "features": "Features",
+    "rate_card": "Rate card",
+    "travel": "Travel",
+    "payments": "Deposit and payment",
+    "templates": "Email templates",
+    "automation": "Automation",
+    "agreement": "Agreement",
+    "intake": "Enquiry and intake form",
+    "working": "Working details",
+    "business_year": "Business year"
+  },
+  "travel": {
+    "description": "How far you are willing to go, and what you charge for getting there.",
+    "base_section_title": "Where you travel from",
+    "base_section_description": "Distances are measured from here.",
+    "charges_section_title": "What you charge",
+    "charges_section_description": "This is used to suggest a travel cost on a quote. You can always change it on the day.",
+    "postcode_label": "Base postcode",
+    "postcode_hint": "The postcode you usually set off from.",
+    "charge_label": "Charge for travel",
+    "charge_hint": "Turn this off if your prices already include travel.",
+    "rule_label": "Charging rule",
+    "rule_hint": "How a travel cost is worked out from the distance.",
+    "rule_option_included": "Included in the price",
+    "rule_option_per_mile": "A rate for every mile",
+    "rule_option_after_free_miles": "Free for the first few miles, then a rate",
+    "rate_label": "Rate per mile",
+    "rate_hint": "What you charge for each mile travelled.",
+    "notes_label": "Notes about travel",
+    "notes_hint": "Anything a client should know, such as parking or a congestion charge."
   },
   "billing": {
     "title": "Billing"

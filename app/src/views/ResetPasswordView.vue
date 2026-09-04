@@ -135,6 +135,6 @@ async function signInWithNewPassword(): Promise<void> {
     return
   }
 
-  await router.push({ name: 'dashboard' })
+  await router.push({ name: 'home' })
 }
 </script>

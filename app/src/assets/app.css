@@ -30,8 +30,62 @@
 
   --radius-control: 0.5rem;
   --radius-card: 0.75rem;
+
+  /*
+    The greyscale the app shell and the UI kit are built from. Warm greys, so
+    that they sit with --color-surface above rather than looking blue beside
+    it. The brand colours are deliberately not used in the shell: the brand
+    work lands later, and swapping these values is all it will take.
+  */
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #f5f4f2;
+  --color-neutral-100: #eceae6;
+  --color-neutral-200: #dedbd6;
+  --color-neutral-300: #c6c2bb;
+  --color-neutral-400: #a29d95;
+  --color-neutral-500: #7b766e;
+  --color-neutral-600: #5c5850;
+  --color-neutral-700: #423f39;
+  --color-neutral-800: #2b2925;
+  --color-neutral-900: #1b1a17;
+
+  /* The tab bar, the create sheet and anything else that floats. */
+  --shadow-raised: 0 8px 24px -8px rgb(0 0 0 / 0.18), 0 2px 6px -2px rgb(0 0 0 / 0.08);
+
+  /* The large corner radius shared by the tab bar and the create sheet. */
+  --radius-sheet: 1.5rem;
 }
 
 body {
   @apply bg-surface font-sans text-ink antialiased;
+}
+
+/*
+  Safe areas. env() cannot live in the @theme block, so these four utilities
+  are the one place the insets are applied, and everything else composes them
+  with Tailwind variants. Each one adds a step from the spacing scale to the
+  inset so that a device with no inset still gets sensible spacing.
+*/
+@utility page-top {
+  padding-top: calc(env(safe-area-inset-top) + var(--spacing) * 6);
+}
+
+/* Clears the floating tab bar: its own inset, its height and a gap. */
+@utility page-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--spacing) * 24);
+}
+
+/* Where the floating tab bar sits above the bottom of the screen. */
+@utility bar-bottom {
+  bottom: calc(env(safe-area-inset-bottom) + var(--spacing) * 4);
+}
+
+/* The bottom sheet reaches the bottom edge, so its padding clears the inset. */
+@utility sheet-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--spacing) * 4);
+}
+
+/* A sticky row of form actions sits directly on top of the tab bar. */
+@utility above-bar {
+  bottom: calc(env(safe-area-inset-bottom) + var(--spacing) * 20);
 }

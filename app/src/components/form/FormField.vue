@@ -1,0 +1,83 @@
+<template>
+  <div class="space-y-2">
+    <!--
+      The label carries "for" so that clicking it focuses a real input. A
+      control that is not a labelable element, such as the toggle switch or a
+      radio group, ignores "for" and points at the label's id with
+      aria-labelledby instead, which is why the id is handed to the slot too.
+    -->
+    <label
+      :id="labelId"
+      class="block text-sm font-medium text-neutral-700"
+      :for="fieldId"
+    >{{ label }}</label>
+
+    <slot
+      :id="fieldId"
+      :described-by="describedBy"
+      :labelled-by="labelId"
+      :invalid="invalid"
+    />
+
+    <p
+      v-if="hint"
+      :id="hintId"
+      class="text-sm text-neutral-500"
+    >
+      {{ hint }}
+    </p>
+
+    <p
+      v-if="error"
+      :id="errorId"
+      class="text-sm font-medium text-neutral-900"
+    >
+      {{ error }}
+    </p>
+  </div>
+</template>
+
+<script setup lang="ts">
+// The wrapper that owns everything around a form control: the label, the
+// hint, the error and the ids that tie the three together. The controls
+// themselves take an id, an aria-describedby and an invalid flag and do no
+// wiring of their own, so the wiring is written once and is right everywhere.
+//
+// Every control takes the same four things, so a field is written as
+// <FormField v-slot="field"><TextInput v-bind="field" v-model="x" /></FormField>
+// and no caller has to remember which control needs which attribute.
+import { computed, useId } from 'vue'
+
+const props = withDefaults(defineProps<{
+  label: string
+  hint?: string
+  error?: string
+}>(), {
+  hint: undefined,
+  error: undefined,
+})
+
+// Vue generates an id that is unique in the page, so a field can appear
+// twice on one page without the two labels pointing at the same control.
+const fieldId = useId()
+const labelId = `${fieldId}-label`
+const hintId = `${fieldId}-hint`
+const errorId = `${fieldId}-error`
+
+const invalid = computed(() => Boolean(props.error))
+
+// The hint and the error are both announced with the control, in that order.
+const describedBy = computed(() => {
+  const ids: string[] = []
+
+  if (props.hint) {
+    ids.push(hintId)
+  }
+
+  if (props.error) {
+    ids.push(errorId)
+  }
+
+  return ids.length > 0 ? ids.join(' ') : undefined
+})
+</script>

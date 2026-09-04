@@ -107,11 +107,30 @@ Run the app's unit tests with:
 npm test
 ```
 
+**Where things live in `app/src`.**
+
+| Folder | What is in it |
+| --- | --- |
+| `lib/` | Everything that is not a component: `api.ts` (the only caller of `fetch`), `auth.ts`, `platform.ts`, `navigation.ts` (the one list of destinations, used by both navigations) and `testMount.ts`, which tests use to mount a component |
+| `stores/` | Pinia. `auth.ts` is the only way a screen reads or changes who is signed in |
+| `router/` | One explicit routes array. Everything behind the sign-in is a child of the layout route |
+| `components/layout/` | The app shell: `AppLayout`, `AppSidebar`, `AppTabBar`, `CreateMenu`, `SettingsNav` |
+| `components/ui/` | PageHeader, Card, EmptyState, AppButton, IconButton, Sheet, Icon |
+| `components/form/` | FormSection, FormField, FormActions and the controls. FormField owns the label, hint, error and id wiring; the controls do not |
+| `views/` | One file per page. Pages that are not built yet share `PlaceholderView.vue` |
+| `locales/` | `en-GB.json`. Every user-facing string is a key here |
+| `assets/app.css` | The `@theme` block, which is where every colour, font, radius and spacing step is defined |
+
+Two rules worth knowing before you open any of it: a component or a view
+never calls the API (it goes through a store, and `src/lib/boundary.test.ts`
+enforces that), and the shell is greyscale (the `--color-neutral-*` tokens
+only), because the brand work has not landed yet.
+
 **Signing in locally.** With the API seeded (`php artisan db:seed`), open
 http://app.klaroly.test/login and sign in as `ellie@example.com` with the
 password in the API's `DEMO_PASSWORD` (`password` by default). The demo
-account is already verified, so the dashboard shows no banner. To see the
-whole flow, use "Create an account" with a fresh address: the dashboard then
+account is already verified, so the home page shows no banner. To see the
+whole flow, use "Create an account" with a fresh address: the home page then
 shows the verification banner, and the verification email, like the
 password reset email, is written to `api/storage/logs/laravel.log`. Copy the
 link out of the log into the same browser. The verification link goes to the

@@ -208,8 +208,34 @@ Hand-written routes live in `routes/api.php` under `/api`:
   so nothing outside the theme block can use a hardcoded colour or spacing
   value. This matches the marketing site, so both share one way of defining
   tokens.
+- The app shell and both component kits are greyscale. `--color-neutral-0`
+  through `--color-neutral-900` in the `@theme` block are the only colours new
+  work may use, along with `--color-surface` for the page itself. The brand
+  colours are still there and are still what the authentication screens use;
+  nothing else touches them until the brand work lands, which is the whole
+  point of having tokens. Never add a colour outside the theme block, and
+  never reach for a brand colour to make something stand out.
+- Spacing comes off an eight pixel grid. Use Tailwind steps 2, 4, 6, 8, 10,
+  12, 16, 20 and 24 for padding, margins and gaps. Step 1 is allowed only
+  inside a control, such as between an icon and its label. Heights, widths and
+  positions are not on that list because a control has to be the size it has
+  to be, but keep them on the same grid.
+- `env(safe-area-inset-*)` cannot live in `@theme`, so `src/assets/app.css`
+  defines five utilities with `@utility` and they are the only place an inset
+  is read: `page-top`, `page-bottom` (clears the tab bar), `bar-bottom` (where
+  the tab bar floats), `sheet-bottom` and `above-bar` (a sticky row of form
+  actions). Compose them with Tailwind variants, for example
+  `max-lg:page-bottom`.
+- A component and a view never talk to the API. They read and change state
+  through a Pinia store; the store calls `src/lib/auth.ts`, which calls
+  `src/lib/api.ts`. The single exception is `ApiError`, which a screen may
+  import so that it can tell a rate limit from a lost connection.
+  `src/lib/boundary.test.ts` reads the source of every file under
+  `src/components` and `src/views` and fails if anything else appears, because
+  the point of the rule is what happens when nobody is looking.
 - No UI component framework of any kind. Not Ionic, not a Tailwind component
-  library.
+  library. There is a small kit of the app's own in `src/components/ui` and
+  `src/components/form`, described below.
 - Every user-facing string is a key in `src/locales/en-GB.json`, with the
   same naming rule as the API.
 - Never derive the API base URL from `window.location`. It is always
@@ -226,6 +252,83 @@ The single place any native-versus-web branch may live. It exports
 checks the platform directly: no user-agent sniffing, no `Capacitor.` calls
 outside this file. Until Capacitor is added, native means the mobile build
 target.
+
+### `src/lib/navigation.ts`
+
+Where someone can go in the app, written down once. One array, `navigation`,
+with a key, a route name, a locale key for the label, an icon name, a flag for
+the phone tab bar and which half of the sidebar the entry belongs to. The
+create action is in the array with a null route name, in the position it is
+drawn in, which is why the tab bar reads Home, Bookings, the create button,
+Enquiries, More.
+
+The derived lists (`tabBarItems`, `sidebarMain`, `sidebarSecondary`,
+`moreItems`, `createItem`) and the two functions that work out what is current
+(`sectionKey`, `activeTabKey`, `activeTabIndex`) all come from that array.
+**Neither navigation component may contain a list of destinations**, and
+adding a section is a line in this file rather than an edit in three places.
+`settingsGroups` does the same job for the ten groups of settings.
+
+`sectionKey` is what makes a detail page mark its list: `/bookings/42` marks
+Bookings, every settings page marks Settings. Sections the tab bar has no room
+for are reached through More, so on a phone they mark More.
+
+### The app shell
+
+`src/components/layout/AppLayout.vue` is the shell every signed-in page sits
+in, and it is a route with children in `src/router/index.ts`, so it mounts
+once and a navigation swaps only the page inside it. It holds the skip link,
+one `<main>`, one `<RouterView>` and the create sheet's open state, which is
+the only state the shell has.
+
+Which navigation shows is decided by Tailwind's `lg` variant and nothing else.
+There is no width watched in JavaScript and no user agent read. Both
+navigations are in the DOM at every width and the hidden one is
+`display: none`, so it is out of the accessibility tree as well as off the
+screen.
+
+- `AppSidebar.vue`, at `lg` and up: a fixed column that does not collapse,
+  with the New button at the top and sign out at the bottom. It never links
+  to More.
+- `AppTabBar.vue`, below `lg`: a bar that floats clear of the bottom edge,
+  with a raised create button in the middle that is not a destination. The
+  pill behind the current item is one element that is measured and moved with
+  a transform, never a style on each item and never an animated layout. It is
+  measured on the first render, so a deep link lands with it in the right
+  place, and again on a route change and on a resize.
+- `CreateMenu.vue` with `ui/Sheet.vue`: one component, two presentations. A
+  bottom sheet on a phone, a menu anchored under the sidebar's New button at
+  `lg`. The anchor is plain CSS offsets that match the geometry at the top of
+  the sidebar; both files carry the arithmetic in a comment, so if one moves
+  the other has to.
+- `SettingsNav.vue`: the second column of settings links, shown beside a
+  settings page at `lg`. The settings index never shows it, because the index
+  is that list.
+
+### The UI kit and the form kit
+
+`src/components/ui` is PageHeader, Card, EmptyState, AppButton, IconButton,
+Sheet and Icon. `AppButton` is the only button component in the app: anything
+that looks like a button is that with a different variant or size. `Icon` is
+the only place an icon lives, as a list of SVG paths on a 24 by 24 grid,
+stroked with `currentColor`. There is no icon package and there will not be
+one.
+
+`src/components/form` is FormSection, FormField, FormActions and the controls.
+**FormField owns every piece of wiring around a control**: it generates the
+id, ties the label to it, puts the hint and the error into
+`aria-describedby` in that order and sets `aria-invalid`. The controls take
+`id`, `labelledBy`, `describedBy` and `invalid` and do none of that
+themselves, so a field is written as one line:
+
+```vue
+<FormField v-slot="field" :label="..." :hint="..."><TextInput v-bind="field" v-model="x" /></FormField>
+```
+
+A control that is not a labelable element, which is the toggle switch and the
+radio group, is named by `aria-labelledby` pointing at the field's label.
+Nothing in either kit validates or submits anything; that arrives with the
+first section that saves something.
 
 ### `src/lib/api.ts`
 
@@ -308,6 +411,20 @@ Not installed yet. Do not run `cap add ios` or `cap add android` until there
 is a login screen and one working list view. `npm run build:mobile` already
 produces the bundle Capacitor will wrap.
 
+Two things about the shell will need attention on the day it is installed,
+both because the tab bar is `position: fixed`:
+
+- **The iOS keyboard.** In a WebView the bar rides up and sits on top of the
+  keyboard, over the field being typed into. The fix is the `Keyboard` plugin
+  with `resize: 'native'`, and hiding the bar while the keyboard is open.
+  That is a piece of state that cannot be derived from the width, so it is
+  the first honest reason to add a small UI store, and the branch belongs in
+  `src/lib/platform.ts` like every other native check.
+- **Android insets.** `env(safe-area-inset-*)` reports zero in an Android
+  WebView unless the native shell asks for an edge-to-edge layout, and the
+  bar would then sit under the gesture pill. `viewport-fit=cover` is already
+  in `index.html`, which is the web half of the same job.
+
 ## Current state
 
 The database schema, email-and-password authentication and the mobile
@@ -374,13 +491,51 @@ What sits on top of the tables:
 The app has its authentication screens: sign in, register (with a live
 username preview and availability check), forgot password, reset password,
 sign out, the verification banner with resend, the verified landing on the
-dashboard, and session restore on load. The router guard awaits
+home page, and session restore on load. The router guard awaits
 `auth.bootstrap()` once before the first navigation, sends a signed-out
 visitor to `/login?redirect=` and follows that redirect after sign-in only
-when it is a relative path. The dashboard is still an empty state with a
-greeting, the banner and a sign-out button; there is no app shell or
-navigation yet. The device list, profile and password change screens are
-not built.
+when it is a relative path.
+
+It also has its shell, and every route behind the sign-in exists as a page.
+That is all it has: the shell is furniture, not features. **Nothing in it
+calls the API.** The only request the app makes when it loads is still the
+one `GET /api/me` that `auth.bootstrap()` sends, and there is no invented
+data anywhere: a page that has not been built says so.
+
+- The routes, all children of the layout route: `/`, `/bookings`,
+  `/bookings/:id`, `/enquiries`, `/enquiries/:id`, `/contacts`,
+  `/contacts/:id`, `/more`, `/account`, `/help`, `/settings` and its ten
+  groups, plus `/billing` on the web target. A detail route echoes its `:id`
+  and looks nothing up.
+- Every page that has not been built is one shared `PlaceholderView.vue`: a
+  header and a card saying so. A route names its title with `meta.titleKey`,
+  which is also the document title, and where a phone's back link goes with
+  `meta.backTo`. When a section is really built it gets a view of its own and
+  the routes array points at that instead.
+- The pages that are real: `HomeView` (the greeting, the verification banner
+  and an empty state), `MoreView` (the phone's overflow list and sign out),
+  the settings index, and `/settings/travel`, which is the one honest example
+  of the form kit doing a section's work. It saves nothing: there is no
+  settings API yet.
+- The document title comes from the route's locale key, there is a skip link
+  to `<main>`, every route has one `<h1>` in it, and both navigations are
+  real `<nav>` landmarks.
+
+Vitest covers what will actually break: the navigation config's derived
+lists and its idea of what is current, that both navigations render one item
+per entry and mark the right one, that the pill resolves on a deep link,
+the sheet's open, close and focus behaviour, FormField's wiring, and the two
+tests that read the source of the app rather than run it:
+`boundary.test.ts`, which stops business logic leaking into components, and
+`router/routeNames.test.ts`, which fails if any route name written down
+anywhere is not a route that exists. Renaming a route is the change that
+breaks a `router.push` in a screen nobody opened, and a route name is a
+string, so nothing else can catch it. Component tests mount through
+`src/lib/testMount.ts`, twenty lines of `createApp` with the real router,
+i18n and pinia, because there is no component testing library and there is
+not going to be one.
+
+The device list, profile and password change screens are not built.
 
 Not built yet: passkeys and two-factor enforcement (configured, unused),
 Sign in with Apple or Google, switching between accounts, collaborator

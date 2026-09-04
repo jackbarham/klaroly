@@ -44,7 +44,7 @@ describe('router guard', () => {
 
     await router.push('/login')
 
-    expect(router.currentRoute.value.name).toBe('dashboard')
+    expect(router.currentRoute.value.name).toBe('home')
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })

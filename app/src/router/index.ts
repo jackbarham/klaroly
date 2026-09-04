@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import i18n from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
-import DashboardView from '@/views/DashboardView.vue'
+import AppLayout from '@/components/layout/AppLayout.vue'
 import ForgotPasswordView from '@/views/ForgotPasswordView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
@@ -10,11 +11,22 @@ declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
     guestOnly?: boolean
+    // The locale key for this page's name. It is the document title and, on
+    // a page that has not been built yet, the heading as well.
+    titleKey?: string
+    // The name of the route a phone's back link goes to. A wide screen has
+    // the sidebar and the settings column instead, so it shows no back link.
+    backTo?: string
   }
 }
 
 // Every route is listed here, by hand. There is no file-based routing.
-const routes: RouteRecordRaw[] = [
+//
+// Everything behind the sign-in sits under one layout route, so the shell is
+// mounted once and a navigation swaps only the page inside it. Every one of
+// those views is loaded on demand: the app starts with the shell and the
+// page that was asked for, not with all twenty.
+export const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'login',
@@ -41,9 +53,142 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
-    name: 'dashboard',
-    component: DashboardView,
+    component: AppLayout,
     meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'home',
+        component: () => import('@/views/HomeView.vue'),
+        meta: { titleKey: 'home.title' },
+      },
+      {
+        path: 'bookings',
+        name: 'bookings',
+        component: () => import('@/views/PlaceholderView.vue'),
+        meta: { titleKey: 'bookings.title' },
+      },
+      {
+        path: 'bookings/:id',
+        name: 'booking',
+        component: () => import('@/views/PlaceholderView.vue'),
+        meta: { titleKey: 'bookings.detail_title', backTo: 'bookings' },
+      },
+      {
+        path: 'enquiries',
+        name: 'enquiries',
+        component: () => import('@/views/PlaceholderView.vue'),
+        meta: { titleKey: 'enquiries.title' },
+      },
+      {
+        path: 'enquiries/:id',
+        name: 'enquiry',
+        component: () => import('@/views/PlaceholderView.vue'),
+        meta: { titleKey: 'enquiries.detail_title', backTo: 'enquiries' },
+      },
+      {
+        path: 'contacts',
+        name: 'contacts',
+        component: () => import('@/views/PlaceholderView.vue'),
+        meta: { titleKey: 'contacts.title', backTo: 'more' },
+      },
+      {
+        path: 'contacts/:id',
+        name: 'contact',
+        component: () => import('@/views/PlaceholderView.vue'),
+        meta: { titleKey: 'contacts.detail_title', backTo: 'contacts' },
+      },
+      {
+        path: 'more',
+        name: 'more',
+        component: () => import('@/views/MoreView.vue'),
+        meta: { titleKey: 'more.title' },
+      },
+      {
+        path: 'account',
+        name: 'account',
+        component: () => import('@/views/PlaceholderView.vue'),
+        meta: { titleKey: 'account.title', backTo: 'more' },
+      },
+      {
+        path: 'help',
+        name: 'help',
+        component: () => import('@/views/PlaceholderView.vue'),
+        meta: { titleKey: 'help.title', backTo: 'more' },
+      },
+      {
+        path: 'settings',
+        component: () => import('@/views/settings/SettingsLayout.vue'),
+        children: [
+          {
+            path: '',
+            name: 'settings',
+            component: () => import('@/views/settings/SettingsView.vue'),
+            meta: { titleKey: 'settings.title' },
+          },
+          {
+            path: 'features',
+            name: 'settings-features',
+            component: () => import('@/views/PlaceholderView.vue'),
+            meta: { titleKey: 'settings.features', backTo: 'settings' },
+          },
+          {
+            path: 'rate-card',
+            name: 'settings-rate-card',
+            component: () => import('@/views/PlaceholderView.vue'),
+            meta: { titleKey: 'settings.rate_card', backTo: 'settings' },
+          },
+          {
+            path: 'travel',
+            name: 'settings-travel',
+            component: () => import('@/views/settings/TravelSettingsView.vue'),
+            meta: { titleKey: 'settings.travel', backTo: 'settings' },
+          },
+          {
+            path: 'payments',
+            name: 'settings-payments',
+            component: () => import('@/views/PlaceholderView.vue'),
+            meta: { titleKey: 'settings.payments', backTo: 'settings' },
+          },
+          {
+            path: 'templates',
+            name: 'settings-templates',
+            component: () => import('@/views/PlaceholderView.vue'),
+            meta: { titleKey: 'settings.templates', backTo: 'settings' },
+          },
+          {
+            path: 'automation',
+            name: 'settings-automation',
+            component: () => import('@/views/PlaceholderView.vue'),
+            meta: { titleKey: 'settings.automation', backTo: 'settings' },
+          },
+          {
+            path: 'agreement',
+            name: 'settings-agreement',
+            component: () => import('@/views/PlaceholderView.vue'),
+            meta: { titleKey: 'settings.agreement', backTo: 'settings' },
+          },
+          {
+            path: 'intake',
+            name: 'settings-intake',
+            component: () => import('@/views/PlaceholderView.vue'),
+            meta: { titleKey: 'settings.intake', backTo: 'settings' },
+          },
+          {
+            path: 'working',
+            name: 'settings-working',
+            component: () => import('@/views/PlaceholderView.vue'),
+            meta: { titleKey: 'settings.working', backTo: 'settings' },
+          },
+          {
+            path: 'business-year',
+            name: 'settings-business-year',
+            component: () => import('@/views/PlaceholderView.vue'),
+            meta: { titleKey: 'settings.business_year', backTo: 'settings' },
+          },
+        ],
+      },
+    ],
   },
 ]
 
@@ -53,11 +198,13 @@ const routes: RouteRecordRaw[] = [
 // and inside this branch for that to hold; a static import at the top of the
 // file would keep the code in the mobile binary.
 if (__WEB_TARGET__) {
-  routes.push({
-    path: '/billing',
+  const layout = routes[routes.length - 1]
+
+  layout.children?.push({
+    path: 'billing',
     name: 'billing',
     component: () => import('@/views/BillingView.vue'),
-    meta: { requiresAuth: true },
+    meta: { titleKey: 'billing.title' },
   })
 }
 
@@ -84,10 +231,19 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.guestOnly && auth.isAuthenticated) {
-    return { name: 'dashboard' }
+    return { name: 'home' }
   }
 
   return true
+})
+
+// The document title says which page this is, for a browser tab, a bookmark
+// and a screen reader announcing a navigation. It comes from the route's
+// locale key, so there is no title written out anywhere but the locale file.
+router.afterEach((to) => {
+  const name = i18n.global.t('app.name')
+
+  document.title = to.meta.titleKey ? `${i18n.global.t(to.meta.titleKey)} - ${name}` : name
 })
 
 // Where to go after signing in or registering. The redirect query is
