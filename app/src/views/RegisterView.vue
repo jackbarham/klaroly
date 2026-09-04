@@ -2,67 +2,96 @@
   <AuthCard :title="t('auth.register_title')">
     <form
       ref="form"
-      class="space-y-4"
+      class="space-y-6"
       novalidate
       @submit.prevent="submit"
     >
-      <TextField
-        id="business_name"
-        v-model="businessName"
+      <FormField
+        v-slot="field"
         :label="t('auth.business_name_label')"
-        autocomplete="organization"
         :error="errors.business_name"
-      />
+      >
+        <TextInput
+          v-bind="field"
+          v-model="businessName"
+          autocomplete="organization"
+        />
+      </FormField>
 
-      <TextField
-        id="name"
-        v-model="name"
+      <FormField
+        v-slot="field"
         :label="t('auth.name_label')"
-        autocomplete="name"
         :error="errors.name"
-      />
+      >
+        <TextInput
+          v-bind="field"
+          v-model="name"
+          autocomplete="name"
+        />
+      </FormField>
 
-      <TextField
-        id="email"
-        v-model="email"
+      <FormField
+        v-slot="field"
         :label="t('auth.email_label')"
-        type="email"
-        autocomplete="email"
         :error="errors.email"
-      />
+      >
+        <TextInput
+          v-bind="field"
+          v-model="email"
+          type="email"
+          autocomplete="email"
+        />
+      </FormField>
 
-      <TextField
-        id="username"
-        v-model="username"
+      <!--
+        The tick or cross inside the field is TextInput's status; the same
+        thing in words is the field's statusMessage, which is announced and
+        not shown. One without the other is a mark nobody can hear.
+      -->
+      <FormField
+        v-slot="field"
         :label="t('auth.username_label')"
-        autocomplete="username"
         :hint="usernameHint"
-        :status="usernameStatus"
         :status-message="usernameStatusMessage"
         :error="errors.username"
-        @input="usernameTyped = true"
-      />
+      >
+        <TextInput
+          v-bind="field"
+          v-model="username"
+          autocomplete="username"
+          :status="usernameStatus"
+          @update:model-value="usernameTyped = true"
+        />
+      </FormField>
 
-      <TextField
-        id="password"
-        v-model="password"
+      <FormField
+        v-slot="field"
         :label="t('auth.password_label')"
-        type="password"
-        autocomplete="new-password"
         :error="errors.password"
-      />
+      >
+        <TextInput
+          v-bind="field"
+          v-model="password"
+          type="password"
+          autocomplete="new-password"
+        />
+      </FormField>
 
-      <CheckboxField
-        id="marketing_consent"
+      <CheckboxInput
+        id="marketing-consent"
         v-model="marketingConsent"
         :label="t('auth.marketing_consent_label')"
       />
 
       <FormError :message="formError" />
 
-      <SubmitButton :pending="pending">
+      <AppButton
+        class="w-full"
+        type="submit"
+        :pending="pending"
+      >
         {{ t('auth.register_action') }}
-      </SubmitButton>
+      </AppButton>
     </form>
 
     <!--
@@ -72,7 +101,7 @@
       side of the rule do not look equal.
     -->
     <div class="space-y-5 pt-1">
-      <hr class="border-t border-line">
+      <hr class="border-t border-neutral-200">
 
       <p class="text-center text-sm">
         <RouterLink
@@ -91,10 +120,11 @@ import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRouter } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
-import CheckboxField from '@/components/CheckboxField.vue'
-import FormError from '@/components/FormError.vue'
-import SubmitButton from '@/components/SubmitButton.vue'
-import TextField from '@/components/TextField.vue'
+import CheckboxInput from '@/components/form/CheckboxInput.vue'
+import FormError from '@/components/form/FormError.vue'
+import FormField from '@/components/form/FormField.vue'
+import TextInput from '@/components/form/TextInput.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import { ApiError } from '@/lib/api'
 import { focusFirstInvalid } from '@/lib/form'
 import { deriveUsername } from '@/lib/username'
@@ -119,6 +149,9 @@ const formError = ref<string | null>(null)
 
 // Until the person types in the username field themselves, it follows the
 // business name. The API derives the same thing when no username is sent.
+//
+// The control emits update:modelValue only when someone types in it, so the
+// watcher below can write the field without that counting as typing.
 const usernameTyped = ref(false)
 
 watch(businessName, (value) => {
@@ -175,8 +208,7 @@ const usernameHint = computed(() => {
   return candidate === '' ? undefined : t('auth.username_hint', { username: candidate })
 })
 
-// A tick or a cross inside the field, which also turns the hint red when the
-// name cannot be had.
+// A tick or a cross inside the field.
 const usernameStatus = computed(() => {
   if (availability.value === null) {
     return undefined

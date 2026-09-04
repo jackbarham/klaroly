@@ -27,6 +27,19 @@
       {{ hint }}
     </p>
 
+    <!--
+      What a control's live status says out loud. It is announced when it
+      changes rather than described with the control, because it is the
+      answer to what has just been typed, not part of what the field is for.
+    -->
+    <p
+      v-if="statusMessage"
+      class="sr-only"
+      role="status"
+    >
+      {{ statusMessage }}
+    </p>
+
     <p
       v-if="error"
       :id="errorId"
@@ -48,13 +61,19 @@
 // and no caller has to remember which control needs which attribute.
 import { computed, useId } from 'vue'
 
+// statusMessage is the words for a control that shows a live check as
+// someone types, which TextInput draws as a tick or a cross. The mark is
+// inside the control's box, so the control draws it; the words belong out
+// here with the hint and the error, so the field says them.
 const props = withDefaults(defineProps<{
   label: string
   hint?: string
   error?: string
+  statusMessage?: string
 }>(), {
   hint: undefined,
   error: undefined,
+  statusMessage: undefined,
 })
 
 // Vue generates an id that is unique in the page, so a field can appear

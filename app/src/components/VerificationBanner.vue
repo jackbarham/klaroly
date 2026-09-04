@@ -1,33 +1,39 @@
 <template>
-  <div
-    v-if="auth.me && auth.me.user.email_verified_at === null"
-    class="space-y-2 rounded-card border border-line bg-surface-raised p-4 text-sm"
-    role="status"
-  >
-    <p>{{ t('auth.email_unverified') }}</p>
-    <p
-      v-if="message"
-      :class="messageIsError ? 'text-danger' : 'text-success'"
+  <Card v-if="auth.me && auth.me.user.email_verified_at === null">
+    <div
+      class="space-y-4 text-sm"
+      role="status"
     >
-      {{ t(message) }}
-    </p>
-    <button
-      class="rounded-control border border-line px-3 py-1 hover:bg-surface disabled:opacity-60"
-      type="button"
-      :disabled="pending"
-      @click="resend"
-    >
-      {{ t('auth.resend_verification_action') }}
-    </button>
-  </div>
+      <p>{{ t('auth.email_unverified') }}</p>
+      <p
+        v-if="message"
+        :class="messageIsError ? 'font-medium text-neutral-900' : 'text-neutral-600'"
+      >
+        {{ t(message) }}
+      </p>
+      <AppButton
+        variant="secondary"
+        size="small"
+        :pending="pending"
+        @click="resend"
+      >
+        {{ t('auth.resend_verification_action') }}
+      </AppButton>
+    </div>
+  </Card>
 </template>
 
 <script setup lang="ts">
 // Shown while the signed-in person's email address is unverified. A 204
 // from the resend means the address was verified in the meantime, so the
 // store is refreshed and the banner goes away on its own.
+//
+// Whether the message is a failure or a confirmation is carried by its
+// weight and by what it says, not by a colour.
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AppButton from '@/components/ui/AppButton.vue'
+import Card from '@/components/ui/Card.vue'
 import { ApiError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
 

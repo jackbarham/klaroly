@@ -2,11 +2,17 @@
 
 /*
   Every design token lives in this block. Components use the utility classes
-  Tailwind generates from it (bg-brand, text-ink, font-sans, p-4, rounded-card)
-  and never a raw colour, font or size.
+  Tailwind generates from it (bg-brand, text-neutral-900, font-sans, p-4,
+  rounded-card) and never a raw colour, font or size.
 
   The default Tailwind palette is switched off so that a stray text-red-500
   cannot creep in. Values below are placeholders until the brand work lands.
+
+  There is one grey family and one accent colour, and that is the whole
+  palette. There is deliberately no danger or success colour: an error says
+  what is wrong in words, and shows it with a heavier border and a heavier
+  weight, because a red border on its own tells a screen reader nothing and
+  two ways of saying "this is wrong" in one form is one too many.
 */
 @theme {
   --font-*: initial;
@@ -14,28 +20,22 @@
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   --color-*: initial;
+
+  /*
+    The accent. It is the primary action and nothing else: a submit button, a
+    link that continues the journey, the New button. AppButton's primary
+    variant is what applies it, so no screen decides this for itself.
+  */
   --color-brand: #7a3e8c;
   --color-brand-strong: #5e2d6e;
   --color-on-brand: #ffffff;
-  --color-ink: #1f1a22;
-  --color-ink-muted: #6b6470;
+
+  /* The page itself, behind every card. */
   --color-surface: #faf9f7;
-  --color-surface-raised: #ffffff;
-  --color-line: #e4dfe6;
-  --color-danger: #b3261e;
-  --color-success: #2e7d4f;
-
-  /* Tailwind 4 derives the whole spacing scale (p-1, gap-2, w-64) from this. */
-  --spacing: 0.25rem;
-
-  --radius-control: 0.5rem;
-  --radius-card: 0.75rem;
 
   /*
-    The greyscale the app shell and the UI kit are built from. Warm greys, so
-    that they sit with --color-surface above rather than looking blue beside
-    it. The brand colours are deliberately not used in the shell: the brand
-    work lands later, and swapping these values is all it will take.
+    The greyscale everything else is built from. Warm greys, so that they sit
+    with --color-surface above rather than looking blue beside it.
   */
   --color-neutral-0: #ffffff;
   --color-neutral-50: #f5f4f2;
@@ -49,6 +49,12 @@
   --color-neutral-800: #2b2925;
   --color-neutral-900: #1b1a17;
 
+  /* Tailwind 4 derives the whole spacing scale (p-1, gap-2, w-64) from this. */
+  --spacing: 0.25rem;
+
+  --radius-control: 0.5rem;
+  --radius-card: 0.75rem;
+
   /* The tab bar, the create sheet and anything else that floats. */
   --shadow-raised: 0 8px 24px -8px rgb(0 0 0 / 0.18), 0 2px 6px -2px rgb(0 0 0 / 0.08);
 
@@ -57,7 +63,7 @@
 }
 
 body {
-  @apply bg-surface font-sans text-ink antialiased;
+  @apply bg-surface font-sans text-neutral-900 antialiased;
 }
 
 /*

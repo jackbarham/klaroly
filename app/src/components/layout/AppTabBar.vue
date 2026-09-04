@@ -34,11 +34,13 @@
         <!--
           The create button is not a destination: it never takes the pill and
           it never marks itself as the current page. It is larger than the
-          other items and lifts above the top edge of the bar.
+          other items, it lifts above the top edge of the bar, and it is the
+          brand colour, because it is the primary action on a phone in the
+          same way the sidebar's New button is on a wide screen.
         -->
         <button
           v-if="item.routeName === null"
-          class="-translate-y-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-900 text-neutral-0 shadow-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+          class="-translate-y-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand text-on-brand shadow-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
           type="button"
           :aria-label="t(item.labelKey)"
           @click="emit('create')"

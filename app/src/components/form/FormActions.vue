@@ -14,7 +14,7 @@
     </AppButton>
     <AppButton
       variant="primary"
-      :disabled="pending"
+      :pending="pending"
       @click="emit('save')"
     >
       {{ t('common.save') }}

@@ -3,12 +3,14 @@
     <p class="mb-6 text-2xl font-bold">
       {{ t('app.name') }}
     </p>
-    <div class="w-full max-w-sm space-y-6 rounded-card border border-line bg-surface-raised p-8">
-      <h1 class="text-xl font-semibold">
-        {{ title }}
-      </h1>
-      <slot />
-    </div>
+    <Card class="w-full max-w-sm">
+      <div class="space-y-6">
+        <h1 class="text-xl font-semibold">
+          {{ title }}
+        </h1>
+        <slot />
+      </div>
+    </Card>
   </main>
 </template>
 
@@ -16,7 +18,13 @@
 // The centred card every authentication screen sits in, with the Klaroly
 // wordmark above it. One column at every width (decision 10); the card
 // simply narrows on a phone.
+//
+// It is the UI kit's Card, so a signed-out page and a signed-in one share a
+// border, a radius and a padding step. It stays a component of its own
+// because it is also the main landmark and the heading of four screens, and
+// that is four copies of the same eight lines otherwise.
 import { useI18n } from 'vue-i18n'
+import Card from '@/components/ui/Card.vue'
 
 defineProps<{
   title: string

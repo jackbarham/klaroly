@@ -1,15 +1,11 @@
 <template>
   <AuthCard :title="t('auth.reset_password_title')">
     <template v-if="linkInvalid">
-      <p
-        class="text-sm text-danger"
-        role="alert"
-      >
-        {{ t('auth.reset_link_invalid') }}
-      </p>
+      <FormError :message="t('auth.reset_link_invalid')" />
+
       <p class="text-sm">
         <RouterLink
-          class="text-brand hover:text-brand-strong"
+          class="font-medium text-brand hover:text-brand-strong"
           :to="{ name: 'forgot-password' }"
         >
           {{ t('auth.forgot_password_link') }}
@@ -20,7 +16,7 @@
     <form
       v-else
       ref="form"
-      class="space-y-4"
+      class="space-y-6"
       novalidate
       @submit.prevent="submit"
     >
@@ -30,20 +26,28 @@
       -->
       <p>{{ email }}</p>
 
-      <TextField
-        id="password"
-        v-model="password"
+      <FormField
+        v-slot="field"
         :label="t('auth.new_password_label')"
-        type="password"
-        autocomplete="new-password"
         :error="errors.password"
-      />
+      >
+        <TextInput
+          v-bind="field"
+          v-model="password"
+          type="password"
+          autocomplete="new-password"
+        />
+      </FormField>
 
       <FormError :message="formError" />
 
-      <SubmitButton :pending="pending">
+      <AppButton
+        class="w-full"
+        type="submit"
+        :pending="pending"
+      >
         {{ t('auth.reset_password_action') }}
-      </SubmitButton>
+      </AppButton>
     </form>
   </AuthCard>
 </template>
@@ -53,9 +57,10 @@ import { nextTick, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
-import FormError from '@/components/FormError.vue'
-import SubmitButton from '@/components/SubmitButton.vue'
-import TextField from '@/components/TextField.vue'
+import FormError from '@/components/form/FormError.vue'
+import FormField from '@/components/form/FormField.vue'
+import TextInput from '@/components/form/TextInput.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import { ApiError } from '@/lib/api'
 import { focusFirstInvalid } from '@/lib/form'
 import { useAuthStore } from '@/stores/auth'

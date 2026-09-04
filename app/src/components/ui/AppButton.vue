@@ -2,7 +2,8 @@
   <button
     :class="[baseClasses, sizeClasses[size], variantClasses[variant]]"
     :type="type"
-    :disabled="disabled"
+    :disabled="disabled || pending"
+    :aria-busy="pending ? 'true' : undefined"
     @click="emit('click')"
   >
     <Icon
@@ -18,20 +19,30 @@
 // The only button component in the app. Anything that looks like a button is
 // this with a different variant or size, so there is one place to change how
 // a button behaves and one place to keep the focus ring honest.
+//
+// The primary variant is the brand colour, and it is the only place in the
+// app that colour is applied. A button never knows which screen it is on: a
+// form's submit, the sidebar's New button and a settings page's Save are all
+// the primary action, so they are all the same button.
 import Icon, { type IconName } from '@/components/ui/Icon.vue'
 
+// Pending means a request this button started is still in flight. It
+// disables the button, so a form cannot be submitted twice, and says so with
+// aria-busy, because a disabled button on its own does not explain itself.
 withDefaults(defineProps<{
   variant?: 'primary' | 'secondary' | 'ghost'
   size?: 'small' | 'medium'
   icon?: IconName
   type?: 'button' | 'submit'
   disabled?: boolean
+  pending?: boolean
 }>(), {
   variant: 'primary',
   size: 'medium',
   icon: undefined,
   type: 'button',
   disabled: false,
+  pending: false,
 })
 
 const emit = defineEmits<{
@@ -48,7 +59,7 @@ const sizeClasses = {
 }
 
 const variantClasses = {
-  primary: 'bg-neutral-900 text-neutral-0 hover:bg-neutral-800',
+  primary: 'bg-brand text-on-brand hover:bg-brand-strong',
   secondary: 'border border-neutral-300 bg-neutral-0 text-neutral-900 hover:bg-neutral-50',
   ghost: 'text-neutral-700 hover:bg-neutral-100',
 }

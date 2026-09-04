@@ -11,33 +11,41 @@
     <form
       v-else
       ref="form"
-      class="space-y-4"
+      class="space-y-6"
       novalidate
       @submit.prevent="submit"
     >
-      <p class="text-sm text-ink-muted">
+      <p class="text-sm text-neutral-600">
         {{ t('auth.forgot_password_intro') }}
       </p>
 
-      <TextField
-        id="email"
-        v-model="email"
+      <FormField
+        v-slot="field"
         :label="t('auth.email_label')"
-        type="email"
-        autocomplete="email"
         :error="errors.email"
-      />
+      >
+        <TextInput
+          v-bind="field"
+          v-model="email"
+          type="email"
+          autocomplete="email"
+        />
+      </FormField>
 
       <FormError :message="formError" />
 
-      <SubmitButton :pending="pending">
+      <AppButton
+        class="w-full"
+        type="submit"
+        :pending="pending"
+      >
         {{ t('auth.send_reset_link_action') }}
-      </SubmitButton>
+      </AppButton>
     </form>
 
     <p class="text-sm">
       <RouterLink
-        class="text-brand hover:text-brand-strong"
+        class="font-medium text-brand hover:text-brand-strong"
         :to="{ name: 'login' }"
       >
         {{ t('auth.sign_in_link') }}
@@ -51,9 +59,10 @@ import { nextTick, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
-import FormError from '@/components/FormError.vue'
-import SubmitButton from '@/components/SubmitButton.vue'
-import TextField from '@/components/TextField.vue'
+import FormError from '@/components/form/FormError.vue'
+import FormField from '@/components/form/FormField.vue'
+import TextInput from '@/components/form/TextInput.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import { ApiError } from '@/lib/api'
 import { focusFirstInvalid } from '@/lib/form'
 import { useAuthStore } from '@/stores/auth'

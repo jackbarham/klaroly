@@ -208,13 +208,22 @@ Hand-written routes live in `routes/api.php` under `/api`:
   so nothing outside the theme block can use a hardcoded colour or spacing
   value. This matches the marketing site, so both share one way of defining
   tokens.
-- The app shell and both component kits are greyscale. `--color-neutral-0`
-  through `--color-neutral-900` in the `@theme` block are the only colours new
-  work may use, along with `--color-surface` for the page itself. The brand
-  colours are still there and are still what the authentication screens use;
-  nothing else touches them until the brand work lands, which is the whole
-  point of having tokens. Never add a colour outside the theme block, and
-  never reach for a brand colour to make something stand out.
+- There is one grey family and one accent colour, and that is the whole
+  palette. `--color-neutral-0` through `--color-neutral-900` are what new
+  work is built from, with `--color-surface` for the page itself.
+  `--color-brand` is the primary action and nothing else: `AppButton`'s
+  primary variant applies it, and the tab bar's create button is the one
+  hand-rolled twin of that button, so a screen never decides for itself that
+  something deserves colour. Never add a colour outside the theme block, and
+  never reach for the brand colour to make something stand out.
+- There is deliberately no danger or success token. A form says what is wrong
+  in words, and shows it with a heavier border and a heavier weight: an
+  invalid control is `border-2 border-neutral-900` plus `aria-invalid`, and a
+  form-level failure is `FormError`, which uses the same treatment. Colour on
+  its own tells a screen reader nothing, so it was never what carried the
+  meaning, and one way of saying "this is wrong" beats one per screen. When a
+  semantic red and green are wanted they arrive with the brand work, as a
+  text, border, background and hover tint each, checked for contrast.
 - Spacing comes off an eight pixel grid. Use Tailwind steps 2, 4, 6, 8, 10,
   12, 16, 20 and 24 for padding, margins and gaps. Step 1 is allowed only
   inside a control, such as between an icon and its label. Heights, widths and
@@ -314,7 +323,8 @@ the only place an icon lives, as a list of SVG paths on a 24 by 24 grid,
 stroked with `currentColor`. There is no icon package and there will not be
 one.
 
-`src/components/form` is FormSection, FormField, FormActions and the controls.
+`src/components/form` is FormSection, FormField, FormActions, FormError and
+the controls.
 **FormField owns every piece of wiring around a control**: it generates the
 id, ties the label to it, puts the hint and the error into
 `aria-describedby` in that order and sets `aria-invalid`. The controls take
@@ -327,8 +337,27 @@ themselves, so a field is written as one line:
 
 A control that is not a labelable element, which is the toggle switch and the
 radio group, is named by `aria-labelledby` pointing at the field's label.
-Nothing in either kit validates or submits anything; that arrives with the
-first section that saves something.
+
+Two things sit outside that four-prop shape, both for a check that happens
+while someone types rather than when they submit. `TextInput` takes a
+`status` of `valid` or `invalid` and draws a tick or a cross inside its right
+edge; `FormField` takes a `statusMessage` and announces it in an `sr-only`
+live region beside the hint and the error. The mark is inside the control's
+box, so the control draws it; the words belong with the field's other
+messages, so the field says them. Pass the pair or pass neither: a mark with
+no message is a shape nobody can hear. The register screen's username check
+is the one user of both.
+
+`FormError` is the other half of saying no: a failure that belongs to no
+single field, such as a rate limit or a lost connection. `FormField` handles
+the per-field kind and this is the rest.
+
+Neither kit validates anything itself. What a screen does with a rejected
+submit is settled and is the same on every one: a 422's field messages go
+into `FormField`'s `error`, anything else goes into `FormError`, and
+`focusFirstInvalid` from `src/lib/form.ts` then moves focus to the first
+control carrying `aria-invalid`. The authentication screens are the worked
+example.
 
 ### `src/lib/api.ts`
 
@@ -491,7 +520,9 @@ What sits on top of the tables:
 The app has its authentication screens: sign in, register (with a live
 username preview and availability check), forgot password, reset password,
 sign out, the verification banner with resend, the verified landing on the
-home page, and session restore on load. The router guard awaits
+home page, and session restore on load. They are built from the UI kit and
+the form kit like every other screen, so they are also the only forms in the
+app that really submit something. The router guard awaits
 `auth.bootstrap()` once before the first navigation, sends a signed-out
 visitor to `/login?redirect=` and follows that redirect after sign-in only
 when it is a relative path.
@@ -524,8 +555,12 @@ data anywhere: a page that has not been built says so.
 Vitest covers what will actually break: the navigation config's derived
 lists and its idea of what is current, that both navigations render one item
 per entry and mark the right one, that the pill resolves on a deep link,
-the sheet's open, close and focus behaviour, FormField's wiring, and the two
-tests that read the source of the app rather than run it:
+the sheet's open, close and focus behaviour, FormField's wiring, that a
+button says it is busy while its request is in flight, that a rejected field
+puts the message on that field and moves focus to it, that a second submit
+sends nothing while the first is still going, that the username check is
+announced in words as well as drawn, and the two tests that read the source
+of the app rather than run it:
 `boundary.test.ts`, which stops business logic leaking into components, and
 `router/routeNames.test.ts`, which fails if any route name written down
 anywhere is not a route that exists. Renaming a route is the change that

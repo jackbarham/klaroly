@@ -2,7 +2,7 @@
   <AuthCard :title="t('auth.sign_in_title')">
     <p
       v-if="notice"
-      class="text-sm text-ink-muted"
+      class="text-sm text-neutral-600"
       role="status"
     >
       {{ t(notice) }}
@@ -10,28 +10,37 @@
 
     <form
       ref="form"
-      class="space-y-4"
+      class="space-y-6"
       novalidate
       @submit.prevent="submit"
     >
-      <TextField
-        id="email"
-        v-model="email"
+      <FormField
+        v-slot="field"
         :label="t('auth.email_label')"
-        type="email"
-        autocomplete="email"
         :error="errors.email"
-      />
+      >
+        <TextInput
+          v-bind="field"
+          v-model="email"
+          type="email"
+          autocomplete="email"
+        />
+      </FormField>
 
-      <TextField
-        id="password"
-        v-model="password"
+      <FormField
+        v-slot="field"
         :label="t('auth.password_label')"
-        type="password"
-        autocomplete="current-password"
-      />
+        :error="errors.password"
+      >
+        <TextInput
+          v-bind="field"
+          v-model="password"
+          type="password"
+          autocomplete="current-password"
+        />
+      </FormField>
 
-      <CheckboxField
+      <CheckboxInput
         v-if="isWeb"
         id="remember"
         v-model="remember"
@@ -40,9 +49,13 @@
 
       <FormError :message="formError" />
 
-      <SubmitButton :pending="pending">
+      <AppButton
+        class="w-full"
+        type="submit"
+        :pending="pending"
+      >
         {{ t('auth.sign_in_action') }}
-      </SubmitButton>
+      </AppButton>
     </form>
 
     <!--
@@ -52,7 +65,7 @@
       side of the rule do not look equal. Same as the register screen.
     -->
     <div class="space-y-5 pt-1">
-      <hr class="border-t border-line">
+      <hr class="border-t border-neutral-200">
 
       <div class="space-y-2 text-center text-sm">
         <p>
@@ -81,10 +94,11 @@ import { nextTick, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
-import CheckboxField from '@/components/CheckboxField.vue'
-import FormError from '@/components/FormError.vue'
-import SubmitButton from '@/components/SubmitButton.vue'
-import TextField from '@/components/TextField.vue'
+import CheckboxInput from '@/components/form/CheckboxInput.vue'
+import FormError from '@/components/form/FormError.vue'
+import FormField from '@/components/form/FormField.vue'
+import TextInput from '@/components/form/TextInput.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import { ApiError } from '@/lib/api'
 import { focusFirstInvalid } from '@/lib/form'
 import { isWeb } from '@/lib/platform'
