@@ -1,0 +1,732 @@
+/* ============================================================================
+   STAGED, NOT YET APPLIED.
+   This file has not replaced app/src/assets/app.css. The app still runs on the
+   placeholder palette described under "App rules" in CLAUDE.md. Applying this
+   is one change: swap the theme block and re-point every component in the same
+   commit. Do not part-apply it.
+
+   Klaroly design tokens
+   Tailwind v4 @theme block. Paste into src/assets/app.css.
+
+   Extracted from Lemon Squeezy's application UI (app.lemonsqueezy.com),
+   4 September 2026. This is a PLACEHOLDER SKIN, not Klaroly's identity.
+   See style-guide.md for the status note and the reasoning.
+
+   TWO LAYERS, KEPT STRICTLY SEPARATE:
+     Layer 1  PRIMITIVES  raw scales. Never referenced by a component.
+     Layer 2  SEMANTICS   named aliases. The only thing components may use.
+
+   Dark mode redefines the SEMANTIC layer only. Primitives never move.
+   Replacing the borrowed identity later means editing layer 2 and nothing else.
+   ========================================================================== */
+
+@import "tailwindcss";
+
+/* Dark mode is a class on <html>, not a media query, so the user can choose. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================================
+   LAYER 1  PRIMITIVES
+   ========================================================================== */
+
+@theme {
+  /* --- Typeface ------------------------------------------------------------
+     Inter, SIL Open Font License 1.1. Free for commercial web use, no fee,
+     webfont embedding permitted. Self-host the variable build; do not hotlink.
+     -------------------------------------------------------------------------- */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* --- Neutral ramp --------------------------------------------------------
+     Taken from their wedges-gray scale. 600 was never rendered anywhere and
+     is omitted. 850 is their body ink, which sat outside the numbered ramp.
+     -------------------------------------------------------------------------- */
+  --color-white: oklch(100% 0 0);      /* #ffffff */
+  --color-black: oklch(0% 0 0);        /* #000000 */
+  --color-neutral-50: oklch(97.6% 0.0013 286.4);  /* #f7f7f8 */
+  --color-neutral-100: oklch(93.2% 0.0067 286.3);  /* #e8e8ed */
+  --color-neutral-200: oklch(86.4% 0.0137 286.1);  /* #d1d1db */
+  --color-neutral-300: oklch(74.1% 0.0271 285.7);  /* #a9a9bc */
+  --color-neutral-400: oklch(64.2% 0.0371 285.3);  /* #8a8aa3 */
+  --color-neutral-500: oklch(54.2% 0.0450 284.8);  /* #6c6c89 */
+  --color-neutral-600: oklch(46.0% 0.0400 285.0);  /* #55556e -- fills the gap
+     their ramp left at 600, which they declared and never used. */
+  --color-neutral-700: oklch(37.5% 0.0289 284.9);  /* #3f3f50 */
+  --color-neutral-800: oklch(28.2% 0.0201 285.0);  /* #282833 */
+  --color-neutral-850: oklch(26.8% 0.0148 285.4);  /* #25252d */
+  --color-neutral-900: oklch(18.5% 0.0101 285.4);  /* #121217 */
+
+  /* --- Dark surfaces -------------------------------------------------------
+     Their dark-N ramp, where N is roughly HSL lightness.
+     -------------------------------------------------------------------------- */
+  --color-ink-base: oklch(24.8% 0.0132 292.0);  /* #212027 */
+  --color-ink-raised: oklch(28.1% 0.0128 292.1);  /* #29282f */
+  --color-ink-overlay: oklch(30.1% 0.0126 292.2);  /* #2e2d34 */
+  --color-ink-muted: oklch(33.0% 0.0158 290.6);  /* #35343d */
+  --color-ink-line: oklch(35.7% 0.0172 290.1);  /* #3c3b45 */
+  --color-ink-strong: oklch(38.4% 0.0185 289.7);  /* #43424d */
+  --color-ink-text: oklch(96.1% 0.0013 286.4);  /* #f2f2f3 */
+  --color-ink-text-muted: oklch(67.2% 0.0234 285.8);  /* #9494a4 */
+  --color-ink-text-subtle: oklch(83.5% 0.0110 286.2);  /* #c8c8d0 */
+
+  /* --- Translucent whites --------------------------------------------------
+     The whole architecture of their dark theme. In dark, surfaces, borders and
+     fills are white at a low alpha over the base, not separate solid greys.
+     This is what replaces shadows, which stop reading on a dark ground.
+     -------------------------------------------------------------------------- */
+  --color-white-a05: oklch(100% 0 0 / 0.05);
+  --color-white-a08: oklch(100% 0 0 / 0.08);
+  --color-white-a10: oklch(100% 0 0 / 0.10);
+  --color-white-a12: oklch(100% 0 0 / 0.12);
+  --color-white-a16: oklch(100% 0 0 / 0.16);
+  --color-white-a24: oklch(100% 0 0 / 0.24);
+  --color-white-a50: oklch(100% 0 0 / 0.50);
+  --color-white-a65: oklch(100% 0 0 / 0.65);
+  --color-white-a80: oklch(100% 0 0 / 0.80);
+
+  /* --- Accent (purple) ----------------------------------------------------- */
+  --color-accent-50: oklch(95.9% 0.0191 299.1);  /* #f3effd */
+  --color-accent-300: oklch(68.0% 0.1700 287.5);  /* #9483fa, for accent TEXT
+     on a dark ground. The 500 is only 2.9:1 there, which fails AA. */
+  --color-accent-400: oklch(58.3% 0.2119 289.7);  /* #7e59ed */
+  --color-accent-500: oklch(54.3% 0.2313 287.5);  /* #7047eb */
+  --color-accent-600: oklch(47.7% 0.2606 281.5);  /* #5423e7 */
+
+  /* --- Danger (red) -------------------------------------------------------- */
+  --color-danger-50: oklch(96.7% 0.0159 358.0);  /* #fef0f4 */
+  --color-danger-200: oklch(83.5% 0.0892 2.3);  /* #fbb1c4 */
+  --color-danger-400: oklch(68.5% 0.2063 9.7);  /* #fd537d */
+  --color-danger-500: oklch(64.8% 0.2188 11.7);  /* #f53d6b */
+  --color-danger-600: oklch(61.7% 0.2396 17.0);  /* #f3164e */
+  --color-danger-700: oklch(55.6% 0.2190 18.3);  /* #d50b3e */
+  --color-danger-800: oklch(46.0% 0.2050 18.3);  /* #ad0027 */
+
+  /* --- Success (green) ----------------------------------------------------- */
+  --color-success-50: oklch(97.6% 0.0165 162.8);  /* #eefbf4 */
+  --color-success-500: oklch(74.1% 0.1781 152.9);  /* #2dca72 */
+  --color-success-700: oklch(55.1% 0.1297 153.2);  /* #1e874c, their value */
+  --color-success-800: oklch(45.1% 0.1232 153.2);  /* #006832, darkened for contrast */
+
+  /* --- Warning (orange) ---------------------------------------------------- */
+  --color-warning-50: oklch(97.0% 0.0151 37.9);  /* #fff2ee */
+  --color-warning-500: oklch(73.2% 0.1690 38.7);  /* #ff7d52 */
+  --color-warning-600: oklch(67.9% 0.2132 36.9);  /* #ff571f */
+  --color-warning-700: oklch(61.6% 0.2190 34.5);  /* #eb3a00, their value */
+  --color-warning-800: oklch(51.6% 0.2081 34.5);  /* #c21200, darkened for contrast */
+
+  /* --- Info (blue) --------------------------------------------------------- */
+  --color-info-50: oklch(97.9% 0.0125 228.9);  /* #f0faff */
+  --color-info-500: oklch(71.2% 0.1663 241.1);  /* #00acff */
+  --color-info-700: oklch(53.6% 0.1229 240.0);  /* #0075ad */
+
+  /* --- Spacing -------------------------------------------------------------
+     Their config declares an 8px unit with fractional steps. What the app
+     actually renders is a 4px grid. 2px survives only for hairline insets
+     (the toggle track). Sizes are named by their pixel value so nobody has to
+     remember whether 3 means 12 or 24.
+     -------------------------------------------------------------------------- */
+  --spacing: 4px;
+
+  /* --- Radius --------------------------------------------------------------
+     8px is 76% of every rounded corner in their app. Their `rounded-full` is
+     100%, which makes ellipses of non-square boxes; we use 9999px instead.
+     -------------------------------------------------------------------------- */
+  /* --- Widths --------------------------------------------------------------
+     Named so no component ever needs a Tailwind arbitrary value.
+     -------------------------------------------------------------------------- */
+  --container-content: 1096px;   /* main column maximum */
+  --container-panel: 640px;      /* slide-over */
+  --container-auth: 464px;       /* auth column, 400px of field inside it */
+  --container-form: 560px;       /* a form column on a page */
+  --container-sidebar: 264px;    /* nav column */
+  --shell-header-row: 40px;      /* the row the logo and the page title both sit in */
+  --shell-nav-row: 40px;         /* every sidebar item, no gap between them */
+  --container-copy: 400px;       /* centred supporting copy */
+  --container-action: 280px;     /* minimum width of a lone primary action */
+  --container-field: 400px;      /* maximum width of a single form control */
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-pill: 9999px;
+
+  /* --- Type scale ----------------------------------------------------------
+     Their compiled CSS ships 11 sizes and 4 weights. The application renders
+     4 sizes and 2 weights. This is the rendered set, plus one added caption
+     step for phone density.
+     -------------------------------------------------------------------------- */
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+  --text-meta: 13px;
+  --text-meta--line-height: 24px;
+  --text-body: 14px;
+  --text-body--line-height: 24px;
+  /* The value you type into a control. One step up in size and weight from
+     body, so the data out-weighs its label. 15px is a real step in their
+     scale; it was cut from the first pass because their app never renders it. */
+  --text-control: 15px;
+  --text-control--line-height: 24px;
+  --text-lead: 16px;
+  --text-lead--line-height: 28px;
+  --text-section: 20px;
+  --text-section--line-height: 28px;
+  --text-title: 24px;
+  --text-title--line-height: 32px;
+  --text-title--letter-spacing: -0.01em;
+  --text-figure: 24px;
+  --text-figure--line-height: 40px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+
+  /* --- Shadow --------------------------------------------------------------
+     Three shadows, and only one of them is a real drop shadow. Cards in their
+     app carry a 1px border, never a shadow.
+     -------------------------------------------------------------------------- */
+  /* No drop shadow under a field. Theirs carries a 1px lift; it reads as
+     fussy at Klaroly's density and does nothing on a phone. The inset ring
+     is the border, which is why focus can recolour it without the box moving. */
+  --shadow-control: 0 0 0 1px rgb(10 10 46 / 0.24) inset;
+  --shadow-control-hover: 0 0 0 1px rgb(10 10 46 / 0.36) inset;
+  --shadow-button: 0 1px 1px rgb(10 10 46 / 0.06);
+  --shadow-popover: 0 0 0 1px rgb(18 18 23 / 0.10), 0 24px 48px rgb(18 18 23 / 0.03),
+    0 10px 18px rgb(18 18 23 / 0.03), 0 5px 8px rgb(18 18 23 / 0.04),
+    0 2px 4px rgb(18 18 23 / 0.04);
+  /* Dark equivalents. A drop shadow does nothing on a dark ground, so the
+     hairline ring carries the elevation instead. */
+  --shadow-control-dark: 0 0 0 1px rgb(255 255 255 / 0.24) inset;
+  --shadow-control-hover-dark: 0 0 0 1px rgb(255 255 255 / 0.40) inset;
+  --shadow-popover-dark: 0 0 0 1px rgb(255 255 255 / 0.12),
+    0 24px 48px rgb(0 0 0 / 0.40), 0 5px 8px rgb(0 0 0 / 0.30);
+
+  /* --- Motion --------------------------------------------------------------
+     Two durations and one easing carry the whole app.
+     -------------------------------------------------------------------------- */
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /* --- Breakpoints ---------------------------------------------------------
+     Stock Tailwind, which is what they use. Klaroly is phone-first, so `sm`
+     is the first step up from the default phone layout, not a shrink.
+     -------------------------------------------------------------------------- */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
+
+/* ============================================================================
+   LAYER 2  SEMANTICS
+   The only tokens a component is allowed to reference.
+   `@theme inline` keeps the generated utilities pointing at the variable
+   rather than at a resolved value, which is what makes the dark override work.
+   ========================================================================== */
+
+@theme inline {
+  /* surfaces */
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-disabled: var(--surface-disabled);
+  --color-scrim: var(--scrim);
+
+  /* text */
+  --color-text: var(--text);
+  --color-text-strong: var(--text-strong);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+  --color-text-placeholder: var(--text-placeholder);
+  --color-text-on-accent: var(--text-on-accent);
+
+  /* lines */
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-focus: var(--border-focus);
+
+  /* accents and states */
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-text: var(--accent-text);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-solid: var(--danger-solid);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-danger-text: var(--danger-text);
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-text: var(--success-text);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-text: var(--warning-text);
+  --color-info: var(--info);
+  --color-info-subtle: var(--info-subtle);
+  --color-info-text: var(--info-text);
+
+  /* shape */
+  --radius-control: var(--radius-control-value);
+  --radius-card: var(--radius-card-value);
+
+  /* elevation */
+  --shadow-card: var(--shadow-card-value);
+  --shadow-input: var(--shadow-input-value);
+  --shadow-input-hover: var(--shadow-input-hover-value);
+  --shadow-menu: var(--shadow-menu-value);
+
+  /* spacing aliases, so the levers reach utilities as well as components.
+     These generate p-field, mb-label, gap-section, py-row, px-gutter, h-control. */
+  --spacing-field:   var(--space-field-gap);
+  --spacing-label:   var(--space-label-gap);
+  --spacing-section: var(--space-section-gap);
+  --spacing-row:     var(--space-row-padding);
+  --spacing-gutter:  var(--space-page-gutter);
+  --spacing-control: var(--control-height);
+}
+
+/* --- Light, the default ---------------------------------------------------- */
+:root {
+  --surface: var(--color-white);
+  --surface-sunken: var(--color-neutral-50);
+  --surface-hover: var(--color-neutral-100);
+  --surface-raised: var(--color-white);
+  --surface-overlay: var(--color-white);
+  --surface-disabled: var(--color-neutral-50);
+  --scrim: oklch(0% 0 0 / 0.10);
+
+  --text: var(--color-neutral-850);
+  --text-strong: var(--color-neutral-900);
+  --text-muted: var(--color-neutral-600);
+  --text-subtle: var(--color-neutral-500);
+  --text-placeholder: var(--color-neutral-400);
+  --text-on-accent: var(--color-white);
+
+  --border: var(--color-neutral-100);
+  --border-strong: var(--color-neutral-200);
+  --border-focus: var(--color-accent-500);
+
+  --accent: var(--color-accent-500);
+  --accent-hover: var(--color-accent-600);
+  --accent-text: var(--color-accent-600);
+  --accent-subtle: var(--color-accent-50);
+  --danger: var(--color-danger-500);
+  --danger-solid: var(--color-danger-700);
+  --danger-solid-hover: var(--color-danger-800);
+  --danger-hover: var(--color-danger-600);
+  --danger-subtle: var(--color-danger-50);
+  --danger-text: var(--color-danger-700);
+  --success: var(--color-success-500);
+  --success-subtle: var(--color-success-50);
+  --success-text: var(--color-success-800);
+  --warning: var(--color-warning-500);
+  --warning-subtle: var(--color-warning-50);
+  --warning-text: var(--color-warning-800);
+  --info: var(--color-info-500);
+  --info-subtle: var(--color-info-50);
+  --info-text: var(--color-info-700);
+
+  --shadow-card-value: none;
+  --shadow-input-value: var(--shadow-control);
+  --shadow-input-hover-value: var(--shadow-control-hover);
+  --shadow-menu-value: var(--shadow-popover);
+
+  /* ---- THE LEVERS. See the levers section of style-guide.md. ---- */
+  --radius-control-value: var(--radius-sm);
+  --radius-card-value: var(--radius-sm);
+  --border-width-control: 1px;
+  --border-width-focus: 2px;
+
+  --space-field-gap: 24px;
+  --space-label-gap: 8px;
+  --space-section-gap: 40px;
+  --space-page-gutter: 16px;
+  --space-row-padding: 16px;
+
+  --control-height: 48px;
+  --control-height-sm: 36px;
+  --control-height-lg: 56px;
+  --tap-target-min: 44px;
+
+  --duration-fast: 100ms;
+  --duration-base: 200ms;
+
+  --layout-sidebar: 264px;
+  --layout-content-max: 1096px;
+  --layout-auth-column: var(--container-auth);
+}
+
+/* --- Dark, a redefinition of the semantic layer only ------------------------
+   Which primitives move between themes and which stay fixed:
+
+   MOVE      surface, text, border, every elevation shadow, and the *subtle*
+             status fills. In dark these all become translucent white over the
+             base rather than solid greys, so they stack correctly on any
+             surface without a new token per depth.
+   FIXED     accent, danger, success, warning and info at full strength. The
+             hue is the identity; changing it between themes makes the app
+             feel like two products. Only the tinted *backgrounds* derived
+             from them change, and they change to white alphas, not to darker
+             versions of the hue.
+   -------------------------------------------------------------------------- */
+.dark {
+  --surface: var(--color-ink-base);
+  --surface-sunken: var(--color-white-a05);
+  --surface-hover: var(--color-white-a08);
+  --surface-raised: var(--color-ink-raised);
+  --surface-overlay: var(--color-ink-overlay);
+  --surface-disabled: var(--color-ink-muted);
+  --scrim: oklch(0% 0 0 / 0.50);
+
+  --text: var(--color-white-a80);
+  --text-strong: var(--color-ink-text);
+  --text-muted: var(--color-white-a65);
+  --text-subtle: var(--color-white-a50);
+  --text-placeholder: var(--color-white-a50);
+  --text-on-accent: var(--color-white);
+
+  --border: var(--color-white-a12);
+  --border-strong: var(--color-white-a24);
+  --border-focus: var(--color-accent-500);
+
+  --accent: var(--color-accent-500);
+  --accent-hover: var(--color-accent-400);
+  --accent-text: var(--color-accent-300);
+  --accent-subtle: var(--color-white-a10);
+  --danger: var(--color-danger-500);
+  --danger-solid: var(--color-danger-700);
+  --danger-solid-hover: var(--color-danger-800);
+  --danger-hover: var(--color-danger-600);
+  --danger-subtle: var(--color-white-a10);
+  --danger-text: var(--color-danger-500);
+  --success: var(--color-success-500);
+  --success-subtle: var(--color-white-a10);
+  --success-text: var(--color-success-500);
+  --warning: var(--color-warning-500);
+  --warning-subtle: var(--color-white-a10);
+  --warning-text: var(--color-warning-500);
+  --info: var(--color-info-500);
+  --info-subtle: var(--color-white-a10);
+  --info-text: var(--color-info-500);
+
+  --shadow-card-value: none;
+  --shadow-input-value: var(--shadow-control-dark);
+  --shadow-input-hover-value: var(--shadow-control-hover-dark);
+  --shadow-menu-value: var(--shadow-popover-dark);
+}
+
+/* ============================================================================
+   PHONE DENSITY
+   Klaroly is used standing up, on a phone, at 7am. Four tokens tighten and
+   nothing else moves. Named so it is obvious what a wider phone would relax.
+   ========================================================================== */
+@media (width < 640px) {
+  :root {
+    --space-field-gap: 16px;
+    --space-section-gap: 24px;
+    --space-page-gutter: 16px;
+    --space-row-padding: 12px;
+    /* Control heights are deliberately NOT in here. At 48px they already clear
+       the 44px tap minimum, so there is nothing to correct on a phone and one
+       less breakpoint rule to reason about. Spacing compresses; controls do
+       not move. */
+  }
+}
+
+/* ============================================================================
+   BASE
+   The only global styles. Everything else is a utility against the tokens.
+   ========================================================================== */
+@layer base {
+  html {
+    background-color: var(--color-surface);
+  }
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Every focusable thing gets a visible ring. Their app suppresses the
+     outline and puts nothing back on buttons or menu items, which is a
+     keyboard accessibility failure. We do not copy that. */
+  :focus-visible {
+    outline: var(--border-width-focus) solid var(--color-border-focus);
+    outline-offset: 2px;
+  }
+}
+
+/* ============================================================================
+   COMPONENT LAYER
+   Deliberately thin. It exists only where a Tailwind utility cannot read a
+   variable, which is border-width and control height. Everything else in the
+   app is plain utilities against the semantic tokens above.
+
+   Note the padding calculation: the border is subtracted so that a control is
+   exactly --control-height tall whatever --border-width-control is set to.
+   Without that, thickening the border pushes inputs 2px taller than the
+   buttons beside them.
+   ========================================================================== */
+@layer components {
+  .k-field {
+    inline-size: 100%;
+    min-block-size: var(--control-height);
+    padding-inline: 16px;
+    padding-block: calc(
+      (var(--control-height) - var(--text-control--line-height)) / 2
+      - var(--border-width-control));
+    border-radius: var(--radius-control);
+    border: var(--border-width-control) solid transparent;
+    background-color: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow-input-value);
+    font-size: var(--text-control);
+    line-height: var(--text-control--line-height);
+    font-weight: var(--font-weight-medium);
+    transition: box-shadow var(--duration-base) var(--ease-out);
+  }
+  /* A placeholder is a prompt, not data, so it does not take the medium weight. */
+  .k-field::placeholder {
+    color: var(--text-placeholder);
+    font-weight: var(--font-weight-normal);
+  }
+  /* :not(:focus) matters. Without it this rule out-specifies the focus rule
+     below, so a field you have just clicked keeps its hover ring until the
+     pointer leaves. */
+  .k-field:hover:not(:disabled):not(:focus) {
+    box-shadow: var(--shadow-input-hover-value);
+  }
+  /* The field's own border becomes the focus indicator. No outer ring: the
+     inset shadow is already the border, so recolouring and thickening it
+     moves nothing. Buttons and links keep the ring, because they have no
+     border to recolour. */
+  .k-field:focus,
+  .k-field:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 var(--border-width-focus) var(--border-focus) inset;
+  }
+  .k-field[aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 var(--border-width-focus) var(--danger) inset;
+  }
+  .k-field:disabled {
+    background-color: var(--surface-disabled);
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+  .k-field[aria-invalid="true"] {
+    box-shadow: 0 0 0 var(--border-width-focus) var(--danger) inset;
+  }
+
+  .k-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    block-size: var(--control-height);
+    padding-inline: 16px;
+    border-radius: var(--radius-control);
+    border: var(--border-width-control) solid transparent;
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--duration-base) var(--ease-out),
+                border-color var(--duration-base) var(--ease-out);
+  }
+  .k-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .k-btn-sm { block-size: var(--control-height-sm); padding-inline: 12px; }
+  .k-btn-lg {
+    block-size: var(--control-height-lg);
+    padding-inline: 16px;
+    font-size: var(--text-lead);
+    line-height: var(--text-lead--line-height);
+  }
+  .k-btn-icon { inline-size: var(--control-height); padding-inline: 0; }
+
+  .k-btn-primary { background-color: var(--accent); color: var(--text-on-accent); }
+  .k-btn-primary:hover:not(:disabled) { background-color: var(--accent-hover); }
+  /* Their grey. Quiet against a white page by design: a cancel action should
+     not compete with the primary beside it. See the style guide for what this
+     costs against WCAG 1.4.11. */
+  .k-btn-secondary { background-color: var(--surface-sunken); color: var(--text); }
+  .k-btn-secondary:hover:not(:disabled) { background-color: var(--surface-hover); }
+  .k-btn-outline {
+    background-color: transparent;
+    border-color: var(--border-strong);
+    color: var(--text);
+  }
+  .k-btn-outline:hover:not(:disabled) { background-color: var(--surface-sunken); }
+  .k-btn-ghost { background-color: transparent; color: var(--text); }
+  .k-btn-ghost:hover:not(:disabled) { background-color: var(--surface-sunken); }
+  /* Not var(--danger). White on the 500 is 3.6:1, which fails AA, and a
+     destructive button is the last place to have an unreadable label. */
+  .k-btn-danger { background-color: var(--danger-solid); color: var(--color-white); }
+  .k-btn-danger:hover:not(:disabled) { background-color: var(--danger-solid-hover); }
+
+  .k-card {
+    border-radius: var(--radius-card);
+    border: var(--border-width-control) solid var(--border);
+    background-color: var(--surface-raised);
+    padding: 24px;
+  }
+
+  .k-select {
+    appearance: none;
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+      linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+    background-position: right 20px center, right 15px center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-inline-end: 40px;
+    cursor: pointer;
+  }
+
+  /* 20px box rather than their 16px, and full opacity at rest rather than
+     their 0.4, which was too faint to read as an affordance. */
+  .k-check {
+    appearance: none;
+    inline-size: 20px;
+    block-size: 20px;
+    flex: none;
+    border: var(--border-width-control) solid var(--border-strong);
+    border-radius: var(--radius-xs);
+    background-color: var(--surface);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-out),
+                border-color var(--duration-fast) var(--ease-out);
+  }
+  .k-check:checked {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%20fill%3D%27none%27%3E%3Cpath%20d%3D%27M3.5%208.5L6.5%2011.5L12.5%204.5%27%20stroke%3D%27%23ffffff%27%20stroke-width%3D%272.25%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 14px 14px;
+  }
+  .k-radio { border-radius: var(--radius-pill); }
+  .k-radio:checked {
+    background-image: radial-gradient(circle at center,
+      var(--color-white) 0 3.5px, transparent 3.5px);
+    background-size: auto;
+  }
+
+  /* A whole row that toggles the control inside it. The control itself is
+     20px, which is smaller than a thumb, so the row carries the hit area and
+     the hover state. */
+  .k-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-block-size: var(--tap-target-min);
+    padding: 10px 12px;
+    margin-inline: -12px;
+    border-radius: var(--radius-control);
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+  /* No fill. The label turns accent, which is enough to say "this responds"
+     without putting a grey box behind every option in a form. Colour is set on
+     the row, so it inherits down to any text that has not claimed its own
+     colour: a title inherits and turns accent, a description carrying
+     text-text-muted keeps its own. That is the whole mechanism. */
+  .k-option { font-weight: var(--font-weight-medium); }
+  .k-option:hover { color: var(--accent-text); }
+  .k-option:hover .k-check:not(:checked) { border-color: var(--accent-text); }
+  .k-option:has(:focus-visible) {
+    outline: var(--border-width-focus) solid var(--border-focus);
+    outline-offset: 2px;
+  }
+  .k-option > input { margin-block-start: 2px; }
+
+  /* Status pill. One step down in size from body, medium weight, and the
+     text colour is the status *-text token so it survives the theme flip. */
+  .k-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: var(--radius-control);
+    padding: 2px 10px;
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+  }
+
+  /* Rows. Hover recolours the divider that is already there. Same 1px, same
+     position, nothing added and nothing raised: the grey line transitions to
+     accent and back. It spans the whole row for free, which is the thing their
+     two offset pseudo-elements were working around. */
+  .k-table tbody tr,
+  .k-list > li {
+    border-block-end: var(--border-width-control) solid var(--border);
+    transition: border-color var(--duration-base) var(--ease-out);
+  }
+  .k-table thead tr {
+    border-block-end: var(--border-width-control) solid var(--border);
+  }
+  .k-table tbody tr:hover,
+  .k-list > li:hover {
+    border-block-end-color: var(--accent);
+  }
+
+  /* 44x26 rather than their 30x18. Theirs is a 30x18 tap target, which fails
+     the 44px minimum on a phone. */
+  .k-switch {
+    appearance: none;
+    position: relative;
+    flex: none;
+    inline-size: 44px;
+    block-size: 26px;
+    padding: 3px;
+    border-radius: var(--radius-pill);
+    background-color: var(--border-strong);
+    cursor: pointer;
+    transition: background-color var(--duration-base) var(--ease-out);
+  }
+  /* The track is 26px tall, which is under the 44px minimum. This extends the
+     hit area to 44px vertically without changing anything you can see. */
+  .k-switch::before {
+    content: "";
+    position: absolute;
+    inset-block: calc((var(--tap-target-min) - 26px) / -2);
+    inset-inline: 0;
+  }
+  .k-switch::after {
+    content: "";
+    position: absolute;
+    inset-block-start: 3px;
+    inset-inline-start: 3px;
+    inline-size: 20px;
+    block-size: 20px;
+    border-radius: var(--radius-pill);
+    background: var(--color-white);
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+  .k-switch:checked { background-color: var(--accent); }
+  .k-switch:checked::after { transform: translateX(18px); }
+
+  .k-menu {
+    border-radius: var(--radius-control);
+    background-color: var(--surface-overlay);
+    box-shadow: var(--shadow-menu-value);
+    padding-block: 8px;
+    min-inline-size: 200px;
+  }
+  .k-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-block-size: var(--control-height-sm);
+    padding-inline: 16px;
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    cursor: pointer;
+  }
+  .k-menu-item:hover { background-color: var(--surface-sunken); }
+}

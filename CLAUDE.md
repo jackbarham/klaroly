@@ -359,6 +359,48 @@ into `FormField`'s `error`, anything else goes into `FormError`, and
 control carrying `aria-invalid`. The authentication screens are the worked
 example.
 
+### The style guide
+
+`docs/style-guide.md` is the specification for every visual decision, in the
+same way `docs/database-schema.md` is for the data. When a colour, size, space,
+radius, border, shadow or duration is in doubt, that document wins, and a change
+to any of them is made there first. `docs/style-guide-screens/` is what each
+component should look like in both themes.
+
+**It is staged, not applied.** Its tokens live in `docs/tokens.css` and have not
+replaced `src/assets/app.css`. Until the restyle lands, the palette described
+under App rules above is what the app actually uses, and that description is the
+current truth. Do not part-apply the style guide: the theme block and every
+component that references it move in one change.
+`docs/kitchen-sink-reference.html` is a standalone render of the target system;
+delete it once `/kitchen-sink` reflects the same thing.
+
+Once the restyle has landed, these are the rules:
+
+- Every colour, size, space, radius, border, shadow and duration comes from the
+  semantic tokens in `src/assets/app.css`. Never hardcode a value and never use
+  a Tailwind arbitrary value in square brackets.
+- If something you need has no token, stop and ask rather than inventing one.
+- **A token added or changed is three edits in one commit**: the theme block in
+  `src/assets/app.css`, the token table in `docs/style-guide.md`, and
+  `/kitchen-sink`. They do not drift apart. Change the control radius once and
+  every button, input, select and menu in the app and on that page moves
+  together, because they all read the same variable.
+- Every component works in light and dark.
+- **Every new component is added to `/kitchen-sink` in the same change that
+  creates it**, in every variant and state it supports. A component that is not
+  on that page is not finished.
+
+### `/kitchen-sink`
+
+A route that renders the whole UI kit and form kit on one page, in every
+variant, size and state, in both themes. It exists to be looked at: it is how a
+change to a token is judged, and how a new component is reviewed.
+
+It is a development page and it is removed before launch. It makes no API calls,
+owns no state beyond the local state its own demos need, and is not linked from
+any navigation.
+
 ### `src/lib/api.ts`
 
 The single wrapper around `fetch`. On web it sends the session cookie and the
