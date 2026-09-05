@@ -79,15 +79,18 @@ export const moreItems: Destination[] = navigation.filter(isDestination).filter(
 // icon from the same place the tab bar's plus button does.
 export const createItem: NavItem = navigation.filter((item) => item.routeName === null)[0]
 
-// The ten groups of settings, in the order they appear. The settings index
-// and the column of links beside a settings page are both built from this.
-export interface SettingsGroup {
+// A section that is itself a list of pages: an index listing them, and a
+// column of the same links beside each one on a wide screen. Settings and My
+// account are both that shape, so both are an array of these and both are
+// drawn by SectionNav and SectionLayout.
+export interface SectionGroup {
   key: string
   routeName: string
   labelKey: string
 }
 
-export const settingsGroups: SettingsGroup[] = [
+// The ten groups of settings, in the order they appear.
+export const settingsGroups: SectionGroup[] = [
   { key: 'features', routeName: 'settings-features', labelKey: 'settings.features' },
   { key: 'rate-card', routeName: 'settings-rate-card', labelKey: 'settings.rate_card' },
   { key: 'travel', routeName: 'settings-travel', labelKey: 'settings.travel' },
@@ -98,6 +101,14 @@ export const settingsGroups: SettingsGroup[] = [
   { key: 'intake', routeName: 'settings-intake', labelKey: 'settings.intake' },
   { key: 'working', routeName: 'settings-working', labelKey: 'settings.working' },
   { key: 'business-year', routeName: 'settings-business-year', labelKey: 'settings.business_year' },
+]
+
+// The four pages of My account, in the order they appear.
+export const accountGroups: SectionGroup[] = [
+  { key: 'details', routeName: 'account-details', labelKey: 'account.details' },
+  { key: 'password', routeName: 'account-password', labelKey: 'account.password' },
+  { key: 'devices', routeName: 'account-devices', labelKey: 'account.devices' },
+  { key: 'email', routeName: 'account-email', labelKey: 'account.email' },
 ]
 
 // Which section of the app a route belongs to. A booking's page belongs to
@@ -122,8 +133,14 @@ export function sectionKey(routeName: unknown): string | null {
     return null
   }
 
+  // A section with pages under it marks its own entry from any of them, so
+  // /settings/travel marks Settings and /account/devices marks My account.
   if (routeName === 'settings' || routeName.startsWith('settings-')) {
     return 'settings'
+  }
+
+  if (routeName.startsWith('account-')) {
+    return 'account'
   }
 
   return sections[routeName] ?? null

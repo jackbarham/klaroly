@@ -163,7 +163,7 @@ two_factor_recovery_codes   text     nullable                  Fortify
 two_factor_confirmed_at     ts       nullable                  Fortify
 notification_preferences    jsonb    not null default '{}'     per type, business logic 27
 marketing_consent_at        ts       nullable                  decision 71: a dated fact, never a bool
-marketing_consent_source    varchar(40) nullable               check: portal | app_signup | other (constraint added in Prompt 4)
+marketing_consent_source    varchar(40) nullable               check: portal | app_signup | settings | other (constraint added in Prompt 4, widened in Prompt 7)
 last_account_id             bigint   nullable fk accounts set null   which account to open on next login
 created_at, updated_at, deleted_at
 ```

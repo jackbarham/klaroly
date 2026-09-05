@@ -10,10 +10,13 @@
         Narrow and widen the window to see them swap.
       </p>
       <p>
-        SettingsNav is not fixed, so it is shown below as it really is. It is
-        drawn beside a settings page from the lg breakpoint up, which the
-        travel settings page shows in place. Its links go to the real settings
-        pages, so clicking one leaves the kitchen sink.
+        SectionNav is not fixed, so it is shown below as it really is. It is
+        drawn beside a page in a section that is itself a list of pages, from
+        the lg breakpoint up, which the travel settings page shows in place.
+        It is one component given a different array, so both sections it
+        serves are below. Its links go to the real pages, so clicking one
+        leaves the kitchen sink. On a section's own index it renders nothing,
+        because the index is that list.
       </p>
       <p>
         <RouterLink
@@ -25,8 +28,21 @@
       </p>
     </div>
 
-    <div class="inline-block rounded-card border border-border bg-surface-raised p-4">
-      <SettingsNav />
+    <div class="flex flex-wrap gap-4">
+      <div class="inline-block rounded-card border border-border bg-surface-raised p-4">
+        <SectionNav
+          :groups="settingsGroups"
+          index-route-name="settings"
+          label-key="settings.title"
+        />
+      </div>
+      <div class="inline-block rounded-card border border-border bg-surface-raised p-4">
+        <SectionNav
+          :groups="accountGroups"
+          index-route-name="account"
+          label-key="account.title"
+        />
+      </div>
     </div>
 
     <div class="space-y-2">
@@ -100,7 +116,8 @@
 import { ref, type Ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
-import SettingsNav from '@/components/layout/SettingsNav.vue'
+import SectionNav from '@/components/layout/SectionNav.vue'
+import { accountGroups, settingsGroups } from '@/lib/navigation'
 
 // The update bar cannot be shown the way the other pieces are, because it is
 // fixed to the window and because App.vue is already rendering it. What it

@@ -55,6 +55,20 @@ export interface Me {
   features: FeatureMap
 }
 
+// One personal access token, as the devices screen lists them. The plain
+// text token is never here; the API shows it once, when it is issued.
+//
+// A web session is not a token, so a browser sees only the phones and tablets
+// that have signed in, and "current" is false on every row it is shown.
+export interface Device {
+  id: number
+  name: string
+  last_used_at: string | null
+  expires_at: string | null
+  created_at: string
+  current: boolean
+}
+
 export interface RegisterFields {
   business_name: string
   name: string

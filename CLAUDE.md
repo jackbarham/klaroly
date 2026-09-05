@@ -105,7 +105,7 @@ from `config/fortify.php`: `web`, then `NormaliseEmail`, then
 | GET | `/email/verify/{id}/{hash}` | auth:web, signed, throttle | The link in the verification email; redirects to `FRONTEND_URL` |
 | POST | `/email/verification-notification` | auth:web, throttle | Resend |
 | PUT | `/user/profile-information` | auth:web | |
-| PUT | `/user/password` | auth:web | Revokes every token and every other session |
+| PUT | `/user/password` | auth:web | Keeps the session making the request; revokes every token and every other session |
 | GET | `/sanctum/csrf-cookie` | web | Sanctum; the web app calls it before its first POST |
 
 Fortify also registers the two-factor, password-confirmation and passkey
@@ -126,6 +126,10 @@ Hand-written routes live in `routes/api.php` under `/api`:
 | DELETE | `/api/auth/tokens/{id}` | auth:sanctum, account | The caller's own only; 404 otherwise |
 | DELETE | `/api/auth/token` | auth:sanctum, account | Revokes the token making the request; 400 for a session caller |
 | POST | `/api/auth/email/verification-notification` | auth:sanctum, account, throttle:6,1 | 202 and the email is sent; 204 if already verified |
+| PUT | `/api/user/profile-information` | auth:sanctum, account, NormaliseEmail, throttle:profile-update | Name and email. Runs Fortify's own action, so a changed email un-verifies and sends a fresh verification email. 200 with the `/api/me` payload |
+| PUT | `/api/user/password` | auth:sanctum, account, throttle:password-update | Current password plus the new one. 200 `{message}`; no `me`, because nothing in it changed |
+| PATCH | `/api/account` | auth:sanctum, account | The business name. Owner only; a collaborator gets 403. 200 with the `/api/me` payload |
+| PUT | `/api/user/marketing-consent` | auth:sanctum, account | `consented`. 200 with the `/api/me` payload |
 
 ### The rules
 
@@ -142,17 +146,29 @@ Hand-written routes live in `routes/api.php` under `/api`:
   call its `normalise()` again on their own input, so there is one definition
   of a normalised address. The `lower(email)` index is the backstop, not the
   mechanism.
-- **Four Fortify routes have stateless JSON twins under `/api/auth`**
-  (decision 87): register, forgot-password, reset-password and
-  email/verification-notification. Fortify's routes sit in the `web` group
-  and need the CSRF cookie, which a bearer-token caller and a Capacitor
-  WebView cannot supply. The twins run outside the `web` group, start no
-  session, and reuse Fortify's actions (`CreateNewUser`,
-  `ResetUserPassword`), the password broker and Fortify's response
-  bindings, so the two paths answer identically. Fortify's own routes are
-  unchanged and remain what the web app uses. Login has no twin because
-  `POST /api/auth/token` is the mobile login. Profile and password update
-  twins arrive with the settings screen.
+- **Six Fortify routes have stateless JSON twins** (decision 87): register,
+  forgot-password, reset-password and email/verification-notification under
+  `/api/auth`, and profile and password update at
+  `/api/user/profile-information` and `/api/user/password`. Fortify's routes
+  sit in the `web` group and need the CSRF cookie, which a bearer-token
+  caller and a Capacitor WebView cannot supply. The twins run outside the
+  `web` group, start no session, and reuse Fortify's actions
+  (`CreateNewUser`, `ResetUserPassword`, `UpdatesUserProfileInformation`,
+  `UpdatesUserPasswords`, the last two resolved from the container), the
+  password broker and Fortify's response bindings, so the two paths answer
+  identically. Fortify's own routes are unchanged and remain what the web app
+  uses. **The two settings twins keep Fortify's own paths on purpose**: a
+  twin is the same route without the session, and one under a different name
+  invites the question of whether it also behaves differently. Login has no
+  twin because `POST /api/auth/token` is the mobile login.
+- **A Fortify route the app depends on gets a parity test.** One test asserts
+  that the web path and its `/api` twin answer the same way, and
+  `tests/Feature/Account/WebRouteParityTest.php` is where they live. The
+  reason is not symmetry: the two paths share one action, so a change made
+  for the phone lands on the browser as well, and Fortify's own routes have
+  no tests of their own. Changing `UpdateUserPassword` to fix the mobile
+  password change left the whole suite green while proving nothing about
+  `PUT /user/password` at all.
 - **One place mints a token.** `App\Services\TokenIssuer` sets the device
   name, abilities and expiry, and builds the `{token, expires_at, me}`
   payload. The token endpoint and the register twin both call it.
@@ -170,12 +186,26 @@ Hand-written routes live in `routes/api.php` under `/api`:
 - **Passwords**: `Password::defaults()` in `AppServiceProvider` is the only
   policy (ten characters plus the breach check, which is off in testing).
   `App\Services\PasswordChanger` is the one place a password is replaced:
-  it saves the hash, revokes every token and every session except the one it
+  it saves the hash, revokes every token and every session except the ones it
   is told to keep, and sends the queued `App\Notifications\PasswordChanged`
-  email. `UpdateUserPassword` keeps the current session; `ResetUserPassword`
-  keeps none. Both actions call it, so the web routes and the mobile twins
-  cannot differ. Its strings live in `lang/en-GB/mail.php`, one group per
-  notification class.
+  email. `UpdateUserPassword` keeps the credential that made the request, the
+  session on the web and the token on the phone, so changing your password on
+  a device does not sign that device out; `ResetUserPassword` keeps neither,
+  because a reset is asked for by someone who could not sign in. Both actions
+  call it, so the web routes and the mobile twins cannot differ. Its strings
+  live in `lang/en-GB/mail.php`, one group per notification class. **A
+  validation rule that reads a guard only works for one of our two
+  credentials**, which is what `current_password:web` turned out to be: the
+  rule below is the worked example, and the same trap waits in any rule that
+  asks a guard a question instead of asking the model.
+- **The current password is checked against the user, not a guard.**
+  Laravel's `current_password` rule asks a named guard for its user, and the
+  `web` guard is a guest on a bearer-token request, so it would reject every
+  password change made from the phone. `UpdateUserPassword` checks the `User`
+  it was handed instead, which answers the same for a session caller, a token
+  caller and a caller with no request at all. A user with no password, which
+  provider sign-in will produce, is told so rather than compared against
+  null.
 - **Email verification is sent, not enforced** (decision 83). The `verified`
   alias goes on the authenticated group in `routes/api.php` when enforcement
   arrives, and nowhere else.
@@ -198,6 +228,18 @@ Hand-written routes live in `routes/api.php` under `/api`:
 - Config comes from `.env`. `.env.example` lists every variable with a
   one-line comment; keep it complete when you add one.
 - `APP_TIMEZONE=UTC`, `CACHE_STORE=database`, `QUEUE_CONNECTION=database`.
+- **An authenticated write is throttled when it checks a credential or sends
+  an email, and not otherwise.** Both are things an attacker can spend on
+  someone else's behalf: a credential check is a guessing game, and an email
+  is a message to a real inbox. Everything else is a write to a row the
+  caller already owns, and a limiter on it buys nothing while adding a
+  failure mode. The four My Account routes are the worked example.
+  `PUT /api/user/password` qualifies on the first and
+  `PUT /api/user/profile-information` on the second, because changing an
+  email queues a verification message; each has a named limiter beside the
+  others in `FortifyServiceProvider`. `PATCH /api/account` and
+  `PUT /api/user/marketing-consent` qualify on neither and carry no limiter,
+  which is the decision and not an oversight.
 - The API has no front-end build. There is no `package.json` in `api/`.
 
 ## App rules (`app/`)
@@ -257,8 +299,10 @@ Hand-written routes live in `routes/api.php` under `/api`:
   on its own tells a screen reader nothing. `TextInput`'s live status mark is
   the same rule in miniature: the tick is `success-text` and the cross is the
   `danger-text` the error message uses, and the field says which in words
-  beside it. `warning` and `info` exist as tokens and nothing uses them yet:
-  the status pill and the booking states are still to build.
+  beside it. `StatusPill` reads all four families, and My account
+  is the first screen to use two of them: `warning` on an unverified email
+  address and `info` on the device you are reading from. `danger` outside a
+  form and the booking states are still to come.
 - Spacing comes off an eight pixel grid. Use Tailwind steps 2, 4, 6, 8, 10,
   12, 16, 20 and 24 for padding, margins and gaps. Steps 1 and 3 are the two
   half-steps the design allows, and both are written down in
@@ -306,7 +350,9 @@ Hand-written routes live in `routes/api.php` under `/api`:
   install, so a screen writes `<AppButton>` or `<FormField>` without an
   import. `src/components/global.d.ts` declares the same list for vue-tsc, so
   a wrong prop on a global component is still a type error; a component is
-  added to both files, and to `/kitchen-sink`, in the same change. Inside the
+  added to both files, and to `/kitchen-sink`, in the same change, and a
+  component whose props change goes back to the kitchen sink in that change
+  too. Inside the
   kit a component still imports the sibling it uses, so each one is complete
   on its own. Everything outside the kit, the shell, `AuthCard`, the banners,
   is imported where it is used, because each of those belongs to one place.
@@ -322,7 +368,8 @@ Hand-written routes live in `routes/api.php` under `/api`:
 ### `src/lib/platform.ts`
 
 The single place any native-versus-web branch may live. It exports
-`isNative`, `isIOS`, `isAndroid` and `isWeb`. Nothing else in the codebase
+`isNative`, `isIOS`, `isAndroid`, `isWeb` and `deviceName`, which names the
+token a mobile login asks for. Nothing else in the codebase
 checks the platform directly: no user-agent sniffing, no `Capacitor.` calls
 outside this file. Until Capacitor is added, native means the mobile build
 target.
@@ -341,11 +388,19 @@ The derived lists (`tabBarItems`, `sidebarMain`, `sidebarSecondary`,
 (`sectionKey`, `activeTabKey`, `activeTabIndex`) all come from that array.
 **Neither navigation component may contain a list of destinations**, and
 adding a section is a line in this file rather than an edit in three places.
-`settingsGroups` does the same job for the ten groups of settings.
+`settingsGroups` and `accountGroups` do the same job for the two sections that
+are themselves a list of pages: the ten groups of settings and the four pages
+of My account. Both are `SectionGroup[]`, and both are read by the section's
+index, by `SectionNav` and by the route record that names the section, so a
+page is added in one place.
 
 `sectionKey` is what makes a detail page mark its list: `/bookings/42` marks
-Bookings, every settings page marks Settings. Sections the tab bar has no room
-for are reached through More, so on a phone they mark More.
+Bookings, every settings page marks Settings and every My account page marks
+My account. Sections the tab bar has no room for are reached through More, so
+on a phone they mark More. **A section with pages under it needs a line in
+`sectionKey`**, or its children resolve to nothing: no sidebar mark, and an
+`activeTabIndex` of minus one, which hides the tab bar's pill with no error
+anywhere.
 
 ### The app shell
 
@@ -375,9 +430,17 @@ screen.
   `lg`. The anchor is plain CSS offsets that match the geometry at the top of
   the sidebar; both files carry the arithmetic in a comment, so if one moves
   the other has to.
-- `SettingsNav.vue`: the second column of settings links, shown beside a
-  settings page at `lg`. The settings index never shows it, because the index
-  is that list.
+- `SectionNav.vue`: the second column of links beside a page in a section
+  that is itself a list of pages, at `lg` and up. Settings and My account are
+  both that shape, so it is one component given a `groups` array, an
+  `indexRouteName` and a `labelKey`. It renders nothing on its section's own
+  index, because the index is that list, which is why it takes the index route
+  name at all.
+- `SectionLayout.vue` (in `src/views`, because it is a routed component): the
+  frame that holds `SectionNav` and the `RouterView` beside it. Both sections
+  use it, and the three things that differ are static `props` on the route
+  record in `src/router/index.ts`, which is already the one place every
+  destination is written down. There is no per-section layout file.
 
 ### The UI kit and the form kit
 
@@ -446,8 +509,10 @@ as `useSubmit` in `src/lib/form.ts`: a screen puts `ref="form"` on its form,
 binds the `pending`, `errors` and `formError` it returns, and calls
 `submit()` with the request it wants made. A screen with something of its own
 to do with a failure passes a second function, which sees the `ApiError`
-first and returns true when it has dealt with it. The authentication screens
-are the worked example. The two generic messages, `common.too_many_attempts`
+first and returns true when it has dealt with it. The register screen is the
+worked example for sending a rejection back to the step that can show it, and
+`AccountDetailsView` for a form making two requests, where the handler has to
+say which one failed without implying the other did. The two generic messages, `common.too_many_attempts`
 and `common.request_failed`, are the only strings the helper knows.
 
 ### The style guide
@@ -479,18 +544,24 @@ The rules:
   every button, input, select and menu in the app and on that page moves
   together, because they all read the same variable.
 - **A token the guide specifies stays, even while nothing reads it.** The type
-  scale, the spacing levers, the container widths and the success, warning
-  and info families are in the theme ahead of the screens that need them,
-  and the kitchen sink says "not used yet" beside each one. Removing one is a
+  scale, the spacing levers, the container widths and the solid `success`,
+  `warning` and `info` fills are in the theme ahead of the screens that need
+  them, and the kitchen sink says "not used yet" beside each one. **That note
+  is part of the token's entry and moves when the token is first used**: My
+  account put the subtle and text halves of all four status families to work
+  through `StatusPill`, and the entries say what uses them now. Removing one is a
   style-guide change first. A variable that is in neither the guide nor a
   component is the only kind that is simply deleted.
 - The PWA manifest in `vite.config.ts` carries `background_color` and
   `theme_color` as hex, because a manifest cannot read CSS. They are copies of
   `--surface` and `--accent` and change when those do.
 - Every component works in light and dark.
-- **Every new component is added to `/kitchen-sink` in the same change that
-  creates it**, in every variant and state it supports. A component that is not
-  on that page is not finished.
+- **Every new or changed component is added to `/kitchen-sink` in the same
+  change**, in every variant and state it supports. A component that is not on
+  that page is not finished. "Changed" is not decoration: `SectionNav` was
+  `SettingsNav` with a different prop shape, and a rule that said "new" did not
+  reach it. A component whose signature changed is exactly as unreviewed as one
+  that did not exist yesterday.
 
 ### `/kitchen-sink`
 
@@ -522,11 +593,27 @@ with a token. It imports `isNative` and `deviceName` from `platform.ts` and
 is the only file besides `api.ts` that may branch on the platform. It
 exports `signIn`, `register`, `signOut`, `fetchMe`, `forgotPassword`,
 `resetPassword`, `resendVerification` and `checkUsername`, each choosing the
-Fortify route or its `/api/auth` twin. Every `Me` that arrives, from
+Fortify route or its `/api/auth` twin, and the six My Account calls,
+`updateProfile`, `updateBusinessName`, `setMarketingConsent`, `updatePassword`,
+`listDevices` and `revokeDevice`, none of which branch at all: the profile and
+password routes are stateless twins at the same paths, so one call serves a
+session cookie and a bearer token alike. The three writes that answer with a
+me payload return it, and the store replaces its copy from the same response
+rather than following a write with a read. Every `Me` that arrives, from
 `/api/me` or embedded in a token response, goes through one helper that
 turns an empty-array `notification_preferences` into an object. Screens
 never import it: they call the Pinia store in `src/stores/auth.ts`, and the
 store calls this.
+
+### `src/lib/verification.ts`
+
+`useResendVerification()`, which is asking for the verification email again
+and coping with all three answers: 202 means one is on its way, 204 means the
+address was verified in the meantime so the store is refreshed and whatever
+offered the resend takes itself off the screen, and a failure separates a rate
+limit from anything else. The home page banner and the email page in My
+account both call it. It returns a locale key rather than a string, so the two
+callers decide how to show the message and this file names no wording.
 
 ### `src/lib/tokenStorage.ts`
 
@@ -547,6 +634,20 @@ target. A component test mounts through `mountWithCleanup` from
 `src/lib/testMount.ts`, which unmounts after each test on its own, and every
 test takes `jsonResponse`, `element`, `typeInto`, `submitForm` and `settle`
 from `src/lib/testHelpers.ts` rather than writing its own.
+
+**An assertion that something is absent is paired with an assertion that the
+same string is present, in a case where it should be.** A test asserted that
+"Send it again" was gone once an address was verified. The locale file says
+"Resend the email", so the assertion passed while testing nothing, and would
+have passed just as happily against the unverified case it was written to
+distinguish. Absences are the dangerous kind: a presence assertion fails when
+the wording moves and tells you, and an absence assertion does not, so it
+quietly stops being about anything. The pair is what makes it fail.
+
+This is not the rule under the API bullets in "Current state" that a new
+assertion is proved by making it fail once, and neither rule finds the other's
+bug: that one catches an assertion that can never hold, this one catches an
+assertion that always holds.
 
 ### The two build targets
 
@@ -605,9 +706,10 @@ both because the tab bar is `position: fixed`:
 
 ## Current state
 
-The database schema, email-and-password authentication and the mobile
-twins of Fortify's registration, password reset and verification routes
-exist.
+The database schema, email-and-password authentication, the mobile
+twins of Fortify's registration, password reset and verification routes,
+and the four writes the My Account screen needs (profile information,
+password, the business name and marketing consent) exist.
 `docs/database-schema.md` is the specification: when a table or column is
 in doubt, that document wins, and a change to the schema is made there
 first. Section 7 of it designs tables that are deliberately not migrated
@@ -622,9 +724,12 @@ modified in place), `accounts`, `account_settings`, `account_user`,
 `invoices`, `payments`, `notes`, `message_templates`, `contract_templates`,
 `agreements`, `entitlements`, `booking_user`. A final migration adds the
 three foreign keys that could not be declared inline, a later one adds
-the `users.marketing_consent_source` check constraint, and another gives
+the `users.marketing_consent_source` check constraint, another gives
 `account_settings.deposit_percent` a default of 25 so a bare insert passes
-the deposit rule check (decision 90). Framework tables from
+the deposit rule check (decision 90), and the last widens the consent-source
+constraint for the `settings` case. Widening a check constraint is always
+drop and re-add, generated from the enum, which is why every one of them
+is named `<table>_<column>_check`. Framework tables from
 Sanctum, Fortify and the passkeys package are untouched. Cashier's own
 migrations are not published; its four columns sit on `accounts`, and the
 subscription tables arrive with the billing work.
@@ -644,6 +749,21 @@ What sits on top of the tables:
   `UsernameHistory` are not scoped. `MessageTemplate` and `ContractTemplate`
   also show system rows with a null `account_id`. On a request, the
   `account` middleware does the binding (see "Authentication shape").
+  **An endpoint that changes the account and answers with the me payload
+  changes the instance bound in `CurrentAccount`, not one it fetched
+  itself.** `MeResource` reads that bound instance rather than the database,
+  so a re-fetched copy leaves the response confirming a rename saying the old
+  name, with no error anywhere. `AccountController` is the worked example.
+  **A value that feeds a permission decision must not be able to mean two
+  things, and the check that collapses it belongs inside the thing returning
+  the value rather than repeated at every caller.** Failing closed is right
+  for a query and wrong for a decision. This has now cost twice:
+  `current_password:web` meant both "wrong password" and "wrong guard", and
+  `currentMembership()` as first written meant both "not a member" and "no
+  account bound", the second of which answered a request with a 403 about
+  ownership. `User::currentMembership()` therefore requires the account
+  before it asks the scope anything, so a missing tenant is a loud failure
+  naming itself and null means one thing only.
 - `App\Services\BookingPricing` (the only place totals are computed),
   `App\Services\InvoiceNumbering` (the only place an invoice gets a number),
   `App\Services\Features` (the only reader of feature toggles),
@@ -654,6 +774,17 @@ What sits on top of the tables:
 - `App\Rules\Username` with `config/reserved_usernames.php`. Its
   `reasonFor()` is the single check behind both registration and
   `GET /api/usernames/{username}`.
+- `App\Http\Requests\BaseRequest`, which **every form request extends**. A
+  form request whose `authorize()` returns false otherwise refuses with
+  Laravel's own hardcoded "This action is unauthorized", which is a
+  user-facing string written in English in the framework rather than a key in
+  `lang/en-GB`. The base turns that into a translated `AuthorizationException`
+  and a subclass names its own key by overriding `deniedMessage()`, which
+  defaults to `common.not_allowed`. It is a base class rather than a rule in
+  this file because a rule people have to remember is a rule that gets
+  forgotten on the fourth form request. It is not called `Request`, which
+  would sit one namespace from `Illuminate\Http\Request`, nor `FormRequest`,
+  which would need an alias in its own file.
 - Config that is not the framework's: `config/billing.php` (trial length),
   `config/features.php` (the default feature map), `config/demo.php` (the
   demo password), `config/reserved_usernames.php`. Nothing outside
@@ -665,9 +796,26 @@ What sits on top of the tables:
 - Pest tests in `api/tests` run against a real Postgres database named
   `klaroly_test`, because the check constraints and partial indexes are part
   of what is tested. Create it once with `createdb klaroly_test`. The
-  authentication tests live in `tests/Feature/Auth`. `tests/Pest.php` holds
-  the helpers more than one file needs: `actingForAccount`, `createOwner`,
-  `sessionRow` and `registration`.
+  authentication tests live in `tests/Feature/Auth` and the My Account writes
+  in `tests/Feature/Account`. `tests/Pest.php` holds the helpers more than
+  one file needs: `actingForAccount`, `createOwner`, `createCollaborator`,
+  `sessionRow`, `actingAsWebApp` and `registration`.
+- **A test that needs a session against `/api/*` uses `actingAsWebApp`.**
+  A JSON test request sends no cookies unless it says it is credentialed, and
+  Sanctum only starts a session when the referer is one of its stateful
+  domains. Miss either and `request()->hasSession()` is false, `UpdateUserPassword`
+  keeps nothing, and a test asserting the other session rows were deleted
+  passes because every row was deleted, including the one that should have
+  survived. The helper does all of it, and asserts that `FRONTEND_URL` and
+  `SANCTUM_STATEFUL_DOMAINS` still name the same host, because they are two
+  environment variables and nothing else keeps them in step.
+- **A new assertion is proved by making it fail once.** That precondition was
+  first written with `expect()->toContain()`, which is variadic, so the
+  failure message went in as a second expected value and the assertion was
+  that the array contained its own error text. It was caught only because two
+  existing tests went red. Written against a passing case it would have
+  shipped as an assertion that can never hold, which is the same false green
+  it exists to prevent.
 - Every date the framework hands back is a `CarbonImmutable`, from
   `Date::use()` in `AppServiceProvider`, so `created_at`, `updated_at` and
   `deleted_at` are not listed in any model's casts. A model casts only the
@@ -680,23 +828,22 @@ consent; a rejection naming a field from the first step takes the form back
 there so the message has somewhere to land), forgot password, reset password,
 sign out, the verification banner with resend, the verified landing on the
 home page, and session restore on load. They are built from the UI kit and
-the form kit like every other screen, so they are also the only forms in the
-app that really submit something. The router guard awaits
+the form kit like every other screen. The router guard awaits
 `auth.bootstrap()` once before the first navigation, sends a signed-out
 visitor to `/login?redirect=` and follows that redirect after sign-in only
 when it is a relative path.
 
 It also has its shell, and every route behind the sign-in exists as a page.
-That is all it has: the shell is furniture, not features. **Nothing in it
-calls the API.** The only request the app makes when it loads is still the
-one `GET /api/me` that `auth.bootstrap()` sends, and there is no invented
-data anywhere: a page that has not been built says so.
+Most of the shell is still furniture rather than features: apart from the
+authentication screens and the four My Account pages, **nothing in it calls
+the API**, and there is no invented data anywhere. A page that has not been
+built says so.
 
 - The routes, all children of the layout route: `/`, `/bookings`,
   `/bookings/:id`, `/enquiries`, `/enquiries/:id`, `/contacts`,
-  `/contacts/:id`, `/more`, `/account`, `/help`, `/settings` and its ten
-  groups, plus `/billing` on the web target. A detail route echoes its `:id`
-  and looks nothing up.
+  `/contacts/:id`, `/more`, `/help`, `/account` and its four pages,
+  `/settings` and its ten groups, plus `/billing` on the web target. A detail
+  route echoes its `:id` and looks nothing up.
 - Every page that has not been built is one shared `PlaceholderView.vue`: a
   header and a card saying so. A route names its title with `meta.titleKey`,
   which is also the document title, and where a phone's back link goes with
@@ -704,9 +851,17 @@ data anywhere: a page that has not been built says so.
   the routes array points at that instead.
 - The pages that are real: `HomeView` (the greeting, the verification banner
   and an empty state), `MoreView` (the phone's overflow list and sign out),
-  the settings index, and `/settings/travel`, which is the one honest example
-  of the form kit doing a section's work. It saves nothing: there is no
-  settings API yet.
+  the settings index, `/settings/travel`, which is the one honest example of
+  the form kit doing a section's work and saves nothing because there is no
+  settings API yet, and all of My account.
+- **My account is the first section that reads and writes real data.** Its
+  index is a list built from `accountGroups`, and its four pages are: your
+  details, which is one form over two endpoints and sends only the half that
+  changed; your password, which keeps you signed in on this device and says
+  the others were not; devices, which lists the tokens from
+  `GET /api/auth/tokens` and revokes one at a time; and email and marketing,
+  which is read-only apart from a resend and one consent toggle that saves the
+  moment it is thrown and goes back if the request fails.
 - The document title comes from the route's locale key, there is a skip link
   to `<main>`, every route has one `<h1>` in it, and both navigations are
   real `<nav>` landmarks.
@@ -718,8 +873,13 @@ the sheet's open, close and focus behaviour, FormField's wiring, that a
 button says it is busy while its request is in flight, that a rejected field
 puts the message on that field and moves focus to it, that a second submit
 sends nothing while the first is still going, that the username check is
-announced in words as well as drawn, and the two tests that read the source
-of the app rather than run it:
+announced in words as well as drawn, and, on My account, that the details form
+sends only the half that changed and says which of its two requests failed,
+that a password mismatch is caught before any request, that the devices list
+gets its empty state, its unrevokable current row and a revoke that keeps a
+row it could not remove, and that the consent toggle sends on change and goes
+back on a failure. Then the three tests that read the source of the app rather
+than run it:
 `boundary.test.ts`, which stops business logic leaking into components,
 `styleRules.test.ts`, which stops a `dark:` variant, an arbitrary value or a
 hex colour reaching a component, and `router/routeNames.test.ts`, which fails
@@ -729,8 +889,6 @@ and a route name is a string, so nothing else can catch it. Component tests
 mount through `src/lib/testMount.ts`, a few lines of `createApp` with the
 real router, i18n, pinia and the global kit, because there is no component
 testing library and there is not going to be one.
-
-The device list, profile and password change screens are not built.
 
 Not built yet: passkeys and two-factor enforcement (configured, unused),
 Sign in with Apple or Google, switching between accounts, collaborator

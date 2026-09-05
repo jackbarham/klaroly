@@ -1,7 +1,7 @@
 import { api } from '@/lib/api'
 import { deviceName, isNative } from '@/lib/platform'
 import * as tokenStorage from '@/lib/tokenStorage'
-import type { Me, RegisterFields, UsernameCheck } from '@/types/auth'
+import type { Device, Me, RegisterFields, UsernameCheck } from '@/types/auth'
 
 // The one module that knows the web app signs in with a session cookie and
 // the native app signs in with a bearer token. Besides api.ts it is the only
@@ -119,6 +119,54 @@ export async function resendVerification(): Promise<boolean> {
   const body = await api.post<unknown>(path)
 
   return body !== null
+}
+
+// The four My Account writes and the devices list. None of them branches on
+// the platform: /api/user/profile-information and /api/user/password are
+// stateless twins of Fortify's own routes at the same paths, so one call
+// serves a session cookie and a bearer token alike.
+//
+// Three of the four answer with the same payload as GET /api/me, which is
+// why they return a Me rather than nothing: the store replaces what it holds
+// without a second request.
+
+export async function updateProfile(name: string, email: string): Promise<Me> {
+  const response = await api.put<{ data: Me }>('/api/user/profile-information', { name, email })
+
+  return normaliseMe(response.data)
+}
+
+export async function updateBusinessName(name: string): Promise<Me> {
+  const response = await api.patch<{ data: Me }>('/api/account', { name })
+
+  return normaliseMe(response.data)
+}
+
+export async function setMarketingConsent(consented: boolean): Promise<Me> {
+  const response = await api.put<{ data: Me }>('/api/user/marketing-consent', { consented })
+
+  return normaliseMe(response.data)
+}
+
+// Answers with a message and no payload, because nothing in "me" changed.
+// The credential that made the request survives; every other token and
+// session does not.
+export async function updatePassword(currentPassword: string, password: string): Promise<void> {
+  await api.put<MessageResponse>('/api/user/password', {
+    current_password: currentPassword,
+    password,
+    password_confirmation: password,
+  })
+}
+
+export async function listDevices(): Promise<Device[]> {
+  const response = await api.get<{ data: Device[] }>('/api/auth/tokens')
+
+  return response.data
+}
+
+export async function revokeDevice(id: number): Promise<void> {
+  await api.delete(`/api/auth/tokens/${id}`)
 }
 
 // The rule only accepts lowercase, so lowercase before asking.

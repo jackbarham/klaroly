@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  accountGroups,
   activeTabIndex,
   activeTabKey,
   moreItems,
@@ -68,6 +69,11 @@ describe('sectionKey', () => {
     expect(sectionKey('settings-travel')).toBe('settings')
   })
 
+  it('puts every My account page in My account', () => {
+    expect(sectionKey('account')).toBe('account')
+    expect(sectionKey('account-devices')).toBe('account')
+  })
+
   it('puts the kitchen sink in its own section, so the sidebar marks it', () => {
     expect(sectionKey('kitchen-sink')).toBe('kitchen-sink')
   })
@@ -99,5 +105,17 @@ describe('the settings groups', () => {
   it('are the ten the settings index lists', () => {
     expect(settingsGroups).toHaveLength(10)
     expect(settingsGroups[0].routeName).toBe('settings-features')
+  })
+})
+
+describe('the account groups', () => {
+  it('are the four the My account index lists, in order', () => {
+    expect(accountGroups.map((group) => group.key)).toEqual(['details', 'password', 'devices', 'email'])
+  })
+
+  it('name routes under the account section, so the navigation marks it', () => {
+    for (const group of accountGroups) {
+      expect(sectionKey(group.routeName)).toBe('account')
+    }
   })
 })

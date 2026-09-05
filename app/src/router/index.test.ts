@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { sampleMe } from '@/lib/auth.sample'
+import { accountGroups, settingsGroups } from '@/lib/navigation'
 import router, { destinationAfterSignIn } from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import { jsonResponse } from '@/lib/testHelpers'
@@ -58,5 +59,34 @@ describe('destinationAfterSignIn', () => {
     expect(destinationAfterSignIn('billing')).toBe('/')
     expect(destinationAfterSignIn(undefined)).toBe('/')
     expect(destinationAfterSignIn(['/a'])).toBe('/')
+  })
+})
+
+// SectionLayout is one component serving both Settings and My account, and
+// the three things that differ are static props on the route record. Nothing
+// else can catch a prop dropped while editing the routes file: the layout
+// would render with an empty column and no error anywhere.
+describe('the two sections that are a list of pages', () => {
+  it('hand the layout their own groups, index and label', () => {
+    // A record with no props has default false rather than an object, which
+    // is what the two layers above these ones are.
+    const layoutOf = (path: string) => router.resolve(path).matched
+      .map((record) => record.props.default)
+      .find((props) => typeof props === 'object')
+
+    const account = layoutOf('/account/details')
+    const settings = layoutOf('/settings/travel')
+
+    expect(account).toEqual({
+      groups: accountGroups,
+      indexRouteName: 'account',
+      labelKey: 'account.title',
+    })
+
+    expect(settings).toEqual({
+      groups: settingsGroups,
+      indexRouteName: 'settings',
+      labelKey: 'settings.title',
+    })
   })
 })

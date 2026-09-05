@@ -82,3 +82,27 @@ it('returns nothing from a scoped query when no account is bound', function () {
 
     expect(Booking::count())->toBe(0);
 });
+
+it('refuses to answer who a user is a member of when no account is bound', function () {
+    $account = Account::factory()->withSettings()->create();
+    $user = createOwner([], $account);
+
+    currentAccount()->clear();
+
+    // The scope would fail closed and answer null, and null is read as "not
+    // an owner" by every permission check. A missing tenant has to say so.
+    expect(fn () => $user->currentMembership())
+        ->toThrow(RuntimeException::class, 'No current account is set.');
+});
+
+it('answers null only when the user is not a member of the bound account', function () {
+    $account = actingForAccount();
+    $member = createOwner([], $account);
+    $stranger = createOwner();
+
+    currentAccount()->set($account);
+
+    expect($member->currentMembership()->account_id)->toBe($account->id)
+        ->and($member->currentMembership()->isOwner())->toBeTrue()
+        ->and($stranger->currentMembership())->toBeNull();
+});

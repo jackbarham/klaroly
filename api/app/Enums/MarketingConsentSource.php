@@ -15,5 +15,6 @@ enum MarketingConsentSource: string
 
     case Portal = 'portal';
     case AppSignup = 'app_signup';
+    case Settings = 'settings';
     case Other = 'other';
 }

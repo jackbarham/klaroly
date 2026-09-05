@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Enums\FeatureKey;
-use App\Models\AccountUser;
 use App\Models\User;
 use App\Services\Features;
 use App\Support\CurrentAccount;
@@ -28,8 +27,12 @@ class MeResource extends JsonResource
     public function toArray(Request $request): array
     {
         $account = app(CurrentAccount::class)->require();
-        $membership = AccountUser::query()->where('user_id', $this->id)->firstOrFail();
         $features = app(Features::class);
+
+        // Never null here: the account middleware refuses a user with no
+        // membership before any controller runs, and TokenIssuer builds this
+        // payload only after AccountResolver found one.
+        $membership = $this->currentMembership();
 
         return [
             'user' => [

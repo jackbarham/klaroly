@@ -1,11 +1,15 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\TokenController;
+use App\Http\Controllers\Auth\UpdatePasswordController;
+use App\Http\Controllers\MarketingConsentController;
 use App\Http\Controllers\MeController;
+use App\Http\Controllers\ProfileInformationController;
 use App\Http\Controllers\UsernameAvailabilityController;
 use App\Http\Middleware\NormaliseEmail;
 use Illuminate\Support\Facades\Route;
@@ -17,12 +21,15 @@ use Illuminate\Support\Facades\Route;
 // without the prefix and inside the web middleware group, so they need the
 // CSRF cookie and, for some, a session. The web app uses them.
 //
-// A bearer-token caller cannot, so four of them have JSON twins under
-// /api/auth (decision 87): register, forgot-password, reset-password and
-// email/verification-notification. Each twin is stateless and reuses
-// Fortify's actions and responses, so the two paths cannot drift. Login has
-// no twin because POST /api/auth/token is the mobile login. Profile and
-// password update twins arrive with the settings screen.
+// A bearer-token caller cannot, so six of them have JSON twins here
+// (decision 87): register, forgot-password, reset-password and
+// email/verification-notification under /api/auth, and profile and password
+// update at /api/user/profile-information and /api/user/password. Each twin
+// is stateless and reuses Fortify's actions and responses, so the two paths
+// cannot drift. The two settings twins keep Fortify's own paths on purpose:
+// a twin is the same route without the session, and one under a different
+// name invites the question of whether it also behaves differently. Login
+// has no twin because POST /api/auth/token is the mobile login.
 
 // Unauthenticated.
 Route::post('/auth/token', [TokenController::class, 'store'])
@@ -55,4 +62,20 @@ Route::middleware(['auth:sanctum', 'account'])->group(function () {
 
     Route::post('/auth/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
         ->middleware('throttle:6,1');
+
+    // What the My Account screen writes. Every one of these except the
+    // password answers with the same payload as GET /api/me, so the app
+    // replaces its stored "me" in one hop instead of following each write
+    // with a read.
+    Route::put('/user/profile-information', [ProfileInformationController::class, 'update'])
+        ->middleware([NormaliseEmail::class, 'throttle:profile-update']);
+
+    // Nothing in "me" changes, so this one answers with a message. It is
+    // limited because it revokes credentials.
+    Route::put('/user/password', [UpdatePasswordController::class, 'update'])
+        ->middleware('throttle:password-update');
+
+    Route::patch('/account', [AccountController::class, 'update']);
+
+    Route::put('/user/marketing-consent', [MarketingConsentController::class, 'update']);
 });

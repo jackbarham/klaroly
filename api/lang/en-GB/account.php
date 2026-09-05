@@ -12,5 +12,6 @@ return [
     */
 
     'no_membership' => 'This login does not belong to any account.',
+    'owner_only' => 'Only the account owner can change this.',
 
 ];

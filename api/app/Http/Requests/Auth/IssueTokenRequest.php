@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Auth;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\BaseRequest;
 
-class IssueTokenRequest extends FormRequest
+class IssueTokenRequest extends BaseRequest
 {
     /**
      * @return array<string, array<int, string>>

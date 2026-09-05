@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\BaseRequest;
 
 /**
  * The mobile registration twin. Only device_name is validated here; every
@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * Checking the device name first means a request without one creates
  * nothing.
  */
-class RegisterRequest extends FormRequest
+class RegisterRequest extends BaseRequest
 {
     /**
      * @return array<string, array<int, string>>

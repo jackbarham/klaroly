@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MarketingConsentSource;
+use App\Support\CurrentAccount;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -67,6 +68,25 @@ class User extends Authenticatable implements MustVerifyEmail
     public function memberships(): HasMany
     {
         return $this->hasMany(AccountUser::class);
+    }
+
+    /**
+     * This user's membership of the account bound in CurrentAccount, or null
+     * when they are not a member of it.
+     *
+     * The account half of the question is answered by AccountUser's global
+     * scope, so no caller names an account_id. That scope fails closed with
+     * no account bound, which is right for a query and wrong here: the
+     * answer becomes a permission decision, and a null meaning "no tenant
+     * was bound" would be read as "not an owner" and refused with a message
+     * about ownership. Requiring the account first means a missing tenant is
+     * a loud failure naming itself, and null means one thing only.
+     */
+    public function currentMembership(): ?AccountUser
+    {
+        app(CurrentAccount::class)->require();
+
+        return AccountUser::query()->where('user_id', $this->id)->first();
     }
 
     public function identities(): HasMany

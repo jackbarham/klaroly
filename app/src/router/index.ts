@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import i18n from '@/i18n'
+import { accountGroups, settingsGroups } from '@/lib/navigation'
 import { useAuthStore } from '@/stores/auth'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import ForgotPasswordView from '@/views/ForgotPasswordView.vue'
@@ -106,9 +107,40 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'account',
-        name: 'account',
-        component: () => import('@/views/PlaceholderView.vue'),
-        meta: { titleKey: 'account.title', backTo: 'more' },
+        component: () => import('@/views/SectionLayout.vue'),
+        props: { groups: accountGroups, indexRouteName: 'account', labelKey: 'account.title' },
+        children: [
+          {
+            path: '',
+            name: 'account',
+            component: () => import('@/views/account/AccountView.vue'),
+            meta: { titleKey: 'account.title' },
+          },
+          {
+            path: 'details',
+            name: 'account-details',
+            component: () => import('@/views/account/AccountDetailsView.vue'),
+            meta: { titleKey: 'account.details', backTo: 'account' },
+          },
+          {
+            path: 'password',
+            name: 'account-password',
+            component: () => import('@/views/account/AccountPasswordView.vue'),
+            meta: { titleKey: 'account.password', backTo: 'account' },
+          },
+          {
+            path: 'devices',
+            name: 'account-devices',
+            component: () => import('@/views/account/AccountDevicesView.vue'),
+            meta: { titleKey: 'account.devices', backTo: 'account' },
+          },
+          {
+            path: 'email',
+            name: 'account-email',
+            component: () => import('@/views/account/AccountEmailView.vue'),
+            meta: { titleKey: 'account.email', backTo: 'account' },
+          },
+        ],
       },
       {
         path: 'help',
@@ -118,7 +150,8 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'settings',
-        component: () => import('@/views/settings/SettingsLayout.vue'),
+        component: () => import('@/views/SectionLayout.vue'),
+        props: { groups: settingsGroups, indexRouteName: 'settings', labelKey: 'settings.title' },
         children: [
           {
             path: '',

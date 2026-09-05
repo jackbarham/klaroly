@@ -79,6 +79,19 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(3)->by($this->emailAndIpKey($request));
         });
 
+        // Both settings writes that cost something: a profile update can
+        // queue a verification email, and a password update revokes
+        // credentials. Keyed on the user because both routes are
+        // authenticated, with the IP as the fallback, because a limiter is a
+        // global registration and a later route could apply it before auth.
+        RateLimiter::for('profile-update', function (Request $request) {
+            return Limit::perMinute(6)->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('password-update', function (Request $request) {
+            return Limit::perMinute(6)->by($request->user()?->id ?: $request->ip());
+        });
+
         RateLimiter::for('two-factor', function (Request $request) {
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
         });

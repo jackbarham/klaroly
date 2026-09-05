@@ -108,11 +108,30 @@ export const useAuthStore = defineStore('auth', () => {
     setSignedIn(await auth.fetchMe())
   }
 
+  // The three My Account writes that answer with a me payload. Each one
+  // replaces what the store holds from the same response, so the screens
+  // never follow a write with a read and the verification banner reacts to a
+  // changed email on its own.
+  async function updateProfile(name: string, email: string): Promise<void> {
+    setSignedIn(await auth.updateProfile(name, email))
+  }
+
+  async function updateBusinessName(name: string): Promise<void> {
+    setSignedIn(await auth.updateBusinessName(name))
+  }
+
+  async function setMarketingConsent(consented: boolean): Promise<void> {
+    setSignedIn(await auth.setMarketingConsent(consented))
+  }
+
   // Passed straight through, so that screens only ever talk to the store.
   const forgotPassword = auth.forgotPassword
   const resetPassword = auth.resetPassword
   const resendVerification = auth.resendVerification
   const checkUsername = auth.checkUsername
+  const updatePassword = auth.updatePassword
+  const listDevices = auth.listDevices
+  const revokeDevice = auth.revokeDevice
 
   function takeNotice(): string | null {
     const value = notice.value
@@ -136,6 +155,12 @@ export const useAuthStore = defineStore('auth', () => {
     resetPassword,
     resendVerification,
     checkUsername,
+    updateProfile,
+    updateBusinessName,
+    setMarketingConsent,
+    updatePassword,
+    listDevices,
+    revokeDevice,
     takeNotice,
   }
 })
