@@ -211,36 +211,41 @@ function event(day: number, over: Partial<BookingEvent> = {}): BookingEvent {
 
   return {
     id: nextId,
-    bookingId: nextId,
+    booking_id: nextId,
     type: 'main',
     label: null,
     date: dayKey(new Date(2026, 8, day)),
-    startTime: '06:30',
-    venueName: 'Thornleigh Hall',
+    start_time: '06:30',
+    venue_name: 'Thornleigh Hall',
     city: 'Marlow',
-    clientName: 'Hannah Wallace',
+    client_name: 'Hannah Wallace',
     stage: 'confirmed',
-    totalMinor: 78000,
+    total_minor: 78000,
     currency: 'GBP',
-    waitingOn: null,
-    lastTouchedAt: new Date(2026, 7, 27).toISOString(),
+    waiting_on: null,
+    last_touched_at: new Date(2026, 7, 27).toISOString(),
     ...over,
   }
 }
 
 const events: BookingEvent[] = [
-  event(5, { clientName: 'Hannah Wallace' }),
-  event(8, { clientName: 'Priya Raman', type: 'trial', venueName: null, city: 'Reading', totalMinor: 6000, startTime: '10:00' }),
-  event(12, { clientName: 'Priya Raman', venueName: 'Marlbrook Court', city: 'Guildford', totalMinor: 94000 }),
-  event(19, { clientName: 'Sophie Ellis', stage: 'provisional', waitingOn: 'client_signature', venueName: 'Wraysbury Mill', totalMinor: 68000 }),
-  event(26, { clientName: 'Amelia Trent', venueName: 'Ashcombe Barn', city: 'Ware', totalMinor: 112000 }),
-  event(26, { clientName: 'Rosie Kerr', stage: 'possible', venueName: null, city: null, totalMinor: 0, startTime: null, lastTouchedAt: new Date(2026, 8, 1).toISOString() }),
-  event(26, { clientName: 'Nadia Iqbal', stage: 'possible', venueName: 'Pentreath House', city: 'Bath', totalMinor: 0, startTime: null, lastTouchedAt: new Date(2026, 7, 24).toISOString() }),
-  event(26, { clientName: 'Charlotte Dean', stage: 'quoted', venueName: null, city: 'Swansea', totalMinor: 54000, startTime: null, waitingOn: 'artist_enquiry_cold', lastTouchedAt: new Date(2026, 6, 26).toISOString() }),
-  event(30, { clientName: 'Jo Fenwick', stage: 'cancelled', totalMinor: 66000 }),
+  event(5, { client_name: 'Hannah Wallace' }),
+  event(8, { client_name: 'Priya Raman', type: 'trial', venue_name: null, city: 'Reading', total_minor: 6000, start_time: '10:00' }),
+  event(12, { client_name: 'Priya Raman', venue_name: 'Marlbrook Court', city: 'Guildford', total_minor: 94000 }),
+  event(19, { client_name: 'Sophie Ellis', stage: 'provisional', waiting_on: 'client_signature', venue_name: 'Wraysbury Mill', total_minor: 68000 }),
+  event(26, { client_name: 'Amelia Trent', venue_name: 'Ashcombe Barn', city: 'Ware', total_minor: 112000 }),
+  event(26, { client_name: 'Rosie Kerr', stage: 'possible', venue_name: null, city: null, total_minor: 0, start_time: null, last_touched_at: new Date(2026, 8, 1).toISOString() }),
+  event(26, { client_name: 'Nadia Iqbal', stage: 'possible', venue_name: 'Pentreath House', city: 'Bath', total_minor: 0, start_time: null, last_touched_at: new Date(2026, 7, 24).toISOString() }),
+  event(26, { client_name: 'Charlotte Dean', stage: 'quoted', venue_name: null, city: 'Swansea', total_minor: 54000, start_time: null, waiting_on: 'artist_enquiry_cold', last_touched_at: new Date(2026, 6, 26).toISOString() }),
+  event(30, { client_name: 'Jo Fenwick', stage: 'cancelled', total_minor: 66000 }),
 ]
 
-const { marks, monthsWithWork } = useDayMarks(() => events)
+const { marks } = useDayMarks(() => events)
+
+// Its own, because the store's copy comes from GET /api/events/months and this
+// page makes no requests. Three lines here is cheaper than a demo page that
+// needs a store.
+const monthsWithWork = computed(() => new Set(events.map((one) => one.date.slice(0, 7))))
 
 // One-day grids, so each mark can be looked at on its own.
 function sampleMarks(stages: BookingStage[]) {
@@ -259,15 +264,15 @@ const markSamples = [
 ]
 
 const rowSamples = computed<BookingEvent[]>(() => [
-  event(12, { clientName: 'Priya Raman', stage: 'confirmed', totalMinor: 94000 }),
-  event(19, { clientName: 'Sophie Ellis', stage: 'provisional', waitingOn: 'client_signature', totalMinor: 68000 }),
-  event(20, { clientName: 'Bea Lawson', stage: 'provisional', waitingOn: 'client_deposit', totalMinor: 86000 }),
-  event(21, { clientName: 'Grace Muir', type: 'trial', label: 'Trial and hair', totalMinor: 7500, startTime: '13:00' }),
-  event(22, { clientName: 'Freya Lindqvist', stage: 'completed', waitingOn: 'client_balance', totalMinor: 84000 }),
-  event(23, { clientName: 'Jo Fenwick', stage: 'cancelled', totalMinor: 66000 }),
-  event(24, { clientName: 'Martha Oyelaran', stage: 'lost', totalMinor: 0, startTime: null, venueName: null, city: null }),
-  event(25, { clientName: 'Nadia Iqbal', stage: 'possible', totalMinor: 0, startTime: null, venueName: null, city: 'Bath', lastTouchedAt: new Date(2026, 7, 24).toISOString() }),
-  event(26, { clientName: 'Rosie Kerr', stage: 'quoted', totalMinor: 54000, startTime: null, venueName: null, city: null, waitingOn: 'artist_enquiry_cold', lastTouchedAt: new Date(2026, 6, 26).toISOString() }),
+  event(12, { client_name: 'Priya Raman', stage: 'confirmed', total_minor: 94000 }),
+  event(19, { client_name: 'Sophie Ellis', stage: 'provisional', waiting_on: 'client_signature', total_minor: 68000 }),
+  event(20, { client_name: 'Bea Lawson', stage: 'provisional', waiting_on: 'client_deposit', total_minor: 86000 }),
+  event(21, { client_name: 'Grace Muir', type: 'trial', label: 'Trial and hair', total_minor: 7500, start_time: '13:00' }),
+  event(22, { client_name: 'Freya Lindqvist', stage: 'completed', waiting_on: 'client_balance', total_minor: 84000 }),
+  event(23, { client_name: 'Jo Fenwick', stage: 'cancelled', total_minor: 66000 }),
+  event(24, { client_name: 'Martha Oyelaran', stage: 'lost', total_minor: 0, start_time: null, venue_name: null, city: null }),
+  event(25, { client_name: 'Nadia Iqbal', stage: 'possible', total_minor: 0, start_time: null, venue_name: null, city: 'Bath', last_touched_at: new Date(2026, 7, 24).toISOString() }),
+  event(26, { client_name: 'Rosie Kerr', stage: 'quoted', total_minor: 54000, start_time: null, venue_name: null, city: null, waiting_on: 'artist_enquiry_cold', last_touched_at: new Date(2026, 6, 26).toISOString() }),
 ])
 
 function onSelect(date: Date): void {

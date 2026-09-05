@@ -1,6 +1,9 @@
-// What the Bookings screen draws. Every name and every value below comes from
-// docs/database-schema.md, so the API can produce this shape without inventing
-// anything, and swapping the fixtures for a real request changes no type.
+// What GET /api/events returns, one object per event.
+//
+// snake_case, because that is what the API speaks and what types/auth.ts
+// already mirrors. Every name below is a column in docs/database-schema.md or
+// a value section 8 says is computed, so nothing here is invented on the way
+// through.
 //
 // The unit is an EVENT, not a booking. A booking is one record at a stage and
 // its dates live in a separate table, normally two rows, a trial and the main
@@ -55,7 +58,7 @@ export type WaitingOn =
 export interface BookingEvent {
   // events.id and events.booking_id. Two events can share a booking.
   id: number
-  bookingId: number
+  booking_id: number
 
   type: EventType
   // events.label: a custom display name. When it is null the type's own name
@@ -68,15 +71,15 @@ export interface BookingEvent {
   date: string
   // events.start_time as 'HH:mm', or null when no call time is agreed yet,
   // which is normal on an enquiry.
-  startTime: string | null
+  start_time: string | null
 
   // events.venue_name, the occasion's venue when it differs from the address
   // the work happens at, and events.city. Either can be absent on an enquiry.
-  venueName: string | null
+  venue_name: string | null
   city: string | null
 
   // contacts.first_name and last_name, composed by the API.
-  clientName: string
+  client_name: string
 
   stage: BookingStage
 
@@ -84,15 +87,15 @@ export interface BookingEvent {
   // unit beside its currency (decision 77), so this is pence for GBP and it
   // is never a float and never a formatted string. Computed from
   // booking_lines by the API (schema section 8).
-  totalMinor: number
+  total_minor: number
   // bookings.currency, ISO 4217.
   currency: string
 
-  waitingOn: WaitingOn | null
+  waiting_on: WaitingOn | null
 
   // bookings.last_touched_at, a UTC instant. The "touched N days ago" figure
   // is derived from this at render with differenceInCalendarDays against the
   // local calendar date, rather than being sent as a number that goes stale
   // in an open tab.
-  lastTouchedAt: string
+  last_touched_at: string
 }

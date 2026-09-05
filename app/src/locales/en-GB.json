@@ -127,6 +127,7 @@
     "detail_title": "Booking",
     "loading": "Loading your bookings",
     "failed": "Those bookings could not be loaded. Try again in a moment.",
+    "retry": "Try again",
     "hide_calendar": "Hide",
     "show_calendar": "Show",
     "hide_calendar_label": "Hide the calendar",

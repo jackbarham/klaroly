@@ -9,19 +9,19 @@ function event(date: string, stage: BookingStage): BookingEvent {
 
   return {
     id: nextId,
-    bookingId: nextId,
+    booking_id: nextId,
     type: 'main',
     label: null,
     date,
-    startTime: null,
-    venueName: null,
+    start_time: null,
+    venue_name: null,
     city: null,
-    clientName: 'Test Client',
+    client_name: 'Test Client',
     stage,
-    totalMinor: 0,
+    total_minor: 0,
     currency: 'GBP',
-    waitingOn: null,
-    lastTouchedAt: '2026-09-01T09:00:00.000Z',
+    waiting_on: null,
+    last_touched_at: '2026-09-01T09:00:00.000Z',
   }
 }
 

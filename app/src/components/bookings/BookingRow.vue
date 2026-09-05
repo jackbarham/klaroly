@@ -6,7 +6,7 @@
   <li :data-date="event.date">
     <RouterLink
       class="booking-row flex w-full items-start gap-3 border-b border-border px-4 py-3 text-left transition-colors hover:bg-row-hover focus-visible:focus-ring focus-visible:-outline-offset-2 @split:px-6"
-      :to="{ name: 'booking', params: { id: event.bookingId } }"
+      :to="{ name: 'booking', params: { id: event.booking_id } }"
     >
       <!--
         A spine rather than a coloured row: the state is already in words on
@@ -22,10 +22,10 @@
       <span class="min-w-0 grow">
         <span class="flex items-baseline gap-2">
           <span class="booking-row__name truncate text-control font-medium text-text-strong transition-colors">
-            {{ event.clientName }}
+            {{ event.client_name }}
           </span>
           <span
-            v-if="event.totalMinor > 0"
+            v-if="event.total_minor > 0"
             class="ml-auto shrink-0 text-body font-medium tabular-nums text-text-strong"
           >{{ total }}</span>
         </span>
@@ -39,9 +39,9 @@
             tone="neutral"
           >{{ typeName }}</StatusPill>
           <StatusPill
-            v-if="event.waitingOn"
+            v-if="event.waiting_on"
             tone="warning"
-          >{{ t(`bookings.waiting.${event.waitingOn}`) }}</StatusPill>
+          >{{ t(`bookings.waiting.${event.waiting_on}`) }}</StatusPill>
           <!--
             How stale, as quiet meta rather than a third pill. The waiting-on
             pill is the authority on whether an enquiry has gone cold; this is
@@ -106,7 +106,7 @@ const typeName = computed(() => props.event.label ?? t(`bookings.event_type.${pr
 // The minor units are divided here rather than stored as a decimal: the
 // integer is the value, and this is the last possible moment before it is
 // drawn.
-const total = computed(() => n(props.event.totalMinor / 100, {
+const total = computed(() => n(props.event.total_minor / 100, {
   key: 'currency',
   currency: props.event.currency,
 }))
@@ -118,11 +118,11 @@ const total = computed(() => n(props.event.totalMinor / 100, {
 const meta = computed(() => {
   const parts = [format(parseISO(props.event.date), t('bookings.calendar.format.row_date'))]
 
-  if (props.event.startTime) {
-    parts.push(props.event.startTime)
+  if (props.event.start_time) {
+    parts.push(props.event.start_time)
   }
 
-  parts.push(props.event.venueName ?? props.event.city ?? t('bookings.list.no_venue'))
+  parts.push(props.event.venue_name ?? props.event.city ?? t('bookings.list.no_venue'))
 
   return parts.join(' · ')
 })
@@ -134,9 +134,14 @@ const showTouched = computed(() => ['new', 'in_conversation', 'possible', 'quote
 const touched = computed(() => {
   // Calendar days rather than an elapsed duration divided by 86400, which is
   // off by one for anything touched in the evening.
+  //
+  // The instant is parsed, never compared as a string. The API sends
+  // microseconds, Laravel's default ISO 8601, and two timestamps for the same
+  // moment can be written more than one way; parseISO reads all of them and
+  // string equality reads none.
   const days = differenceInCalendarDays(
     props.today ?? new Date(),
-    parseISO(props.event.lastTouchedAt),
+    parseISO(props.event.last_touched_at),
   )
 
   return t('bookings.list.touched', { count: days }, days)

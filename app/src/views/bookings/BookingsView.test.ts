@@ -26,19 +26,19 @@ function event(date: Date, over: Partial<BookingEvent> = {}): BookingEvent {
 
   return {
     id: nextId,
-    bookingId: nextId,
+    booking_id: nextId,
     type: 'main',
     label: null,
     date: dayKey(date),
-    startTime: '06:30',
-    venueName: 'Thornleigh Hall',
+    start_time: '06:30',
+    venue_name: 'Thornleigh Hall',
     city: 'Marlow',
-    clientName: `Client ${nextId}`,
+    client_name: `Client ${nextId}`,
     stage: 'confirmed',
-    totalMinor: 78000,
+    total_minor: 78000,
     currency: 'GBP',
-    waitingOn: null,
-    lastTouchedAt: new Date(2026, 8, 1).toISOString(),
+    waiting_on: null,
+    last_touched_at: new Date(2026, 8, 1).toISOString(),
     ...over,
   }
 }
@@ -48,11 +48,11 @@ function event(date: Date, over: Partial<BookingEvent> = {}): BookingEvent {
 // unfiltered list has more than one thing in it.
 function seed(): BookingEvent[] {
   return [
-    event(busy, { clientName: 'Amelia Trent', stage: 'confirmed' }),
-    event(busy, { clientName: 'Rosie Kerr', stage: 'possible', totalMinor: 0 }),
-    event(busy, { clientName: 'Nadia Iqbal', stage: 'possible', totalMinor: 0 }),
-    event(busy, { clientName: 'Charlotte Dean', stage: 'quoted', totalMinor: 0 }),
-    event(other, { clientName: 'Priya Raman', stage: 'confirmed' }),
+    event(busy, { client_name: 'Amelia Trent', stage: 'confirmed' }),
+    event(busy, { client_name: 'Rosie Kerr', stage: 'possible', total_minor: 0 }),
+    event(busy, { client_name: 'Nadia Iqbal', stage: 'possible', total_minor: 0 }),
+    event(busy, { client_name: 'Charlotte Dean', stage: 'quoted', total_minor: 0 }),
+    event(other, { client_name: 'Priya Raman', stage: 'confirmed' }),
   ]
 }
 

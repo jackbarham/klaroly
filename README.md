@@ -111,7 +111,7 @@ npm test
 
 | Folder | What is in it |
 | --- | --- |
-| `lib/` | Everything that is not a component: `api.ts` (the only caller of `fetch`), `auth.ts`, `platform.ts`, `navigation.ts` (the one list of destinations, used by both navigations), `form.ts` (the one way a screen submits a form), `dialog.ts` (the focus trap every modal shares), `monthGrid.ts` and `dayMarks.ts` (the calendar's arithmetic), `bookingFixtures.ts` (temporary, see below), and `testMount.ts` and `testHelpers.ts`, which tests use to mount and drive a component |
+| `lib/` | Everything that is not a component. The data layer is `api.ts` (the only caller of `fetch`) and the two modules that use its verbs, `auth.ts` and `bookings.ts`; a screen may not import any of them, and `boundary.test.ts` works out that list rather than holding one. Above it sit `verification.ts` and `form.ts`, which a screen may import because they go through a store. The rest is `platform.ts`, `navigation.ts` (the one list of destinations), `dialog.ts` (the focus trap every modal shares), `monthGrid.ts` and `dayMarks.ts` (the calendar's arithmetic), and `testMount.ts` and `testHelpers.ts` |
 | `stores/` | Pinia. `auth.ts` is the only way a screen reads or changes who is signed in; `bookings.ts` is the only way a screen reads the calendar's events |
 | `router/` | One explicit routes array. Everything behind the sign-in is a child of the layout route |
 | `components/layout/` | The app shell: `AppLayout`, `AppSidebar`, `AppTabBar`, `CreateMenu`, `SettingsNav` |
@@ -128,14 +128,10 @@ never calls the API (it goes through a store, and `src/lib/boundary.test.ts`
 enforces that), and the shell is greyscale (the `--color-neutral-*` tokens
 only), because the brand work has not landed yet.
 
-**The bookings screen still reads fixtures, and the API it will read is
-built.** `GET /api/events` and `GET /api/events/months` exist and are tested;
-the app has not been switched over yet, so `src/lib/bookingFixtures.ts` is
-still what `src/stores/bookings.ts` calls. It exports a single
-`loadBookingEvents()` and no component may import it
-(`src/lib/bookings.guards.test.ts` fails if one does), so switching over is
-that function body plus the field names, which move from camelCase to the
-snake_case the rest of the API speaks. `CLAUDE.md` covers both halves.
+**The bookings screen reads the API.** `src/lib/bookings.ts` calls
+`GET /api/events` and `GET /api/events/months`, `src/stores/bookings.ts` holds
+the result, and components read the store. There are no fixtures left.
+`CLAUDE.md` covers how the two halves fit together.
 
 **Signing in locally.** With the API seeded (`php artisan db:seed`), open
 http://app.klaroly.test/login and sign in as `ellie@example.com` with the

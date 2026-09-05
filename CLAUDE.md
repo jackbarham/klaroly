@@ -956,20 +956,44 @@ reads. `App\Http\Controllers\EventController` serves both.
 `/bookings` is a month calendar and a list, two views of one set of events on
 one screen, per business logic 19.1. It is the first screen built against a
 seam rather than against the API: there is no bookings API yet, so
-`src/lib/bookingFixtures.ts` stands in for one and says at the top that it
-goes when the request is real. `src/stores/bookings.ts` calls its
-`loadBookingEvents()` once and holds the result, components read the store,
-and `src/lib/bookings.guards.test.ts` fails if a component or a view imports
-the fixtures. The swap is that one function body.
+`src/lib/bookings.ts` is its data module, sitting where `src/lib/auth.ts`
+sits: below the store, above `api.ts`, and the only other file that turns a
+URL into a domain shape. It exports `events({ from, to })` and
+`eventMonths()`, both unwrapping the `data` envelope.
 
 **The unit is an event, not a booking.** A booking is one record at a stage
 and its dates live in `events`, normally a trial and a `main`, so a row in the
 list and a mark on a day are both an event carrying its booking's stage,
-client and total. `src/types/bookings.ts` is that view model, and every field
-in it is a column in `docs/database-schema.md`: the wedding day is `main` and
-there is no `wedding` type, money is `totalMinor` beside its `currency`, and
-`lastTouchedAt` is the UTC instant rather than a day count, which would go
-stale in an open tab.
+client and total. `src/types/bookings.ts` is that view model in **snake_case**,
+matching the API and `src/types/auth.ts` before it, and every field in it is a
+column in `docs/database-schema.md`: the wedding day is `main` and there is no
+`wedding` type, money is `total_minor` beside its `currency`, and
+`last_touched_at` is the UTC instant rather than a day count, which would go
+stale in an open tab. **Timestamps are parsed, never compared as strings**: the
+API sends microseconds, which is Laravel's correct ISO 8601, and the same
+moment can be written more than one way.
+
+- **The store holds a list of loaded ranges, not one span.** The first load
+  asks from the first of the current month forward, so a normal session makes
+  one call and never another. It sends `from` rather than letting the API
+  default to today, because the calendar opens on the current month and that
+  month starts before today: with the default, a Saturday already worked would
+  draw as empty, which is a lie about the artist's own diary rather than a gap
+  in a feature. The default stays right for every other caller. Moving to a month outside
+  what is held fetches that month with a month either side and merges by event
+  id. The list of ranges is not tidiness: the jump sheet advertises every
+  month the account has ever worked, and a contiguous backfill from today to
+  January 2020 is past the API's span cap, so it would be refused and the month
+  the artist asked for would never load.
+- **The range guard lives in the store, and it is asked about the month, not
+  the window fetched around it.** The scroll sync changes the month as the
+  artist scrolls, so `ensureMonthLoaded` is called constantly and must be free
+  when there is nothing to do. Testing the padded window instead puts its start
+  before today, nothing ever looks loaded, and scrolling forward fires a
+  request per month.
+- **A window failure never clears the list.** `status` covers the first load
+  and `windowStatus` a window, so a month that would not load is a month with
+  no marks, which is recoverable, rather than an empty screen, which is not.
 
 - **A mark answers one question: is this day spoken for.** So a stage that no
   longer holds the date carries nothing. `confirmed`, `completed` and `closed`

@@ -139,12 +139,25 @@ const monthNames = computed(() => {
   return Array.from({ length: 12 }, (unused, index) => format(new Date(2000, index, 1), pattern))
 })
 
-// Far enough back to find last season's work and far enough forward for a
-// wedding booked three years out, which does happen.
+// The years the strip offers, taken from the months the account actually has
+// work in and extended a year each way.
+//
+// It used to be the current year minus one to plus four, carried over from the
+// prototype, which meant an artist with a 2031 wedding had a dot she could not
+// navigate to: the range and the dots came from two places and disagreed. Both
+// now come from the summary, so they cannot.
+//
+// With nothing in the diary at all there is nothing to derive from, so the
+// fallback is a year either side of this one, which is where somebody starting
+// out would be looking.
 const years = computed(() => {
   const current = new Date().getFullYear()
+  const inUse = [...props.monthsWithWork].map((month) => Number(month.slice(0, 4)))
 
-  return Array.from({ length: 6 }, (unused, index) => current - 1 + index)
+  const first = inUse.length > 0 ? Math.min(...inUse, current) - 1 : current - 1
+  const last = inUse.length > 0 ? Math.max(...inUse, current) + 1 : current + 1
+
+  return Array.from({ length: last - first + 1 }, (unused, index) => first + index)
 })
 
 const shownYear = ref(props.month.getFullYear())

@@ -119,21 +119,10 @@ function strengthOrder(event: BookingEvent): number {
 }
 
 export function useDayMarks(events: MaybeRefOrGetter<BookingEvent[]>) {
-  const marks = computed(() => marksFor(toValue(events)))
-
-  // 'YYYY-MM' for every month that has any event in it, marked or not, which
-  // is what puts a dot on the month jump sheet. An artist's diary is mostly
-  // empty with clusters on summer Saturdays, so "where is my work" is a more
-  // common question than "take me to March".
-  const monthsWithWork = computed(() => {
-    const months = new Set<string>()
-
-    for (const event of toValue(events)) {
-      months.add(event.date.slice(0, 7))
-    }
-
-    return months
-  })
-
-  return { marks, monthsWithWork }
+  // Only the marks. monthsWithWork used to be derived here from the loaded
+  // events, which was true while every event was loaded at once and became
+  // wrong the moment the data was windowed: a derivation can only ever know
+  // about the months it has been given, and the jump sheet's whole job is to
+  // point at the ones it has not. GET /api/events/months answers that instead.
+  return { marks: computed(() => marksFor(toValue(events))) }
 }

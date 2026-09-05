@@ -11,7 +11,7 @@ const sources = import.meta.glob<string>([
   '../views/bookings/**/*.ts',
   '../lib/monthGrid.ts',
   '../lib/dayMarks.ts',
-  '../lib/bookingFixtures.ts',
+  '../lib/bookings.ts',
   '../stores/bookings.ts',
   '../types/bookings.ts',
 ], { query: '?raw', import: 'default', eager: true })
@@ -57,16 +57,16 @@ describe('the bookings feature', () => {
   // day key files an evening event under the previous day for the eight
   // months the clocks are forward. format(d, 'yyyy-MM-dd') reads the local
   // calendar date and is the only way a date becomes a key here.
+  //
+  // The ban has no exceptions now. It used to name bookingFixtures.ts, which
+  // serialised a UTC instant and was entitled to; that file is gone and the
+  // timestamps come from the API already serialised, so there is nothing left
+  // for the exception to point at. A ban with no exceptions is a better test
+  // than the one it replaces.
   it('never turns a date into a day key with toISOString', () => {
-    // bookingFixtures.ts is the one exception, and a named one rather than a
-    // pattern: it serialises last_touched_at, which is a UTC instant, and that
-    // is exactly what the method is for. Everything else in the feature is
-    // dealing in calendar dates.
-    const others = files.filter(([path]) => !path.endsWith('bookingFixtures.ts'))
-
     // Matched as a method call, so toJSON, which is the same conversion under
     // another name, cannot be used to slip past this.
-    expect(offences(/\.toISOString\s*\(|\.toJSON\s*\(/, others)).toEqual([])
+    expect(offences(/\.toISOString\s*\(|\.toJSON\s*\(/)).toEqual([])
   })
 
   // The stronger half of the same rule: if there is only one place that writes
@@ -75,17 +75,4 @@ describe('the bookings feature', () => {
     expect(offences(/'yyyy-MM-dd'/)).toHaveLength(1)
   })
 
-  // The seam the API prompt swaps. A component that imports the fixtures is a
-  // component that still needs editing on the day the request is real.
-  it('never imports the fixtures into a component or a view', () => {
-    const components = files.filter(([path]) => path.includes('/components/') || path.includes('/views/'))
-
-    expect(offences(/bookingFixtures/, components)).toEqual([])
-  })
-
-  // Only the store may reach the fixtures, so there is one place the swap
-  // happens and one place that holds the result.
-  it('imports the fixtures into the store and nowhere else', () => {
-    expect(offences(/from '@\/lib\/bookingFixtures'/)).toHaveLength(1)
-  })
 })

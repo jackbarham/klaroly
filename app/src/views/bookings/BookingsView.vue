@@ -23,12 +23,25 @@
       </template>
     </PageHeader>
 
+    <!--
+      One banner for both failures. A window that would not load is a month
+      with no marks on it, which is recoverable; the first load failing is an
+      empty screen. Either way there is now something to do about it.
+    -->
     <p
-      v-if="bookings.status === 'failed'"
-      class="rounded-card border border-border bg-surface-raised p-4 text-sm text-text"
+      v-if="bookings.hasFailed"
+      class="mb-4 flex flex-wrap items-center gap-3 rounded-card border border-border bg-surface-raised p-4 text-sm text-text"
       role="status"
     >
       {{ t('bookings.failed') }}
+      <AppButton
+        variant="secondary"
+        size="small"
+        :pending="retrying"
+        @click="onRetry"
+      >
+        {{ t('bookings.retry') }}
+      </AppButton>
     </p>
 
     <!--
@@ -64,7 +77,7 @@
             v-model:month="month"
             v-model:mode="mode"
             :marks="marks"
-            :months-with-work="monthsWithWork"
+            :months-with-work="bookings.monthsWithWork"
             :selected="selected"
             :today="today"
             @select="onSelectDay"
@@ -118,7 +131,7 @@ const mode = ref<GridMode>('month')
 const calendarVisible = ref(true)
 const calendarId = useId()
 
-const { marks, monthsWithWork } = useDayMarks(() => bookings.events)
+const { marks } = useDayMarks(() => bookings.events)
 
 const calendarWrap = useTemplateRef<HTMLElement>('calendarWrap')
 const listWrap = useTemplateRef<HTMLElement>('listWrap')
@@ -351,6 +364,26 @@ onBeforeUnmount(() => {
 // Anything the calendar drives holds the sync off, so the two cannot chase
 // each other while a month change settles.
 watch([month, mode], holdSync)
+
+// Fetch the month if it has not been loaded. The scroll sync changes the month
+// as the artist scrolls, so this runs constantly and is free when there is
+// nothing to fetch: the range guard is inside the store rather than here,
+// where a caller could forget it.
+watch(month, (current) => {
+  bookings.ensureMonthLoaded(current)
+})
+
+const retrying = ref(false)
+
+async function onRetry(): Promise<void> {
+  retrying.value = true
+
+  try {
+    await bookings.retry(month.value)
+  } finally {
+    retrying.value = false
+  }
+}
 </script>
 
 <style scoped>
