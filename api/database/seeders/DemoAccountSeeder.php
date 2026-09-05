@@ -50,9 +50,22 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * One realistic account that doubles as the App Store review account. Every
- * person here is fictional; the venues are real places with real postcodes so
- * the calendar and travel screens have something true to show.
+ * One realistic account that doubles as the App Store review account.
+ *
+ * Every person and every venue here is invented, and the venues deliberately
+ * so: this account is what gets screenshotted, demonstrated and handed to
+ * Apple, and naming a real wedding venue in it implies a relationship with
+ * that business which does not exist. The same rule the app's own fixtures
+ * were given, for the same reason.
+ *
+ * Towns, counties and streets are kept, because they name a place rather than
+ * a business, and so is the outward half of each postcode, which names a
+ * postal district. The inward half is invented, because that names a delivery
+ * point and so effectively a building. Nothing depends on any of them
+ * resolving: the seeder sets no travel columns, there is no geocoding
+ * anywhere in the app, and travel estimates are decision 74, unused in v1.
+ * When they arrive, whether the demo wants postcodes that really resolve is a
+ * decision to make then rather than one inherited by accident.
  *
  * Dates are relative to today so the demo always has bookings ahead of it
  * and money owed behind it.
@@ -245,11 +258,11 @@ class DemoAccountSeeder extends Seeder
         $this->bookings[1] = $this->booking('sophie', [
             'stage' => BookingStage::New,
             'source' => BookingSource::WebForm,
-            'enquiry_message' => 'Hi Ellie, we are getting married at Clevedon Hall next June and I would love to talk about makeup for me, three bridesmaids and my mum. Ready by 12.30 if possible.',
+            'enquiry_message' => 'Hi Ellie, we are getting married at Harbourmead Hall next June and I would love to talk about makeup for me, three bridesmaids and my mum. Ready by 12.30 if possible.',
             'last_touched_at' => now()->subDays(1),
         ], [
             'date' => $today->addMonths(9)->addDays(10),
-            'venue' => ['Clevedon Hall', 'Elton Road', 'Clevedon', 'BS21 7RH'],
+            'venue' => ['Harbourmead Hall', 'Elton Road', 'Clevedon', 'BS21 7XN'],
             'start' => '07:00:00', 'ready' => '12:30:00',
         ], null, [
             ['Sophie', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
@@ -264,7 +277,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(4),
         ], [
             'date' => $today->addMonths(8)->addDays(6),
-            'venue' => ['Priston Mill', 'Priston', 'Bath', 'BA2 9EQ'],
+            'venue' => ['Wrenfield Mill', 'Priston', 'Bath', 'BA2 9XT'],
             'start' => '07:30:00', 'ready' => '12:00:00',
         ], null, [
             ['Hannah', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'],
@@ -282,7 +295,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(6),
         ], [
             'date' => $today->addMonths(7)->addDays(22),
-            'venue' => ['Elmore Court', 'Elmore', 'Gloucester', 'GL2 3NT'],
+            'venue' => ['Alderway Court', 'Elmore', 'Gloucester', 'GL2 3XP'],
             'start' => '06:30:00', 'ready' => '11:30:00',
         ], null, [
             ['Amelia', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
@@ -302,7 +315,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(2),
         ], [
             'date' => $today->addMonths(6)->addDays(18),
-            'venue' => ['Deer Park Country House', 'Weston', 'Honiton', 'EX14 3PG'],
+            'venue' => ['Fallowmere House', 'Weston', 'Honiton', 'EX14 3XR'],
             'start' => '08:00:00', 'ready' => '13:00:00',
         ], $today->addMonths(5)->addDays(25), [
             ['Chloe', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'],
@@ -321,7 +334,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(19),
         ], [
             'date' => $today->addMonths(5)->addDays(11),
-            'venue' => ['Coombe Lodge', 'Bourne Lane', 'Blagdon', 'BS40 7RE'],
+            'venue' => ['Netherstone Lodge', 'Bourne Lane', 'Blagdon', 'BS40 7XQ'],
             'start' => '07:30:00', 'ready' => '12:30:00',
         ], $today->addMonths(4)->addDays(20), [
             ['Megan', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'], ['Nan', 'Senior'],
@@ -340,7 +353,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(3),
         ], [
             'date' => $today->addMonth()->addDays(15),
-            'venue' => ['Tortworth Court', 'Tortworth', 'Wotton-under-Edge', 'GL12 8HH'],
+            'venue' => ['Marlbury Court', 'Tortworth', 'Wotton-under-Edge', 'GL12 8XJ'],
             'start' => '07:00:00', 'ready' => '12:00:00',
         ], $today->addDays(17), [
             ['Lucy', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
@@ -366,7 +379,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(8),
         ], [
             'date' => $today->addMonths(2)->addDays(26),
-            'venue' => ['Orchardleigh House', 'Orchardleigh', 'Frome', 'BA11 2PH'],
+            'venue' => ['Pearmain House', 'Orchardleigh', 'Frome', 'BA11 2XW'],
             'start' => '07:30:00', 'ready' => '13:00:00',
         ], $today->addMonths(2)->addDays(5), [
             ['Jessica', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'], ['Mother-in-law', 'Mother of the bride'],
@@ -389,7 +402,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(12),
         ], [
             'date' => $today->addMonths(4)->addDays(14),
-            'venue' => ['The Great Tythe Barn', 'Tetbury', 'Tetbury', 'GL8 8SQ'],
+            'venue' => ['Saltway Barn', 'Tetbury', 'Tetbury', 'GL8 8XD'],
             'start' => '08:00:00', 'ready' => '13:30:00',
         ], $today->addMonths(3)->addDays(20), [
             ['Emily', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'],
@@ -408,7 +421,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(5),
         ], [
             'date' => $today->addMonths(10)->addDays(8),
-            'venue' => ['Ashton Court Mansion', 'Long Ashton', 'Bristol', 'BS41 9JN'],
+            'venue' => ['Quillet Court', 'Long Ashton', 'Bristol', 'BS41 9XG'],
             'start' => '07:30:00', 'ready' => '12:30:00',
         ], $today->addMonths(9)->addDays(15), [
             ['Sarah', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
@@ -428,7 +441,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(9),
         ], [
             'date' => $today->addMonths(11)->addDays(19),
-            'venue' => ['Bath Assembly Rooms', 'Bennett Street', 'Bath', 'BA1 2QH'],
+            'venue' => ['The Verity Rooms', 'Bennett Street', 'Bath', 'BA1 2XF'],
             'start' => '08:00:00', 'ready' => '13:00:00',
         ], $today->addMonths(10)->addDays(28), [
             ['Hannah', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'],
@@ -447,7 +460,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(15),
         ], [
             'date' => $today->subMonth()->subDays(22),
-            'venue' => ['Berwick Lodge', 'Berwick Drive', 'Bristol', 'BS10 7TD'],
+            'venue' => ['Brackendown Lodge', 'Berwick Drive', 'Bristol', 'BS10 7XB'],
             'start' => '07:00:00', 'ready' => '12:00:00',
         ], $today->subMonths(2)->subDays(20), [
             ['Lucy', 'Bride'], ['Amelia', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
@@ -467,7 +480,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(10),
         ], [
             'date' => $today->subDays(18),
-            'venue' => ['Kings Weston House', 'Kings Weston Lane', 'Bristol', 'BS11 0UR'],
+            'venue' => ['Sheldrake House', 'Kings Weston Lane', 'Bristol', 'BS11 0XL'],
             'start' => '07:30:00', 'ready' => '12:30:00',
         ], $today->subMonth()->subDays(10), [
             ['Grace', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Nan', 'Senior'], ['Flower girl', 'Child'],
@@ -487,7 +500,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subMonths(2),
         ], [
             'date' => $today->subMonths(2)->subDays(27),
-            'venue' => ['Cheltenham Town Hall', 'Imperial Square', 'Cheltenham', 'GL50 1QA'],
+            'venue' => ['The Pallantine Rooms', 'Imperial Square', 'Cheltenham', 'GL50 1XN'],
             'start' => '08:00:00', 'ready' => '13:00:00',
         ], $today->subMonths(3)->subDays(20), [
             ['Emily', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
@@ -506,7 +519,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subWeeks(3),
         ], [
             'date' => $today->addYear()->addDays(2),
-            'venue' => ['The Pump Room', 'Stall Street', 'Bath', 'BA1 1LZ'],
+            'venue' => ['The Conduit Room', 'Stall Street', 'Bath', 'BA1 1XM'],
             'start' => '08:00:00', 'ready' => '13:00:00',
         ], null, [
             ['Megan', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'],
