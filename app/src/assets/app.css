@@ -166,7 +166,11 @@
   */
   --shadow-control: 0 0 0 1px rgb(10 10 46 / 0.24) inset;
   --shadow-control-hover: 0 0 0 1px rgb(10 10 46 / 0.36) inset;
-  --shadow-popover: 0 0 0 1px rgb(18 18 23 / 0.10), 0 24px 48px rgb(18 18 23 / 0.03),
+  /* The ring is far lighter than the 10% at source: at this radius and padding
+     a menu wants an edge that is barely there. The dark twin below keeps its
+     own 12% and does not follow, because on a dark ground the drop layers do
+     nothing and the ring is the only elevation there is. */
+  --shadow-popover: 0 0 0 1px rgb(18 18 23 / 0.03), 0 24px 48px rgb(18 18 23 / 0.03),
     0 10px 18px rgb(18 18 23 / 0.03), 0 5px 8px rgb(18 18 23 / 0.04),
     0 2px 4px rgb(18 18 23 / 0.04);
   /* A drop shadow does nothing on a dark ground, so the hairline ring carries
@@ -411,6 +415,22 @@
 
 body {
   @apply bg-surface font-sans text-text antialiased;
+}
+
+/*
+  Tailwind 4's reset gives a button the ordinary arrow cursor rather than the
+  pointing hand, so nothing in the app looked clickable on hover. This puts
+  the hand back in one place, which is the whole app: AppButton and
+  IconButton, and equally the hand-rolled ones in the tab bar, the create menu
+  and the update bar, without each of them having to remember.
+
+  It sits in the base layer so a utility still wins, and it leaves a disabled
+  button alone, which keeps the not-allowed cursor those components ask for.
+*/
+@layer base {
+  button:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 /*

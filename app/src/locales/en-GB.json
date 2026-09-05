@@ -22,7 +22,8 @@
     "settings": "Settings",
     "account": "My account",
     "help": "Help",
-    "create": "New"
+    "create": "New",
+    "kitchen_sink": "Kitchen sink"
   },
   "create": {
     "title": "Create",
@@ -69,6 +70,7 @@
   },
   "account": {
     "title": "My account",
+    "menu_label": "Account",
     "no_membership": "This login does not belong to any account."
   },
   "home": {

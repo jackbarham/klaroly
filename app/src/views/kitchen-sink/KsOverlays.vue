@@ -3,8 +3,8 @@
     <div class="space-y-2">
       <p class="text-xs font-medium text-text-muted">
         Sheet. Below the lg breakpoint it is a sheet along the bottom edge;
-        at lg it is a small panel under the sidebar's New button, which is
-        the geometry it is built to sit in.
+        at lg it is a small panel in the sidebar's column, at one of its two
+        anchors. This is the default one, below the New button.
       </p>
       <AppButton
         variant="secondary"
@@ -50,16 +50,67 @@
       </AppButton>
       <CreateMenu v-model:open="menuOpen" />
     </div>
+
+    <div class="space-y-2">
+      <p class="text-xs font-medium text-text-muted">
+        Sheet again, at its other anchor: above the account row at the foot of
+        the sidebar, which is where AccountMenu opens. The panel below is the
+        anchor on its own, so that it can be compared with the one above
+        without signing anybody out.
+      </p>
+      <AppButton
+        variant="secondary"
+        @click="anchoredOpen = true"
+      >
+        Open the sheet above the account row
+      </AppButton>
+      <Sheet
+        v-model:open="anchoredOpen"
+        anchor="above-account"
+        label="An example sheet at the lower anchor"
+      >
+        <div class="space-y-4 pb-2">
+          <p>
+            Below lg this is the same bottom sheet as the one above: the
+            anchor only means anything from lg up.
+          </p>
+          <AppButton
+            variant="secondary"
+            @click="anchoredOpen = false"
+          >
+            Close
+          </AppButton>
+        </div>
+      </Sheet>
+    </div>
+
+    <div class="space-y-2">
+      <p class="text-xs font-medium text-text-muted">
+        AccountMenu, which is that lower anchor with the way out in it. The
+        sidebar's account row opens the real one; this is a second copy and
+        its Sign out really does sign out, so it is here to be looked at
+        rather than clicked.
+      </p>
+      <AppButton
+        variant="secondary"
+        @click="accountOpen = true"
+      >
+        Open the account menu
+      </AppButton>
+      <AccountMenu v-model:open="accountOpen" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// The two things that open over the page. Both are shown behind a button
-// rather than left open, because how they arrive and where focus goes is
-// most of what they are.
+// Everything that opens over the page, each behind a button rather than left
+// open, because how it arrives and where focus goes is most of what it is.
 import { ref } from 'vue'
+import AccountMenu from '@/components/layout/AccountMenu.vue'
 import CreateMenu from '@/components/layout/CreateMenu.vue'
 
 const sheetOpen = ref(false)
 const menuOpen = ref(false)
+const anchoredOpen = ref(false)
+const accountOpen = ref(false)
 </script>

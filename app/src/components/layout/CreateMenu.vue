@@ -3,22 +3,19 @@
     v-model:open="open"
     :label="t('create.title')"
   >
-    <p class="px-4 pb-2 text-sm font-medium text-text-muted">
-      {{ t('create.title') }}
-    </p>
-    <ul>
+    <ul :class="sheetListClasses">
       <li
         v-for="row in rows"
         :key="row.key"
       >
         <button
-          class="flex w-full items-center gap-4 rounded-control px-4 py-4 text-left text-text-strong hover:bg-surface-sunken focus-visible:focus-ring"
+          :class="sheetRowClasses"
           type="button"
           @click="choose"
         >
           <Icon
             :name="row.icon"
-            class="h-5 w-5 text-text-muted"
+            :class="sheetRowIconClasses"
           />
           {{ t(row.labelKey) }}
         </button>
@@ -34,6 +31,7 @@
 // one it is comes from the width alone. See Sheet.vue.
 import { useI18n } from 'vue-i18n'
 import type { IconName } from '@/components/ui/Icon.vue'
+import { sheetListClasses, sheetRowClasses, sheetRowIconClasses } from '@/components/ui/Sheet.vue'
 
 const open = defineModel<boolean>('open', { required: true })
 

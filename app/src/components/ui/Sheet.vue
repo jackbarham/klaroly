@@ -18,14 +18,17 @@
 
       <!--
         One panel, two presentations, switched on width alone. Below lg it is
-        a sheet along the bottom edge with rounded top corners. At lg it is a
-        small menu under the sidebar's New button: the sidebar is w-72 with
-        page-top padding, an h-8 wordmark, a gap-8 and an h-12 button, so
-        the button ends 136 pixels down and the menu starts at top-36.
+        a sheet along the bottom edge, with the sheet radius on its top
+        corners and the raised shadow. At lg it is a small menu in the
+        sidebar's column, with the card radius, because a menu that size looks
+        like a box rather than a sheet, and the menu shadow, whose first layer
+        is the hairline ring around it. Which of the two heights it opens at
+        is in anchorClasses.
       -->
       <div
         ref="panel"
-        class="sheet-panel sheet-bottom absolute inset-x-0 bottom-0 rounded-t-sheet border-t border-border bg-surface-overlay px-4 pt-4 shadow-raised lg:inset-x-auto lg:bottom-auto lg:left-6 lg:top-36 lg:w-60 lg:rounded-sheet lg:border lg:pb-4"
+        class="sheet-panel sheet-bottom absolute inset-x-0 bottom-0 rounded-t-sheet border-t border-border bg-surface-overlay px-4 pt-4 shadow-raised lg:inset-x-auto lg:left-6 lg:w-60 lg:rounded-card lg:border-0 lg:p-3 lg:shadow-menu"
+        :class="[anchorClasses[anchor], originClasses[anchor]]"
         role="dialog"
         aria-modal="true"
         :aria-label="label"
@@ -41,6 +44,27 @@
   </Transition>
 </template>
 
+<script lang="ts">
+// A row inside the panel, which is what every menu built on this is made of.
+// It is here rather than copied into each menu because the second copy is
+// where two menus start drifting apart.
+//
+// It is a sidebar item at lg, where the menu opens beside one: the same
+// height, the same gap, the same type at the same weight, and the same 4px
+// between rows.
+// On a phone the panel is a bottom sheet and the row is taller, because 40px
+// is under the tap minimum.
+//
+// The row is a group so that the icon can follow the label into the accent on
+// hover: an icon left grey beside a purple label reads as two things.
+export const sheetListClasses = 'space-y-1'
+
+export const sheetRowClasses = 'group flex h-14 w-full items-center gap-3 rounded-control px-4 text-left text-body font-medium text-text-strong transition-colors hover:bg-surface-sunken hover:text-accent-text focus-visible:focus-ring lg:h-10'
+
+// The icon in that row, which is the sidebar's idle icon at the sidebar's size.
+export const sheetRowIconClasses = 'h-6 w-6 text-text-placeholder transition-colors group-hover:text-accent-text'
+</script>
+
 <script setup lang="ts">
 // The presentational half of anything modal: the scrim, the panel, the way
 // in and the way out. What goes inside is the caller's business.
@@ -49,9 +73,39 @@
 // and the scrim close it, and closing puts focus back on whatever opened it.
 import { nextTick, useTemplateRef, watch } from 'vue'
 
-defineProps<{
+// The anchor only means anything at lg, where the panel is a menu in the
+// sidebar's column rather than a sheet along the bottom of a phone.
+withDefaults(defineProps<{
   label: string
-}>()
+  anchor?: 'below-new' | 'above-account'
+}>(), {
+  anchor: 'below-new',
+})
+
+// Both positions are measured off the sidebar, so a change to its geometry
+// is a change here as well. See AppSidebar.vue, which carries the same sums.
+//
+// Below the New button: page-top padding, an h-8 wordmark, a gap-8 and an
+// h-12 button put the button's bottom 136 pixels down, so the menu starts at
+// top-36.
+//
+// Above the account row: the column's pb-6 and the row's own h-10 come to 64
+// pixels, and the 8 the style guide asks for above the trigger puts the
+// menu's bottom at bottom-18.
+const anchorClasses = {
+  'below-new': 'lg:bottom-auto lg:top-36',
+  'above-account': 'lg:bottom-18 lg:top-auto',
+}
+
+// At lg the panel comes out of the thing that opened it and goes back into
+// it: down from under the New button, up from above the account row. These
+// are plain class names rather than utilities because the transition that
+// reads them is in the style block below. Below lg neither applies: both
+// panels are the same bottom sheet, arriving from the bottom edge.
+const originClasses = {
+  'below-new': 'from-above',
+  'above-account': '',
+}
 
 const open = defineModel<boolean>('open', { required: true })
 
@@ -131,8 +185,14 @@ watch(open, async (isOpen) => {
 
 <style scoped>
 /*
-  The scrim fades and the panel slides up from below. Transform and opacity
-  only, so the browser can do the whole thing on the compositor.
+  The scrim fades and the panel slides. Transform and opacity only, so the
+  browser can do the whole thing on the compositor.
+
+  Below lg it is a bottom sheet and travels its own height up from the bottom
+  edge. At lg it is a menu and travels one spacing step out of its trigger,
+  which is a much smaller move: the panel is already beside the button, so
+  anything longer sweeps it across the sidebar rather than dropping it out of
+  the thing that was clicked.
 */
 .sheet-enter-active,
 .sheet-leave-active {
@@ -154,6 +214,21 @@ watch(open, async (isOpen) => {
   transform: translateY(100%);
 }
 
+/* A menu that opens below its trigger drops down into place and lifts back
+   into it. One that opens above does the opposite, which is what the rule
+   above already does at a shorter distance. */
+@media (width >= 64rem) {
+  .sheet-enter-from .sheet-panel,
+  .sheet-leave-to .sheet-panel {
+    transform: translateY(calc(var(--spacing) * 4));
+  }
+
+  .sheet-enter-from .sheet-panel.from-above,
+  .sheet-leave-to .sheet-panel.from-above {
+    transform: translateY(calc(var(--spacing) * -4));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sheet-enter-active,
   .sheet-leave-active,
@@ -163,7 +238,9 @@ watch(open, async (isOpen) => {
   }
 
   .sheet-enter-from .sheet-panel,
-  .sheet-leave-to .sheet-panel {
+  .sheet-leave-to .sheet-panel,
+  .sheet-enter-from .sheet-panel.from-above,
+  .sheet-leave-to .sheet-panel.from-above {
     transform: none;
   }
 }

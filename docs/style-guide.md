@@ -165,6 +165,11 @@ previews where you are about to land, and the active item stays distinguishable
 because it also carries accent text and its dot marker. Fill alone was never
 carrying that job.
 
+**In Klaroly the hover takes the accent label too**, so a pointed-at row says
+so in words as well as in fill. What separates it from the active row is then
+the icon: grey while you are only hovering, accent once you are there. So the
+active row is the only one where the label and the icon agree.
+
 This supersedes an earlier note in this guide claiming a hover you cannot see is
 not a hover. That is true of a table row, which is a 1px divider across a wide
 column with nothing else to signal it, and it is why row hover became an accent
@@ -245,9 +250,9 @@ controls stay put.
 | --- | --- | --- |
 | `--radius-xs` | 4px | Thumbnails, small indicators |
 | `--radius-control` | 8px | Buttons, inputs, selects, menus, pills, nav items |
-| `--radius-card` | **12px in Klaroly**, 8px at source | Cards and panels |
+| `--radius-card` | **12px in Klaroly**, 8px at source | Cards, and a menu panel from lg up |
 | `--radius-pill` | 9999px | Avatars, toggles, round icon buttons |
-| `--radius-sheet` | 24px | **Klaroly only.** The tab bar and the create sheet, which have no equivalent at source |
+| `--radius-sheet` | 24px | **Klaroly only.** The tab bar, and a menu panel below lg, where it is a bottom sheet. No equivalent at source |
 
 8px accounts for **76%** of every rounded corner in their application. Their
 `rounded-full` is `100%`, which turns any non-square box into an ellipse; this
@@ -280,7 +285,7 @@ never a shadow.
 | `--shadow-input-hover` | same at 36% | same at 40% |
 | `--shadow-input-focus` | `0 0 0 var(--border-width-focus) var(--border-focus) inset` | identical |
 | `--shadow-input-invalid` | `0 0 0 var(--border-width-focus) var(--danger) inset` | identical |
-| `--shadow-menu` | five layers, see below | ring plus two soft layers |
+| `--shadow-menu` | five layers, see below. Ring at 3% | ring at 12% plus two soft layers |
 | `--shadow-card` | `none` | `none` |
 
 The last two are the focus and error edges, and they are written as `var()`
@@ -294,11 +299,11 @@ under the inset ring. It reads as fussy at this density, it does nothing at all 
 a phone, and removing it means the field's only edge is the inset ring, which is
 what lets focus recolour that edge without the box moving by a pixel.
 
-The popover shadow is worth copying verbatim, because it is the thing that makes
-their menus feel expensive:
+The popover shadow is what makes their menus feel expensive, and it is copied
+almost verbatim. The one change is the ring, far lighter than their 10%:
 
 ```
-0 0 0 1px  rgb(18 18 23 / .10),
+0 0 0 1px  rgb(18 18 23 / .03),   /* theirs is .10 */
 0 24px 48px rgb(18 18 23 / .03),
 0 10px 18px rgb(18 18 23 / .03),
 0 5px 8px   rgb(18 18 23 / .04),
@@ -306,6 +311,13 @@ their menus feel expensive:
 ```
 
 A hairline ring plus four very soft, very low-opacity layers. Not one big blur.
+
+**The ring is the lever for how contained a menu looks**, and it is the only
+part of this shadow anyone should expect to tune. Klaroly runs it very light,
+so the panel reads as lying on the page rather than boxed off from it. The dark
+theme's ring stays at 12% and must not follow: a drop shadow does nothing on a
+dark ground, so there the ring is carrying the elevation as well as the edge,
+and 3% would leave the panel with no edge at all.
 
 ### Layout
 
@@ -373,13 +385,14 @@ A full-height flex column, `264px` wide, in three parts.
 | Nav column | 24px horizontal padding, grows to fill | flexible |
 | Footer block | `margin-top: auto`, 24px horizontal padding | 113px |
 
-**Nav rhythm.** Every row is 40px and there is **no gap between them**. Not 2px,
-not 4px. The nav is one continuous 40px rhythm from the first item to the last,
-and that consistency is most of why it reads as tidy.
+**Nav rhythm.** Every row is 40px, with a **4px gap** between them. Theirs has no
+gap at all: one continuous 40px rhythm from the first item to the last, and that
+consistency is most of why it reads as tidy. Klaroly runs the small gap.
 
-**No group separators.** There are none in the whole nav column. The only hairline
-in the sidebar is in the footer, above its last row. Sections are distinguished by
-expanding, not by dividing.
+**Group separators.** Theirs has none in the whole nav column, and the only
+hairline in the sidebar is in the footer, above its last row; sections are
+distinguished by expanding, not by dividing. Klaroly has one hairline, between
+the main group and Settings, My account and Help.
 
 | Item | Padding | Type |
 | --- | --- | --- |
@@ -581,8 +594,11 @@ cannot read. Filled danger uses `--color-danger-solid` at `#d50b3e`, which is
 and is still what error rings, required markers and pill text use, because those
 sit on white or on a light tint where it measures fine.
 
-Disabled is `opacity: .5` and `cursor: not-allowed`. Radius is
-`--radius-control`. Gap between icon and label is 8px.
+Disabled is `opacity: .5` and `cursor: not-allowed`. Anything else that can be
+clicked takes the pointing hand, which is a single base rule in
+`src/assets/app.css` rather than a class per button, because Tailwind 4's reset
+gives a button the ordinary arrow. Radius is `--radius-control`. Gap between
+icon and label is 8px.
 
 An icon may sit on either side of the label, and the side is the label's to
 decide: a leading icon for what the button does, a trailing one for where it
@@ -811,9 +827,9 @@ Title, description, and actions on the right, over a hairline divider.
 | Radius | `--radius-control` |
 | Type | 14 / 24 / 500 |
 | Idle | `text-strong`, transparent background |
-| Hover | `surface-sunken`, **the same fill as active** |
+| Hover | `surface-sunken`, **the same fill as active**, plus an `accent-text` label. The icon does not follow |
 | Active | `surface-sunken` background, `accent` text, plus the dot marker |
-| Icon | 20px, 8px gap to the label |
+| Icon | 24px, 12px gap to the label, `text-placeholder` idle **and on hover**, the row's own colour only when active |
 | Group separation | **none.** See the shell section |
 | Column width | 264px total, 216px item, 24px gutters |
 
@@ -834,18 +850,22 @@ most finished.
 
 | Property | Value |
 | --- | --- |
-| Panel | `surface-overlay`, 8px radius, 8px vertical padding, no border |
-| Elevation | `--shadow-menu`, the five-layer shadow |
+| Panel | `surface-overlay`, `--radius-card`, 12px padding, and no border of its own: the hairline ring is the shadow's first layer. As a bottom sheet below `lg` it keeps `--radius-sheet` on its top corners, 16px padding, `--shadow-raised` and a real top border |
+| Elevation | `--shadow-menu`, the five-layer shadow, whose 3% ring is the panel's only edge |
 | Minimum width | 200px, or the trigger width where that is wider |
-| Item | 32px tall, 0 16px padding, 14 / 24 / 400 |
-| Item hover | `surface-sunken` |
+| Item | 40px tall, 0 16px padding, 14 / 24 / 500, 12px gap to its icon, 4px between rows. Same weight as a sidebar item, because the menu opens beside one |
+| Item hover | `surface-sunken` fill, with the label and the icon both going `accent-text` |
 | Offset from trigger | 8px |
 | Transform origin | the corner nearest the trigger |
-| Enter | opacity 0 to 1 over 100ms `ease-out` |
+| Enter | opacity 0 to 1 over 200ms, with a 16px slide out of the trigger: down from a menu anchored below it, up from one anchored above. Reversed on the way out |
 | Trigger | 200ms transform, for a plus that rotates into a close |
 
-Note what the animation is not: there is no scale, no slide, no spring. Opacity
-over 100ms, and the shadow does the rest.
+Note what the animation is not: there is no scale and no spring. Theirs has no
+slide either, and Klaroly adds one, but only 16px and always in the direction
+the menu opens, so the panel reads as coming out of the button that was clicked
+and going back into it. Anything longer sweeps the panel across the sidebar
+instead. Below `lg` the same panel is a bottom sheet and travels its own height
+up from the bottom edge, which is the one place a long move is right.
 
 ```html
 <div class="k-menu">

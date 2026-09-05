@@ -25,7 +25,7 @@
       {{ t(createItem.labelKey) }}
     </AppButton>
 
-    <ul class="mt-8 space-y-2">
+    <ul class="mt-8 space-y-1">
       <li
         v-for="item in sidebarMain"
         :key="item.key"
@@ -37,7 +37,7 @@
         >
           <Icon
             :name="item.icon"
-            class="h-5 w-5"
+            :class="[iconClasses, isCurrent(item) ? '' : iconIdleClasses]"
           />
           {{ t(item.labelKey) }}
         </RouterLink>
@@ -46,7 +46,7 @@
 
     <hr class="my-6 border-t border-border">
 
-    <ul class="space-y-2">
+    <ul class="space-y-1">
       <li
         v-for="item in sidebarSecondary"
         :key="item.key"
@@ -58,23 +58,35 @@
         >
           <Icon
             :name="item.icon"
-            class="h-5 w-5"
+            :class="[iconClasses, isCurrent(item) ? '' : iconIdleClasses]"
           />
           {{ t(item.labelKey) }}
         </RouterLink>
       </li>
     </ul>
 
+    <!--
+      Who is signed in, and the way out. The row is h-10 and the column's
+      padding below it is 6, which is the arithmetic the menu above it is
+      positioned from. See Sheet.vue.
+    -->
     <div class="mt-auto pt-6">
-      <AppButton
-        class="w-full justify-start"
-        variant="ghost"
-        icon="sign-out"
-        @click="signOut"
+      <button
+        class="flex h-10 w-full items-center gap-3 rounded-control px-4 text-body font-medium text-text-strong hover:bg-surface-sunken focus-visible:focus-ring"
+        type="button"
+        aria-haspopup="dialog"
+        :aria-expanded="accountOpen"
+        @click="accountOpen = true"
       >
-        {{ t('auth.sign_out_action') }}
-      </AppButton>
+        <span class="grow truncate text-left">{{ accountName }}</span>
+        <Icon
+          name="more"
+          :class="[iconClasses, iconIdleClasses]"
+        />
+      </button>
     </div>
+
+    <AccountMenu v-model:open="accountOpen" />
   </nav>
 </template>
 
@@ -82,8 +94,10 @@
 // The sidebar builds itself from the navigation config; it has no list of
 // its own. It does not link to More, because More exists only to reach the
 // sections a phone's tab bar cannot show and every one of them is here.
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
+import AccountMenu from '@/components/layout/AccountMenu.vue'
 import { createItem, sectionKey, sidebarMain, sidebarSecondary, type Destination } from '@/lib/navigation'
 import { useAuthStore } from '@/stores/auth'
 
@@ -93,21 +107,40 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const route = useRoute()
-const router = useRouter()
 const auth = useAuthStore()
 
-const linkClasses = 'flex h-12 items-center gap-4 rounded-control px-4 focus-visible:focus-ring'
-const currentClasses = 'bg-surface-sunken font-medium text-accent-text'
-const idleClasses = 'text-text hover:bg-surface-sunken'
+const accountOpen = ref(false)
+
+// The business name, because that is what the person thinks of this account
+// as. Their own name is the fallback for an account that has not been given
+// one, and the empty string keeps the row from collapsing before the first
+// GET /api/me answers.
+const accountName = computed(() => auth.me?.account.name || auth.me?.user.name || '')
+
+// The weight does not change when a row becomes the current one: only the
+// fill and the colour do. A label that thickens on the way past is a label
+// that moves.
+const linkClasses = 'flex h-10 items-center gap-3 rounded-control px-4 text-body font-medium transition-colors focus-visible:focus-ring'
+const currentClasses = 'bg-surface-sunken text-accent-text'
+const idleClasses = 'text-text hover:bg-surface-sunken hover:text-accent-text'
+
+// The icon is quieter than its label, and takes the accent only on the current
+// row. It deliberately does not follow the label on hover: with the fill and
+// the accent label now on both, the icon is the one thing left that says which
+// row you are actually on rather than which one you are pointing at. It is a lighter token
+// rather than an opacity, because half opacity is how this app says
+// unavailable.
+//
+// text-placeholder is the lightest step on the grey ramp and is named for the
+// text inside an empty control, which is not what this is. It is used here
+// because it is the value the column wants and nothing else on the ramp is
+// that light; a token named for a quiet icon would be the better home for it.
+const iconClasses = 'h-6 w-6'
+const iconIdleClasses = 'text-text-placeholder'
 
 // A booking's page marks Bookings, a settings group marks Settings, and so
 // on, which is what sectionKey works out.
 function isCurrent(item: Destination): boolean {
   return sectionKey(route.name) === item.key
-}
-
-async function signOut(): Promise<void> {
-  await auth.signOut()
-  await router.push({ name: 'login' })
 }
 </script>

@@ -135,6 +135,7 @@ export interface SpacingStep {
 export const spacingSteps: SpacingStep[] = [
   { step: 1, className: 'w-1' },
   { step: 2, className: 'w-2' },
+  { step: 3, className: 'w-3' },
   { step: 4, className: 'w-4' },
   { step: 6, className: 'w-6' },
   { step: 8, className: 'w-8' },
@@ -155,8 +156,8 @@ export interface ShapeToken {
 // card, in one edit and with no component touched.
 export const radiusTokens: ShapeToken[] = [
   { token: '--radius-control-value', className: 'rounded-control', use: 'a button, an input, a menu row, a navigation link' },
-  { token: '--radius-card-value', className: 'rounded-card', use: 'a card. Klaroly runs this at 12px, where the style guide says 8' },
-  { token: '--radius-sheet', className: 'rounded-sheet', use: 'the tab bar and the create sheet' },
+  { token: '--radius-card-value', className: 'rounded-card', use: 'a card, and a menu panel from lg up. Klaroly runs this at 12px, where the style guide says 8' },
+  { token: '--radius-sheet', className: 'rounded-sheet', use: 'the tab bar, and the same panel below lg, where it is a bottom sheet' },
 ]
 
 // A control's edge is four of these, and every one is an inset ring rather
@@ -164,12 +165,12 @@ export const radiusTokens: ShapeToken[] = [
 // without the box moving. The two state shadows read --border-width-focus, so
 // thickening every form edge in the app is one variable.
 export const shadowTokens: ShapeToken[] = [
-  { token: '--shadow-raised', className: 'shadow-raised', use: 'the tab bar, the create button, the create sheet' },
+  { token: '--shadow-raised', className: 'shadow-raised', use: 'the tab bar, the create button, and a menu panel below lg, where it is a bottom sheet' },
   { token: '--shadow-input', className: 'shadow-input', use: "a control's edge at rest" },
   { token: '--shadow-input-hover', className: 'shadow-input-hover', use: 'the same edge hovered, when the control is neither disabled nor focused' },
   { token: '--shadow-input-focus', className: 'shadow-input-focus', use: 'the same edge focused. There is no ring around the control' },
   { token: '--shadow-input-invalid', className: 'shadow-input-invalid', use: 'the same edge on a control that is wrong, and it stays while the control is focused' },
-  { token: '--shadow-menu-value', className: 'shadow-menu', use: 'a menu or popover. Not used yet' },
+  { token: '--shadow-menu-value', className: 'shadow-menu', use: 'a menu panel from lg up. Its first layer is a hairline ring, which is the only edge that panel has' },
 ]
 
 export interface BorderWidth {

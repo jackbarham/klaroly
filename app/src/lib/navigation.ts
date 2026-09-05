@@ -34,6 +34,24 @@ export const navigation: NavItem[] = [
   { key: 'help', routeName: 'help', labelKey: 'nav.help', icon: 'help', inTabBar: false, sidebarGroup: 'secondary' },
 ]
 
+// The kitchen sink is a development page, so its entry is added the same way
+// its route is, under import.meta.env.DEV. That is a compile-time constant,
+// so a build drops this and the array is the nine entries above. It is
+// spliced in below My account rather than pushed, because Help belongs at the
+// end of the list whether this is there or not.
+if (import.meta.env.DEV) {
+  const afterAccount = navigation.findIndex((item) => item.key === 'account') + 1
+
+  navigation.splice(afterAccount, 0, {
+    key: 'kitchen-sink',
+    routeName: 'kitchen-sink',
+    labelKey: 'nav.kitchen_sink',
+    icon: 'sink',
+    inTabBar: false,
+    sidebarGroup: 'secondary',
+  })
+}
+
 // An entry that goes somewhere. Everything except the create action is one,
 // and the lists below are all of this type so that a link never has to cope
 // with a missing route name.
@@ -96,6 +114,7 @@ const sections: Record<string, string> = {
   more: 'more',
   account: 'account',
   help: 'help',
+  'kitchen-sink': 'kitchen-sink',
 }
 
 export function sectionKey(routeName: unknown): string | null {

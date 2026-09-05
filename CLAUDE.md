@@ -258,10 +258,12 @@ Hand-written routes live in `routes/api.php` under `/api`:
   exist as tokens and nothing uses them yet: the status pill and the booking
   states are still to build.
 - Spacing comes off an eight pixel grid. Use Tailwind steps 2, 4, 6, 8, 10,
-  12, 16, 20 and 24 for padding, margins and gaps. Step 1 is allowed only
-  inside a control, such as between an icon and its label. Heights, widths and
-  positions are not on that list because a control has to be the size it has
-  to be, but keep them on the same grid.
+  12, 16, 20 and 24 for padding, margins and gaps. Steps 1 and 3 are the two
+  half-steps the design allows, and both are written down in
+  `docs/style-guide.md`: 4px inside a control, and 12px for a control's icon
+  gap and for a menu panel's padding. Heights, widths and positions are not on
+  that list because a control has to be the size it has to be, but keep them
+  on the same grid.
 - `env(safe-area-inset-*)` cannot live in `@theme`, so `src/assets/app.css`
   defines five utilities with `@utility` and they are the only place an inset
   is read: `page-top`, `page-bottom` (clears the tab bar), `bar-bottom` (where

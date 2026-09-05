@@ -38,6 +38,7 @@ export type IconName =
   | 'chevron-right'
   | 'sign-out'
   | 'page'
+  | 'sink'
 
 const paths: Record<IconName, string[]> = {
   home: [
@@ -103,6 +104,15 @@ const paths: Record<IconName, string[]> = {
     'M5.5 6.5A1.5 1.5 0 0 1 7 5h10a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 17 19H7a1.5 1.5 0 0 1-1.5-1.5Z',
     'M9 10h6',
     'M9 14h4',
+  ],
+  // A basin with a tap over it. The tap sits left of centre and its spout
+  // ends above the rim, because an arch centred on a closed box reads as a
+  // padlock at this size.
+  sink: [
+    'M3 12h18v5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17Z',
+    'M7 12V7.5h5.5a2.5 2.5 0 0 1 2.5 2.5v1',
+    'M5 7.5h4',
+    'M12 15.4v.2',
   ],
 }
 

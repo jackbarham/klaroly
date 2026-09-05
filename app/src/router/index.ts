@@ -211,18 +211,19 @@ if (__WEB_TARGET__) {
 // The kitchen sink is a development page: the whole UI kit and form kit on
 // one route, so that a change to a token can be judged in one place. It sits
 // inside the layout, so every component on it is shown in the container it
-// really lives in. Nothing links to it; it is reached by typing the address.
+// really lives in, and the navigation config lists it under the same flag, so
+// in development it is a link in the sidebar rather than an address to type.
 //
 // import.meta.env.DEV is a compile-time constant, so this branch is dead code
-// in a build and the page is never shipped. It has no titleKey because its
-// strings are inline, so the tab simply says Klaroly.
+// in a build and neither the page nor the link is shipped.
 if (import.meta.env.DEV) {
   const layout = routes[routes.length - 1]
 
   layout.children?.push({
     path: 'kitchen-sink',
-    name: 'kitchenSink',
+    name: 'kitchen-sink',
     component: () => import('@/views/kitchen-sink/KitchenSinkView.vue'),
+    meta: { titleKey: 'nav.kitchen_sink', backTo: 'more' },
   })
 }
 

@@ -6,7 +6,7 @@
         page: the sidebar from the lg breakpoint up, the tab bar below it.
         Neither is drawn again here. Both are fixed to the viewport, so a
         second copy would escape any box put around it, and the sidebar's copy
-        would come with a second Sign out button that really signs out.
+        would come with a second account row over the real one.
         Narrow and widen the window to see them swap.
       </p>
       <p>

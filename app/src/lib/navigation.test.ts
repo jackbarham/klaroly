@@ -10,6 +10,14 @@ import {
   tabBarItems,
 } from '@/lib/navigation'
 
+// The kitchen sink is a development-only entry, added under
+// import.meta.env.DEV in navigation.ts, and the tests below describe the
+// navigation the app ships. Dropping it here keeps them saying the same thing
+// in a build, and again on the day the entry is taken out.
+function shipped(items: { key: string }[]): string[] {
+  return items.map((item) => item.key).filter((key) => key !== 'kitchen-sink')
+}
+
 describe('the tab bar list', () => {
   it('is five items in the documented order', () => {
     expect(tabBarItems.map((item) => item.key)).toEqual(['home', 'bookings', 'create', 'enquiries', 'more'])
@@ -28,8 +36,12 @@ describe('the sidebar lists', () => {
   })
 
   it('are Home, Bookings, Enquiries and Contacts, then Settings, My account and Help', () => {
-    expect(sidebarMain.map((item) => item.key)).toEqual(['home', 'bookings', 'enquiries', 'contacts'])
-    expect(sidebarSecondary.map((item) => item.key)).toEqual(['settings', 'account', 'help'])
+    expect(shipped(sidebarMain)).toEqual(['home', 'bookings', 'enquiries', 'contacts'])
+    expect(shipped(sidebarSecondary)).toEqual(['settings', 'account', 'help'])
+  })
+
+  it('carry the kitchen sink below My account while this is a development build', () => {
+    expect(sidebarSecondary.map((item) => item.key)).toEqual(['settings', 'account', 'kitchen-sink', 'help'])
   })
 
   it('never contain the create action, which is a button rather than a link', () => {
@@ -41,7 +53,7 @@ describe('the sidebar lists', () => {
 
 describe('the More list', () => {
   it('is everything the tab bar has no room for', () => {
-    expect(moreItems.map((item) => item.key)).toEqual(['contacts', 'settings', 'account', 'help'])
+    expect(shipped(moreItems)).toEqual(['contacts', 'settings', 'account', 'help'])
   })
 })
 
@@ -54,6 +66,10 @@ describe('sectionKey', () => {
   it('puts every settings page in Settings', () => {
     expect(sectionKey('settings')).toBe('settings')
     expect(sectionKey('settings-travel')).toBe('settings')
+  })
+
+  it('puts the kitchen sink in its own section, so the sidebar marks it', () => {
+    expect(sectionKey('kitchen-sink')).toBe('kitchen-sink')
   })
 
   it('is null for a route in no section at all', () => {
