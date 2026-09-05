@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\TokenController;
 use App\Http\Controllers\Auth\UpdatePasswordController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\MarketingConsentController;
 use App\Http\Controllers\MeController;
 use App\Http\Controllers\ProfileInformationController;
@@ -78,4 +79,11 @@ Route::middleware(['auth:sanctum', 'account'])->group(function () {
     Route::patch('/account', [AccountController::class, 'update']);
 
     Route::put('/user/marketing-consent', [MarketingConsentController::class, 'update']);
+
+    // What the bookings screen reads. The windowed one is the list and the
+    // calendar; the months one is the jump sheet's dots and the bounds of its
+    // year strip. They are separate because folding them together would mean
+    // either no dots or fetching the whole diary to draw twelve of them.
+    Route::get('/events', [EventController::class, 'index']);
+    Route::get('/events/months', [EventController::class, 'months']);
 });

@@ -128,12 +128,14 @@ never calls the API (it goes through a store, and `src/lib/boundary.test.ts`
 enforces that), and the shell is greyscale (the `--color-neutral-*` tokens
 only), because the brand work has not landed yet.
 
-**The bookings screen has no API behind it yet.** There is no bookings
-endpoint, so `src/lib/bookingFixtures.ts` stands in for one: it exports a
-single `loadBookingEvents()`, the Pinia store calls it once, and no component
-may import it (`src/lib/bookings.guards.test.ts` fails if one does). When the
-endpoint exists, that one function body becomes a request and nothing else on
-the screen changes. `CLAUDE.md` covers how the screen is put together.
+**The bookings screen still reads fixtures, and the API it will read is
+built.** `GET /api/events` and `GET /api/events/months` exist and are tested;
+the app has not been switched over yet, so `src/lib/bookingFixtures.ts` is
+still what `src/stores/bookings.ts` calls. It exports a single
+`loadBookingEvents()` and no component may import it
+(`src/lib/bookings.guards.test.ts` fails if one does), so switching over is
+that function body plus the field names, which move from camelCase to the
+snake_case the rest of the API speaks. `CLAUDE.md` covers both halves.
 
 **Signing in locally.** With the API seeded (`php artisan db:seed`), open
 http://app.klaroly.test/login and sign in as `ellie@example.com` with the

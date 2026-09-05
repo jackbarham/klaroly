@@ -1,7 +1,10 @@
 <?php
 
+use App\Enums\BookingStage;
 use App\Models\Account;
 use App\Models\AccountUser;
+use App\Models\Booking;
+use App\Models\Event;
 use App\Models\User;
 use App\Support\CurrentAccount;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -131,6 +134,55 @@ function actingAsWebApp(TestCase $test, User $user, string $sessionId): TestCase
         ->withCredentials()
         ->withHeader('Referer', config('app.frontend_url'))
         ->withCookie(config('session.cookie'), $sessionId);
+}
+
+/**
+ * An account with the feature map registration actually writes, made current.
+ *
+ * The settings factory defaults features to an empty map, and an absent key is
+ * off, so a test that used the plain factory would watch feature suppression
+ * swallow whatever it was asserting and read as a service that does not work.
+ *
+ * @param  array<string, bool>  $overrides
+ */
+function accountWithFeatures(array $overrides = []): Account
+{
+    return actingForAccount(['features' => $overrides + config('features.defaults')]);
+}
+
+/**
+ * An owner of an account with that same realistic feature map, not bound as
+ * current, for a test that makes a request rather than calling a service.
+ *
+ * @param  array<string, bool>  $features
+ */
+function bookingsOwner(array $features = []): User
+{
+    $account = Account::factory()
+        ->withSettings(['features' => $features + config('features.defaults')])
+        ->create();
+
+    return createOwner([], $account);
+}
+
+/**
+ * One event on a booking of the given stage, on the given date. Confirmed
+ * unless the caller says otherwise, so a test that is about dates does not
+ * have to say anything about stages.
+ *
+ * @param  array<string, mixed>  $bookingAttributes
+ * @param  array<string, mixed>  $eventAttributes
+ */
+function eventOn(string $date, array $bookingAttributes = [], array $eventAttributes = []): Event
+{
+    $booking = Booking::factory()->create($bookingAttributes + [
+        'stage' => BookingStage::Confirmed,
+    ]);
+
+    return Event::factory()->create($eventAttributes + [
+        'booking_id' => $booking->id,
+        'event_date' => $date,
+    ]);
 }
 
 /**

@@ -130,6 +130,8 @@ Hand-written routes live in `routes/api.php` under `/api`:
 | PUT | `/api/user/password` | auth:sanctum, account, throttle:password-update | Current password plus the new one. 200 `{message}`; no `me`, because nothing in it changed |
 | PATCH | `/api/account` | auth:sanctum, account | The business name. Owner only; a collaborator gets 403. 200 with the `/api/me` payload |
 | PUT | `/api/user/marketing-consent` | auth:sanctum, account | `consented`. 200 with the `/api/me` payload |
+| GET | `/api/events` | auth:sanctum, account | `from` (defaults to today) and `to` (unbounded when omitted). The events in the range, each carrying its booking's stage, client, total and waiting-on state |
+| GET | `/api/events/months` | auth:sanctum, account | No parameters. Every month the account holds an event in, for all time, as `["2026-09", ...]` |
 
 ### The rules
 
@@ -897,6 +899,57 @@ and a route name is a string, so nothing else can catch it. Component tests
 mount through `src/lib/testMount.ts`, a few lines of `createApp` with the
 real router, i18n, pinia and the global kit, because there is no component
 testing library and there is not going to be one.
+
+### The bookings endpoints
+
+`GET /api/events` and `GET /api/events/months` are what the bookings screen
+reads. `App\Http\Controllers\EventController` serves both.
+
+- **The unit is an event, not a booking**, so four fields on each row are
+  per-booking and two events of one booking repeat them. That is deliberate:
+  nesting a booking object would make the list sort, group and filter through
+  a level of indirection it never needs. The shape is
+  `app/src/types/bookings.ts`, and the key list in
+  `tests/Feature/Bookings/EventIndexTest.php` is pinned to it so the two
+  cannot drift in silence.
+- **`from` defaults to today and `to` is unbounded when omitted.** The first
+  call the app makes is today with no `to`, which is not laziness: the list
+  groups upcoming work into this week, this month, next three months and
+  later, and "later" cannot be computed from a subset. The window is the
+  fallback for navigating backwards, not the primary mechanism.
+- **The cost is capped, because an endpoint whose cost its caller sets is one
+  somebody trips over.** `config/bookings.php` holds a span cap of 1830 days,
+  applied only when both ends are given, and a row cap of 2000, checked with
+  an indexed count before the fetch. Neither can fire on the call the app
+  makes by itself.
+- **Ordering is total**: `event_date`, then `start_time` with nulls last, then
+  `id`. The list renders in this order and must not sort again, and without
+  the final `id` two events at the same time could swap between requests.
+- **The months summary is presence, not counts**, has no parameters, and is
+  **invalidated by writes rather than cached for a session**: any write that
+  creates, moves or deletes an event date makes it stale. Its `select
+  distinct` goes through the model and never `DB::table('events')`, which
+  would bypass the account scope and return every account's months while
+  looking perfectly correct in a one-account development database. There is a
+  test for exactly that, separate from the windowed endpoint's.
+- **`App\Services\WaitingOnResolver` is axis two of the lifecycle** (business
+  logic section 6), takes a booking and returns an enum, because the Home
+  attention block in 18.1 is the same calculation. Precedence is a list in one
+  place, first match wins: not held, balance, deposit, **enquiry cold**,
+  price, review, signature, form. Cold sits above price because both describe
+  an enquiry at Possible with no quote, so with price first the cold value
+  could never be reported at all. Suppression by feature is inside each
+  branch, not a filter over the top, so with invoicing off the money checks
+  never run rather than running and having their answers discarded.
+- **Two of the eight values are unreachable on purpose.** `client_form` and
+  `artist_review` both need `intake_forms`, which is schema section 7.4:
+  designed, not migrated. The branches exist and return nothing, and a test
+  asserts they are unreachable by design rather than by accident.
+- **Eager load or this becomes the slowest thing in the app.** A test asserts
+  the query count does not grow with the number of events. One eager load
+  looks redundant and is not: `booking.lines.booking` is there because
+  `booking_lines` has no currency column, so `MoneyCast` resolves a line's
+  currency through its booking, and without it that is a query per line.
 
 ### The bookings screen
 

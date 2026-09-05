@@ -116,7 +116,24 @@ class DemoAccountSeeder extends Seeder
 
         AccountSettings::create([
             'account_id' => $this->account->id,
-            'features' => collect(FeatureKey::cases())->mapWithKeys(fn (FeatureKey $key) => [$key->value => true])->all(),
+            // The map a real registration writes, plus the extras this demo
+            // wants switched on, named one at a time.
+            //
+            // It used to be every key mapped to true, which quietly made the
+            // demo account a shape no signup produces. That account is what
+            // gets screenshotted, shown to an artist, and handed to Apple with
+            // a statement about what the app does, so the difference between
+            // it and a real signup should be three lines somebody can read
+            // rather than an accident.
+            //
+            // Intake forms are deliberately not among them: section 7.4 is
+            // designed and not migrated, so switching the toggle on would
+            // promise a screen that does not exist.
+            'features' => [
+                FeatureKey::Photos->value => true,
+                FeatureKey::TravelEstimates->value => true,
+                FeatureKey::FeedbackRequests->value => true,
+            ] + config('features.defaults'),
             'deposit_type' => DepositType::Percent,
             'deposit_percent' => 25,
             'deposit_due_days' => 7,
