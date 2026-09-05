@@ -584,6 +584,10 @@ sit on white or on a light tint where it measures fine.
 Disabled is `opacity: .5` and `cursor: not-allowed`. Radius is
 `--radius-control`. Gap between icon and label is 8px.
 
+An icon may sit on either side of the label, and the side is the label's to
+decide: a leading icon for what the button does, a trailing one for where it
+goes, so Next carries a right chevron and Back a left one.
+
 ```html
 <button class="k-btn k-btn-primary">Confirm booking</button>
 <button class="k-btn k-btn-secondary k-btn-sm">Save draft</button>

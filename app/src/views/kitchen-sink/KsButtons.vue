@@ -33,6 +33,7 @@
             :variant="variant"
             :size="row.size"
             :icon="row.icon"
+            :icon-end="row.iconEnd"
             :disabled="row.disabled"
             :pending="row.pending"
           >
@@ -53,6 +54,7 @@ interface ButtonRow {
   label: string
   size: 'small' | 'medium'
   icon?: IconName
+  iconEnd?: IconName
   disabled: boolean
   pending: boolean
 }
@@ -60,15 +62,18 @@ interface ButtonRow {
 const variants = ['primary', 'secondary', 'ghost'] as const
 
 const rows: ButtonRow[] = [
-  { label: 'Small', size: 'small', icon: undefined, disabled: false, pending: false },
-  { label: 'Medium', size: 'medium', icon: undefined, disabled: false, pending: false },
-  { label: 'Small, icon', size: 'small', icon: 'plus', disabled: false, pending: false },
-  { label: 'Medium, icon', size: 'medium', icon: 'plus', disabled: false, pending: false },
+  { label: 'Small', size: 'small', icon: undefined, iconEnd: undefined, disabled: false, pending: false },
+  { label: 'Medium', size: 'medium', icon: undefined, iconEnd: undefined, disabled: false, pending: false },
+  { label: 'Small, icon', size: 'small', icon: 'plus', iconEnd: undefined, disabled: false, pending: false },
+  { label: 'Medium, icon', size: 'medium', icon: 'plus', iconEnd: undefined, disabled: false, pending: false },
+  { label: 'Trailing icon', size: 'medium', icon: undefined, iconEnd: 'chevron-right', disabled: false, pending: false },
+  { label: 'Both icons', size: 'medium', icon: 'chevron-left', iconEnd: 'chevron-right', disabled: false, pending: false },
   // Disabled and pending sit next to each other on purpose: they used to be
   // the same picture, and the point of the pair is that they no longer are.
-  { label: 'Disabled', size: 'medium', icon: undefined, disabled: true, pending: false },
-  { label: 'Pending', size: 'medium', icon: undefined, disabled: false, pending: true },
-  { label: 'Disabled, icon', size: 'medium', icon: 'plus', disabled: true, pending: false },
-  { label: 'Pending, icon', size: 'medium', icon: 'plus', disabled: false, pending: true },
+  { label: 'Disabled', size: 'medium', icon: undefined, iconEnd: undefined, disabled: true, pending: false },
+  { label: 'Pending', size: 'medium', icon: undefined, iconEnd: undefined, disabled: false, pending: true },
+  { label: 'Disabled, icon', size: 'medium', icon: 'plus', iconEnd: undefined, disabled: true, pending: false },
+  { label: 'Pending, icon', size: 'medium', icon: 'plus', iconEnd: undefined, disabled: false, pending: true },
+  { label: 'Pending, trailing icon', size: 'medium', icon: undefined, iconEnd: 'chevron-right', disabled: false, pending: true },
 ]
 </script>

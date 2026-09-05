@@ -49,6 +49,7 @@
     "username_reserved": "This username is reserved.",
     "username_taken": "This username is already taken.",
     "marketing_consent_label": "Send me occasional updates",
+    "register_next_action": "Next",
     "register_action": "Create account",
     "forgot_password_title": "Reset your password",
     "forgot_password_intro": "Enter your email address and we will send you a link to choose a new password.",

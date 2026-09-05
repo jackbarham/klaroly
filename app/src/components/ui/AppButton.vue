@@ -21,6 +21,11 @@
         class="h-5 w-5"
       />
       <slot />
+      <Icon
+        v-if="iconEnd"
+        :name="iconEnd"
+        class="h-5 w-5"
+      />
     </span>
 
     <!--
@@ -59,7 +64,10 @@ import Icon, { type IconName } from '@/components/ui/Icon.vue'
 const props = withDefaults(defineProps<{
   variant?: 'primary' | 'secondary' | 'ghost'
   size?: 'small' | 'medium'
+  // icon sits before the label and iconEnd after it. A label that points
+  // somewhere, such as Next, wants the arrow on the side it is pointing.
   icon?: IconName
+  iconEnd?: IconName
   type?: 'button' | 'submit'
   disabled?: boolean
   pending?: boolean

@@ -639,8 +639,11 @@ What sits on top of the tables:
   `deleted_at` are not listed in any model's casts. A model casts only the
   columns the framework would not cast on its own.
 
-The app has its authentication screens: sign in, register (with a live
-username preview and availability check), forgot password, reset password,
+The app has its authentication screens: sign in, register (two steps in one
+form and one route: the email and password, then the business name, full name,
+username with its live preview and availability check, and the marketing
+consent; a rejection naming a field from the first step takes the form back
+there so the message has somewhere to land), forgot password, reset password,
 sign out, the verification banner with resend, the verified landing on the
 home page, and session restore on load. They are built from the UI kit and
 the form kit like every other screen, so they are also the only forms in the
