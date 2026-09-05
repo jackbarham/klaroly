@@ -56,11 +56,12 @@ export const colourGroups: ColourGroup[] = [
   },
   {
     title: 'Lines',
-    note: 'Every hairline in the app is the first of these three.',
+    note: 'Every hairline in the app is the first of these four.',
     tokens: [
       { token: '--border', className: 'bg-border', use: 'every border and divider' },
       { token: '--border-strong', className: 'bg-border-strong', use: "a control's edge, the sheet's grabber, the toggle when it is off" },
       { token: '--border-focus', className: 'bg-border-focus', use: 'the focus ring, on everything that takes focus' },
+      { token: '--border-accent-soft', className: 'bg-border-accent-soft', use: 'a radio card under the pointer: the accent softened by the ground behind it' },
     ],
   },
   {
@@ -83,7 +84,7 @@ export const colourGroups: ColourGroup[] = [
       { token: '--danger-solid', className: 'bg-danger-solid', use: 'a destructive button, which needs a readable white label. Not used yet' },
       { token: '--danger-subtle', className: 'bg-danger-subtle', use: 'an error or cancelled pill. Not used yet' },
       { token: '--success', className: 'bg-success', use: 'confirmed, paid. Not used yet' },
-      { token: '--success-text', className: 'bg-success-text', use: 'the words on a success pill. Not used yet' },
+      { token: '--success-text', className: 'bg-success-text', use: 'a text input\'s valid mark, and the words on a success pill' },
       { token: '--success-subtle', className: 'bg-success-subtle', use: 'a success pill. Not used yet' },
       { token: '--warning', className: 'bg-warning', use: 'awaiting, due. Not used yet' },
       { token: '--warning-text', className: 'bg-warning-text', use: 'the words on a warning pill. Not used yet' },

@@ -94,11 +94,16 @@
           />
         </FormField>
 
-        <CheckboxInput
-          id="marketing-consent"
-          v-model="marketingConsent"
+        <FormField
+          v-slot="field"
+          inline
           :label="t('auth.marketing_consent_label')"
-        />
+        >
+          <CheckboxInput
+            v-bind="field"
+            v-model="marketingConsent"
+          />
+        </FormField>
 
         <FormError :message="formError" />
 

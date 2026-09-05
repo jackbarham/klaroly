@@ -23,7 +23,7 @@
     -->
     <span
       class="block rounded-card border p-4 transition-colors duration-200 peer-focus-visible:focus-ring peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
-      :class="selected ? 'border-accent ring-1 ring-accent' : 'border-border-strong'"
+      :class="selected ? 'border-accent ring-1 ring-accent' : 'border-border-strong peer-enabled:hover:border-border-accent-soft'"
     >
       <span class="block text-body font-medium text-text-strong">{{ title }}</span>
       <span
@@ -41,6 +41,12 @@
 // Selected is an accent border plus an accent ring. Both are one pixel, and a
 // ring is drawn outside the box rather than in the layout, so the card reads
 // as a two pixel edge and nothing moves when it is chosen.
+//
+// Hover is the same edge in border-accent-soft, which is the accent softened
+// by the ground behind it. One pixel and a quieter colour, so a card under
+// the pointer cannot be mistaken for the selected one, and only an
+// unselected, enabled card takes it: a selected card is already wearing the
+// accent, and a disabled one is not going anywhere.
 import { computed } from 'vue'
 
 const props = defineProps<{

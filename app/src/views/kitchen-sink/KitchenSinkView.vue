@@ -1,38 +1,14 @@
 <template>
   <div>
-    <header class="mb-8 space-y-2">
-      <h1 class="text-2xl font-semibold text-text-strong">
-        Kitchen sink
-      </h1>
-      <p class="text-text-muted">
-        Every component the app owns, in every variant and state it supports,
-        on one page. It is a development page: nothing links to it, it makes
-        no requests, and it is removed before launch.
-      </p>
-    </header>
-
     <!--
-      The index and the theme control stay put, because this page is long and
+      The title and the theme control stay put, because this page is long and
       is meant to be scrolled. The negative margin lets the bar reach the
       edges of the column, which has px-6 from the layout.
     -->
-    <div class="sticky top-0 z-10 -mx-6 mb-12 flex flex-wrap items-center gap-4 border-b border-border bg-surface px-6 py-4">
-      <nav
-        class="min-w-0 sm:flex-1"
-        aria-label="Sections"
-      >
-        <ul class="flex flex-wrap gap-x-4 gap-y-2">
-          <li
-            v-for="section in sections"
-            :key="section.id"
-          >
-            <a
-              class="text-sm text-text underline hover:text-text-strong focus-visible:focus-ring"
-              :href="`#${section.id}`"
-            >{{ section.title }}</a>
-          </li>
-        </ul>
-      </nav>
+    <div class="sticky top-0 z-10 -mx-6 mb-12 flex items-center gap-4 border-b border-border bg-surface px-6 py-4">
+      <h1 class="min-w-0 text-2xl font-semibold text-text-strong">
+        Kitchen sink
+      </h1>
 
       <div class="ml-auto">
         <AppButton
@@ -73,8 +49,8 @@
 // is deleted before launch, and two hundred keys for labels such as "Client
 // name" would sit in the locale file forever.
 //
-// The sections are listed once, as data, so the index at the top and the
-// page itself cannot drift apart.
+// The sections are listed once, as data, so adding one is a line here rather
+// than a block in the template.
 import { computed, onBeforeUnmount, ref, type Component } from 'vue'
 import KsBands from '@/views/kitchen-sink/KsBands.vue'
 import KsButtons from '@/views/kitchen-sink/KsButtons.vue'

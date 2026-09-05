@@ -8,15 +8,15 @@ import { mountWithCleanup } from '@/lib/testMount'
 
 interface SlotProps {
   id: string
-  labelledBy: string
+  labelledBy?: string
   describedBy?: string
   invalid: boolean
 }
 
 // A real field: FormField around the control it is meant to wire up. The
 // text input is the default, because most of these tests are about the wiring
-// every control shares; the checkbox is the one control that used to bring a
-// label of its own into the field.
+// every control shares; the checkbox is the one that takes the inline shape,
+// where the label becomes the row and wraps the box.
 const Host = defineComponent({
   props: {
     label: { type: String, required: true },
@@ -28,7 +28,12 @@ const Host = defineComponent({
     const text = ref('')
     const ticked = ref(false)
 
-    return () => h(FormField, { label: props.label, hint: props.hint, error: props.error }, {
+    return () => h(FormField, {
+      label: props.label,
+      hint: props.hint,
+      error: props.error,
+      inline: props.control === 'checkbox',
+    }, {
       default: (slotProps: SlotProps) => {
         if (props.control === 'checkbox') {
           return h(CheckboxInput, {
@@ -105,61 +110,41 @@ describe('a form field', () => {
   })
 })
 
-// The bug this covers: the checkbox used to bring its own label wherever it
-// was put, so inside a field the same control had two labels pointing at it
-// and was announced twice.
+// The bug this covers: the checkbox used to be written two ways, one
+// carrying its own label and one named by a field's, and the two lined up
+// differently on the same form. There is one shape now.
 describe('a checkbox', () => {
-  it('carries its own label when it stands on its own', async () => {
-    const mounted = await mount(CheckboxInput, '/', {
-      id: 'remember',
-      label: 'Keep me signed in',
-      modelValue: false,
-    })
-
-    const labels = mounted.host.querySelectorAll('label')
-
-    expect(labels).toHaveLength(1)
-    expect(labels[0].textContent).toBe('Keep me signed in')
-    expect(labels[0].getAttribute('for')).toBe('remember')
-  })
-
-  it('carries no label of its own when a field names it', async () => {
-    const mounted = await mount(CheckboxInput, '/', {
-      id: 'remember',
-      labelledBy: 'remember-label',
-      modelValue: false,
-    })
-
-    expect(mounted.host.querySelectorAll('label')).toHaveLength(0)
-    expect(element(mounted.host, 'input').getAttribute('aria-labelledby')).toBe('remember-label')
-  })
-
-  // The rule the component cannot state in its prop types, so it states it
-  // here instead: a box is named once, by one thing or the other.
-  it('refuses both a label of its own and a field naming it', async () => {
-    await expect(mount(CheckboxInput, '/', {
-      id: 'remember',
-      label: 'Keep me signed in',
-      labelledBy: 'remember-label',
-      modelValue: false,
-    })).rejects.toThrow(/never both/)
-  })
-
-  it('refuses to be given neither', async () => {
-    await expect(mount(CheckboxInput, '/', {
-      id: 'remember',
-      modelValue: false,
-    })).rejects.toThrow(/never both/)
-  })
-
-  it('is named once, by the field, when it sits inside one', async () => {
+  it('is one row, with the field\'s label wrapping the box', async () => {
     const mounted = await mount(Host, '/', { label: 'Send a confirmation email', control: 'checkbox' })
 
     const labels = mounted.host.querySelectorAll('label')
     const input = element(mounted.host, 'input')
 
     expect(labels).toHaveLength(1)
-    expect(labels[0].textContent).toBe('Send a confirmation email')
-    expect(input.getAttribute('aria-labelledby')).toBe(labels[0].id)
+    expect(labels[0].textContent?.trim()).toBe('Send a confirmation email')
+    expect(labels[0].getAttribute('for')).toBe(input.id)
+    expect(labels[0].contains(input)).toBe(true)
+  })
+
+  // A wrapping label already names the box. A second name pointing at that
+  // same label is what made the old shape announce itself twice.
+  it('is named once, by that label alone', async () => {
+    const mounted = await mount(Host, '/', { label: 'Send a confirmation email', control: 'checkbox' })
+
+    expect(element(mounted.host, 'input').getAttribute('aria-labelledby')).toBeNull()
+  })
+
+  it('still takes the hint and the error from the field', async () => {
+    const mounted = await mount(Host, '/', {
+      label: 'Send a confirmation email',
+      hint: 'It goes out as soon as the booking is saved.',
+      error: 'Confirm how the client should be told.',
+      control: 'checkbox',
+    })
+
+    const input = element(mounted.host, 'input')
+
+    expect(input.getAttribute('aria-invalid')).toBe('true')
+    expect((input.getAttribute('aria-describedby') ?? '').split(' ')).toHaveLength(2)
   })
 })

@@ -99,16 +99,16 @@ Semantic tokens and what they resolve to in each theme.
 | `--color-danger-solid` | `#d50b3e` | `#d50b3e` | Destructive **fills** carrying a white label. See the note under Buttons. |
 | `--color-danger-hover` | `#f3164e` | `#f3164e` | Hover on a danger tint |
 | `--color-danger-subtle` | `#fef0f4` | `white 10%` | Error and cancelled pills |
-| `--color-danger-text` | `#d50b3e` | `#f53d6b` | Error message text |
+| `--color-danger-text` | `#ad0027` | `#f53d6b` | Error message text, and danger pill text. 6.8:1 on its fill. |
 | `--color-success` | `#2dca72` | `#2dca72` | Confirmed, paid |
 | `--color-success-subtle` | `#eefbf4` | `white 10%` | Success pill background |
-| `--color-success-text` | `#006832` | `#2dca72` | Success pill text. 6.5:1 on its fill. |
+| `--color-success-text` | `#004f23` | `#2dca72` | Success pill text. 9.2:1 on its fill. |
 | `--color-warning` | `#ff7d52` | `#ff7d52` | Awaiting, due |
 | `--color-warning-subtle` | `#fff2ee` | `white 10%` | Warning pill background |
-| `--color-warning-text` | `#c21200` | `#ff7d52` | Warning pill text. 5.7:1 on its fill. |
+| `--color-warning-text` | `#9e0000` | `#ff7d52` | Warning pill text. 7.8:1 on its fill. |
 | `--color-info` | `#00acff` | `#00acff` | Informational |
 | `--color-info-subtle` | `#f0faff` | `white 10%` | Info pill background |
-| `--color-info-text` | `#0075ad` | `#00acff` | Info pill text |
+| `--color-info-text` | `#005d8e` | `#00acff` | Info pill text. 6.7:1 on its fill. |
 
 **Which primitives move between themes, and which stay fixed.** This distinction
 is the whole architecture of the dark mode and it is worth stating plainly.
@@ -623,8 +623,17 @@ changes, unlike a right-aligned pair.
 
 ### Select, checkbox, radio and toggle
 
-**Select.** The text input with an appended chevron, 20px from the right edge, and
-`cursor: pointer`.
+**Select.** The text input with `appearance: none`, `cursor: pointer` and the
+icon set's `chevron-down` at 20px in `text`, sitting 16px from the right edge,
+which is where a text input's status mark sits. It is the body text colour and
+not `text-muted`, because it is the only thing on the control saying there is
+a list behind it. The platform's own arrow is a hairline
+and reads thinner than every other mark on a form, and the chevron is the one
+part of a select that can be replaced without giving up the native picker.
+
+The static `kitchen-sink.html` fakes the same chevron with two gradients,
+because a bare `<select>` cannot hold an icon and that file has no components
+to reach for. The app draws the real one.
 
 ```html
 <select class="k-field k-select"> … </select>
@@ -643,6 +652,12 @@ read as something you can click. Klaroly uses 20px at full opacity.
 carries the hit area and the hover state, not just the box. `.k-option` gives a
 44px minimum height and a focus ring on the row when the input inside it is
 focused.
+
+**The box is centred against the words, 8px from them.** Both were once the
+other way: the box was pinned to the first line with a 2px nudge to make it
+look level, and the gap was 12px. A one-line option is the only kind either
+control is written with, so centring is what actually lines them up, and 8px is
+the same gap that binds a label to its control everywhere else on a form.
 
 **Hover is the label turning accent, not a background fill.** A grey box behind
 every option in a form is a lot of furniture for a hover state, and it fights the
@@ -687,6 +702,15 @@ control can be toggled, the label toggles it and the label shows a hover.
 description. Selected is a 1px `accent` border plus a 1px `accent` ring, which
 gives a 2px edge without the box moving.
 
+**Hover is the same 1px edge in `--border-accent-soft`**, which is
+`color-mix(in oklab, var(--accent) 70%, var(--surface))`: the accent softened
+by the ground the card is on, so one definition is right in both themes. It
+started at 50% and was taken to 70% because half the accent was too quiet to
+read as a response. Softer than the accent and half the edge is what keeps a
+card under the pointer from reading as the selected one, and it is the only
+hover the card has. Only an unselected, enabled card takes it: a selected card
+is already wearing the accent, and a disabled one is not going anywhere.
+
 **Focus on a radio card is an outer ring, and it is the one exception to the
 rule below.** Everywhere else, a control with a visible edge recolours that
 edge on focus. Here the edge is already carrying a meaning: it is how the card
@@ -699,13 +723,14 @@ read differently: selected, focused, both, and neither. The radio inside the
 card is visually hidden but focusable, so several cards sharing a `name` are
 one arrow-key group like any other radio set.
 
-**Toggle.** Track 44 × 26, 3px inset, knob 20px white, `--radius-pill`, 200ms
-transform. Off is `border-strong`, on is `accent`.
+**Toggle.** Track 48 × 28, 4px inset, knob 20px white, `--radius-pill`, 200ms
+transform over 20px of travel. Off is `border-strong`, on is `accent`. The knob
+moves with a transform and not with a layout change, because the point of the
+200ms is that the travel can be watched.
 
 Theirs is 30 × 18 with a 14px knob, which is a 30 × 18 tap target and fails the
-44px minimum badly. Klaroly's track is 44 × 26 and a pseudo-element extends the
-hit area to 44 × 44 without changing anything visible. Verified by hit testing:
-the toggle responds 21.5px above and below its centre and stops at 23px.
+44px minimum badly. Klaroly's track is 48 × 28 and a pseudo-element extends the
+hit area to 48 × 44 without changing anything visible.
 
 ```html
 <input type="checkbox" class="k-check">
@@ -1282,8 +1307,8 @@ than an opinion.
 | --- | --- | --- | --- |
 | Muted text | `#6c6c89`, 5.1:1 | `#55556e`, **7.2:1** | Secondary copy read as tentative. It should be quieter than a heading, not faint. |
 | Subtle text | `#a9a9bc`, **2.3:1** | `#6c6c89`, **5.1:1** | Their value fails WCAG AA for body text outright. Captions and timestamps are exactly what an older user struggles with. |
-| Success pill text | `#1e874c`, 4.3:1 | `#006832`, **6.5:1** | Washed out against its own fill. |
-| Warning pill text | `#eb3a00`, **3.7:1** | `#c21200`, **5.7:1** | Also failed AA. |
+| Success pill text | `#1e874c`, 4.3:1 | `#004f23`, **9.2:1** | Washed out against its own fill. Taken down a second step later, with the other three, because a pill is read at 13px. |
+| Warning pill text | `#eb3a00`, **3.7:1** | `#9e0000`, **7.8:1** | Also failed AA. |
 | Pill type | 14 / 24 / 400 | 13 / 24 / 500 | One step down, medium weight to hold at that size. |
 | Field drop shadow | `0 1px 1px` under the inset ring | removed | Fussy at this density, invisible on a phone, and it complicated the focus treatment. |
 | Field border | 16% ink | **24% ink**, 1.7:1 on white | Theirs is faint on a poor screen. See the note below on how far this still is from WCAG 1.4.11. |
@@ -1294,7 +1319,7 @@ than an opinion.
 | Filled button hover | lighter, white label at 4.6:1 | **darker**, white label at 7.6:1 | The hover has to keep a white label legible, so the fill moves away from white. |
 | Danger button fill | `#f53d6b`, white label at **3.6:1** | `#d50b3e`, 5.3:1 | Failed AA on the one button where an unreadable label is worst. |
 | Checkbox tick | rotated pseudo-element, off centre | centred background image | The rotation was pushing the tick about 2px high. |
-| Toggle hit area | 30 × 18 | 44 × 44, visual still 44 × 26 | Verified by hit testing at ±21.5px from centre. |
+| Toggle hit area | 30 × 18 | 48 × 44, visual 48 × 28 | A pseudo-element takes the 28px track up to the 44px minimum without changing anything visible. |
 | Control text | 14 / 24 / 400, same as its label | **15 / 24 / 500** | A value you typed should out-weigh the label describing it. Placeholders stay at 400. |
 | Control height | 40px | **48px on every screen** | 40px is the desktop-admin default and reads like one. 48px is calmer, clears the 44px tap minimum without a breakpoint rule, and costs 56px across a twelve-control form. |
 | Label to control | 12px | 8px | Binds the label to its control so the 24px field gap reads as the real separator. |
@@ -1360,8 +1385,9 @@ for what remains.
 
 1. **Tap targets.** The toggle is 30 × 18 and the checkbox is 16 × 16. Both fail
    the 44px minimum badly, and the toggle is a primary control in a settings
-   screen. **Fixed:** the toggle is 44 × 26 and the checkbox is 20px with a 44px
-   hit area, and `--tap-target-min` is a token so it can be checked against.
+   screen. **Fixed:** the toggle is 48 × 28 and the checkbox is 20px, both with
+   a 44px hit area, and `--tap-target-min` is a token so it can be checked
+   against.
 2. **Vertical rhythm.** 40px page gutters, 40px section gaps and 24px field gaps
    are comfortable on a 1440px monitor and produce a great deal of scrolling at
    390px. A twelve-field booking form loses roughly a screen and a half to gaps

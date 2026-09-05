@@ -109,6 +109,7 @@
   --color-success-500: oklch(74.1% 0.1781 152.9);  /* #2dca72 */
   --color-success-700: oklch(55.1% 0.1297 153.2);  /* #1e874c, their value */
   --color-success-800: oklch(45.1% 0.1232 153.2);  /* #006832, darkened for contrast */
+  --color-success-900: oklch(37.0% 0.1050 153.2);  /* #004f23, darkened again for pill text */
 
   /* --- Warning (orange) ---------------------------------------------------- */
   --color-warning-50: oklch(97.0% 0.0151 37.9);  /* #fff2ee */
@@ -116,11 +117,13 @@
   --color-warning-600: oklch(67.9% 0.2132 36.9);  /* #ff571f */
   --color-warning-700: oklch(61.6% 0.2190 34.5);  /* #eb3a00, their value */
   --color-warning-800: oklch(51.6% 0.2081 34.5);  /* #c21200, darkened for contrast */
+  --color-warning-900: oklch(43.5% 0.1850 34.5);  /* #9e0000, darkened again for pill text */
 
   /* --- Info (blue) --------------------------------------------------------- */
   --color-info-50: oklch(97.9% 0.0125 228.9);  /* #f0faff */
   --color-info-500: oklch(71.2% 0.1663 241.1);  /* #00acff */
   --color-info-700: oklch(53.6% 0.1229 240.0);  /* #0075ad */
+  --color-info-800: oklch(45.5% 0.1130 240.0);  /* #005d8e, darkened for pill text */
 
   /* --- Spacing -------------------------------------------------------------
      Their config declares an 8px unit with fractional steps. What the app
@@ -317,16 +320,16 @@
   --danger-solid-hover: var(--color-danger-800);
   --danger-hover: var(--color-danger-600);
   --danger-subtle: var(--color-danger-50);
-  --danger-text: var(--color-danger-700);
+  --danger-text: var(--color-danger-800);
   --success: var(--color-success-500);
   --success-subtle: var(--color-success-50);
-  --success-text: var(--color-success-800);
+  --success-text: var(--color-success-900);
   --warning: var(--color-warning-500);
   --warning-subtle: var(--color-warning-50);
-  --warning-text: var(--color-warning-800);
+  --warning-text: var(--color-warning-900);
   --info: var(--color-info-500);
   --info-subtle: var(--color-info-50);
-  --info-text: var(--color-info-700);
+  --info-text: var(--color-info-800);
 
   --shadow-card-value: none;
   --shadow-input-value: var(--shadow-control);
@@ -578,12 +581,12 @@
   .k-select {
     appearance: none;
     background-image:
-      linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
-      linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
-    background-position: right 20px center, right 15px center;
+      linear-gradient(45deg, transparent 50%, var(--text) 50%),
+      linear-gradient(135deg, var(--text) 50%, transparent 50%);
+    background-position: right 16px center, right 11px center;
     background-size: 5px 5px, 5px 5px;
     background-repeat: no-repeat;
-    padding-inline-end: 40px;
+    padding-inline-end: 48px;
     cursor: pointer;
   }
 
@@ -621,8 +624,8 @@
      the hover state. */
   .k-option {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
+    align-items: center;
+    gap: 8px;
     min-block-size: var(--tap-target-min);
     padding: 10px 12px;
     margin-inline: -12px;
@@ -642,7 +645,6 @@
     outline: var(--border-width-focus) solid var(--border-focus);
     outline-offset: 2px;
   }
-  .k-option > input { margin-block-start: 2px; }
 
   /* Status pill. One step down in size from body, medium weight, and the
      text colour is the status *-text token so it survives the theme flip. */
@@ -681,27 +683,27 @@
     appearance: none;
     position: relative;
     flex: none;
-    inline-size: 44px;
-    block-size: 26px;
-    padding: 3px;
+    inline-size: 48px;
+    block-size: 28px;
+    padding: 4px;
     border-radius: var(--radius-pill);
     background-color: var(--border-strong);
     cursor: pointer;
     transition: background-color var(--duration-base) var(--ease-out);
   }
-  /* The track is 26px tall, which is under the 44px minimum. This extends the
+  /* The track is 28px tall, which is under the 44px minimum. This extends the
      hit area to 44px vertically without changing anything you can see. */
   .k-switch::before {
     content: "";
     position: absolute;
-    inset-block: calc((var(--tap-target-min) - 26px) / -2);
+    inset-block: calc((var(--tap-target-min) - 28px) / -2);
     inset-inline: 0;
   }
   .k-switch::after {
     content: "";
     position: absolute;
-    inset-block-start: 3px;
-    inset-inline-start: 3px;
+    inset-block-start: 4px;
+    inset-inline-start: 4px;
     inline-size: 20px;
     block-size: 20px;
     border-radius: var(--radius-pill);
@@ -709,7 +711,7 @@
     transition: transform var(--duration-base) var(--ease-out);
   }
   .k-switch:checked { background-color: var(--accent); }
-  .k-switch:checked::after { transform: translateX(18px); }
+  .k-switch:checked::after { transform: translateX(20px); }
 
   .k-menu {
     border-radius: var(--radius-control);

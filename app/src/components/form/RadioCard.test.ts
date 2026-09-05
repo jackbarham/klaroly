@@ -97,8 +97,34 @@ describe('a radio card', () => {
     })
 
     const box = mounted.host.querySelector('label > span')
+    const classes = box?.className.split(' ') ?? []
 
-    expect(box?.className).toContain('border-border-strong')
-    expect(box?.className).not.toContain('border-accent')
+    expect(classes).toContain('border-border-strong')
+    expect(classes).not.toContain('border-accent')
+  })
+
+  // The hover edge and the selected edge are both the accent, so the test
+  // that they cannot be confused has to look at whole class names: the
+  // selected card's border-accent is a substring of the hover class.
+  it('offers the soft accent edge on hover only while it is not selected', async () => {
+    const unselected = await mount(RadioCard, '/', {
+      name: 'travel',
+      value: 'included',
+      title: 'Included',
+      modelValue: 'per_mile',
+    })
+
+    expect(unselected.host.querySelector('label > span')?.className)
+      .toContain('peer-enabled:hover:border-border-accent-soft')
+
+    const selected = await mount(RadioCard, '/', {
+      name: 'travel',
+      value: 'included',
+      title: 'Included',
+      modelValue: 'included',
+    })
+
+    expect(selected.host.querySelector('label > span')?.className)
+      .not.toContain('border-border-accent-soft')
   })
 })

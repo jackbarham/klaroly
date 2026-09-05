@@ -40,12 +40,17 @@
         />
       </FormField>
 
-      <CheckboxInput
+      <FormField
         v-if="isWeb"
-        id="remember"
-        v-model="remember"
+        v-slot="field"
+        inline
         :label="t('auth.remember_label')"
-      />
+      >
+        <CheckboxInput
+          v-bind="field"
+          v-model="remember"
+        />
+      </FormField>
 
       <FormError :message="formError" />
 

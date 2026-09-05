@@ -200,38 +200,34 @@
 
     <FormSection
       title="CheckboxInput"
-      description="Two shapes, side by side, and never both at once: a box that carries its own label, and a box inside a field that is named by the field's label. Passing both, or neither, throws while the screen is being written."
+      description="One shape, wherever it is used: FormField's inline label becomes the row and wraps the box, so the words are always beside it and always in the same 44px hit area. A hint and an error hang below the row like any other field's."
     >
-      <div class="grid gap-6 sm:grid-cols-2">
-        <div class="space-y-2">
-          <p class="text-xs font-medium text-text-muted">
-            On its own, carrying its own label
-          </p>
-          <CheckboxInput
-            id="kitchen-sink-standalone-checkbox"
-            v-model="demo.confirmed"
-            label="Send the client a confirmation email"
-          />
-        </div>
-
-        <div class="space-y-2">
-          <p class="text-xs font-medium text-text-muted">
-            Inside a FormField, named by the field alone
-          </p>
-          <FormField
-            v-slot="field"
-            label="Send the client a confirmation email"
-          >
-            <CheckboxInput
-              v-bind="field"
-              v-model="demo.confirmedWithHint"
-            />
-          </FormField>
-        </div>
-      </div>
+      <FormField
+        v-slot="field"
+        inline
+        label="Send the client a confirmation email"
+      >
+        <CheckboxInput
+          v-bind="field"
+          v-model="demo.confirmed"
+        />
+      </FormField>
 
       <FormField
         v-slot="field"
+        inline
+        label="Send the client a confirmation email"
+        hint="The confirmation goes out as soon as the booking is saved."
+      >
+        <CheckboxInput
+          v-bind="field"
+          v-model="demo.confirmedWithHint"
+        />
+      </FormField>
+
+      <FormField
+        v-slot="field"
+        inline
         label="Send the client a confirmation email"
         hint="The confirmation goes out as soon as the booking is saved."
         error="Confirm how the client should be told."

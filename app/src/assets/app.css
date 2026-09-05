@@ -106,16 +106,19 @@
   --color-success-500: oklch(74.1% 0.1781 152.9); /* #2dca72 */
   --color-success-700: oklch(55.1% 0.1297 153.2); /* #1e874c */
   --color-success-800: oklch(45.1% 0.1232 153.2); /* #006832 */
+  --color-success-900: oklch(37.0% 0.1050 153.2); /* #004f23 */
 
   --color-warning-50: oklch(97.0% 0.0151 37.9);   /* #fff2ee */
   --color-warning-500: oklch(73.2% 0.1690 38.7);  /* #ff7d52 */
   --color-warning-600: oklch(67.9% 0.2132 36.9);  /* #ff571f */
   --color-warning-700: oklch(61.6% 0.2190 34.5);  /* #eb3a00 */
   --color-warning-800: oklch(51.6% 0.2081 34.5);  /* #c21200 */
+  --color-warning-900: oklch(43.5% 0.1850 34.5);  /* #9e0000 */
 
   --color-info-50: oklch(97.9% 0.0125 228.9);     /* #f0faff */
   --color-info-500: oklch(71.2% 0.1663 241.1);    /* #00acff */
   --color-info-700: oklch(53.6% 0.1229 240.0);    /* #0075ad */
+  --color-info-800: oklch(45.5% 0.1130 240.0);    /* #005d8e */
 
   /* Tailwind derives the whole spacing scale (p-1, gap-2, w-64) from this. */
   --spacing: 4px;
@@ -219,6 +222,7 @@
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-border-focus: var(--border-focus);
+  --color-border-accent-soft: var(--border-accent-soft);
 
   /* accents and states */
   --color-accent: var(--accent);
@@ -289,6 +293,7 @@
   --border: var(--color-neutral-100);
   --border-strong: var(--color-neutral-200);
   --border-focus: var(--color-accent-500);
+  --border-accent-soft: color-mix(in oklab, var(--accent) 70%, var(--surface));
 
   --accent: var(--color-accent-500);
   --accent-hover: var(--color-accent-600);
@@ -299,16 +304,16 @@
   --danger-solid-hover: var(--color-danger-800);
   --danger-hover: var(--color-danger-600);
   --danger-subtle: var(--color-danger-50);
-  --danger-text: var(--color-danger-700);
+  --danger-text: var(--color-danger-800);
   --success: var(--color-success-500);
   --success-subtle: var(--color-success-50);
-  --success-text: var(--color-success-800);
+  --success-text: var(--color-success-900);
   --warning: var(--color-warning-500);
   --warning-subtle: var(--color-warning-50);
-  --warning-text: var(--color-warning-800);
+  --warning-text: var(--color-warning-900);
   --info: var(--color-info-500);
   --info-subtle: var(--color-info-50);
-  --info-text: var(--color-info-700);
+  --info-text: var(--color-info-800);
 
   --shadow-card-value: none;
   --shadow-input-value: var(--shadow-control);
@@ -372,6 +377,7 @@
   --border: var(--color-white-a12);
   --border-strong: var(--color-white-a24);
   --border-focus: var(--color-accent-500);
+  --border-accent-soft: color-mix(in oklab, var(--accent) 70%, var(--surface));
 
   --accent: var(--color-accent-500);
   --accent-hover: var(--color-accent-400);
@@ -443,6 +449,61 @@ body {
 @utility focus-ring {
   outline: var(--border-width-focus) solid var(--border-focus);
   outline-offset: 2px;
+}
+
+/*
+  The tick box and the radio dot, drawn here rather than left to the browser.
+  A native control takes accent-color and nothing else, so its mark is the
+  platform's: heavy, and close enough to the edges of a 20px box that the box
+  reads as a solid block. These two are the style guide's .k-check and
+  .k-radio, and the tick is a 14px mark centred in the 20px box, which is
+  where the clearance around it comes from.
+
+  The tick is a background image, so its colour cannot be a variable and is
+  written as white. That is safe rather than lazy: --text-on-accent is
+  --color-white in both themes, so there is no second value it could need.
+  It is the same trade as the hex in the PWA manifest, for the same reason.
+*/
+@utility check {
+  appearance: none;
+  inline-size: 20px;
+  block-size: 20px;
+  flex: none;
+  border: var(--border-width-control) solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background-color: var(--surface);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
+
+  &:checked {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%20fill%3D%27none%27%3E%3Cpath%20d%3D%27M3.5%208.5L6.5%2011.5L12.5%204.5%27%20stroke%3D%27%23ffffff%27%20stroke-width%3D%272.25%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 14px 14px;
+  }
+
+  /* The row is always a label, so an empty box answers the hover with it. */
+  label:hover > &:not(:checked) {
+    border-color: var(--accent-text);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+/* The radio is the same box, round, with a dot instead of a tick. */
+@utility radio {
+  border-radius: var(--radius-pill);
+
+  &:checked {
+    background-image: radial-gradient(circle at center,
+      var(--text-on-accent) 0 3.5px, transparent 3.5px);
+  }
 }
 
 /*

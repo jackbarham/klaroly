@@ -14,7 +14,7 @@
     >
       <input
         v-model="model"
-        class="mt-1 h-5 w-5 shrink-0 accent-accent focus-visible:focus-ring"
+        class="check radio focus-visible:focus-ring"
         type="radio"
         :name="id"
         :value="option.value"

@@ -254,9 +254,11 @@ Hand-written routes live in `routes/api.php` under `/api`:
   `border-2 border-danger` plus `aria-invalid`, and a form-level failure is
   `FormError`, which uses the same heavy border with `text-danger-text`. The
   border and the words carry the meaning and the colour helps, because colour
-  on its own tells a screen reader nothing. `success`, `warning` and `info`
-  exist as tokens and nothing uses them yet: the status pill and the booking
-  states are still to build.
+  on its own tells a screen reader nothing. `TextInput`'s live status mark is
+  the same rule in miniature: the tick is `success-text` and the cross is the
+  `danger-text` the error message uses, and the field says which in words
+  beside it. `warning` and `info` exist as tokens and nothing uses them yet:
+  the status pill and the booking states are still to build.
 - Spacing comes off an eight pixel grid. Use Tailwind steps 2, 4, 6, 8, 10,
   12, 16, 20 and 24 for padding, margins and gaps. Steps 1 and 3 are the two
   half-steps the design allows, and both are written down in
@@ -277,6 +279,17 @@ Hand-written routes live in `routes/api.php` under `/api`:
   `--border-width-focus` and `--border-focus`, so every ring in the app is one
   rule. A control with a visible edge recolours that edge instead, through
   `edgeClasses` in `src/components/form/field.ts`.
+- `check` and `radio` are the seventh and eighth, and they are the tick box
+  and the radio drawn rather than left to the browser. A native control takes
+  `accent-color` and nothing else, so its mark is the platform's: heavy, and
+  close enough to the edges of a 20px box that the box reads as a solid
+  block. `check` gives the 20px box its border, its radius and, when checked,
+  a 14px tick centred in it as a background image; `radio` makes the same box
+  round and swaps the tick for a dot. A checkbox is `class="check"` and a
+  radio is `class="check radio"`, which is the style guide's `.k-check` and
+  `.k-radio`. The tick's colour is written as white because a background
+  image cannot read a variable, and `--text-on-accent` is `--color-white` in
+  both themes, so there is no second value it could need.
 - A component and a view never talk to the API. They read and change state
   through a Pinia store; the store calls `src/lib/auth.ts`, which calls
   `src/lib/api.ts`. The single exception is `ApiError`, which a screen may
@@ -394,6 +407,22 @@ themselves, so a field is written as one line:
 
 A control that is not a labelable element, which is the toggle switch and the
 radio group, is named by `aria-labelledby` pointing at the field's label.
+
+**`FormField` has a second shape, `inline`, and the tick box is the whole
+reason for it.** A checkbox reads as the sentence beside it rather than as a
+heading with a box underneath, so with `inline` the field's label becomes the
+row, wraps the control and carries `optionRowClasses`: the words sit beside
+the box, in the same 44px hit area, with the same hover. The label names the
+box through its own `for`, so the slot hands the control no `labelledBy` in
+this shape, and a hint and an error still hang below the row like any other
+field's. `CheckboxInput` is therefore only ever a box; it used to carry a
+label of its own for the times it stood outside a field, and one control
+written two ways is one control that lines up two ways. Every checkbox in the
+app is a field:
+
+```vue
+<FormField v-slot="field" inline :label="..."><CheckboxInput v-bind="field" v-model="x" /></FormField>
+```
 
 Two things sit outside that four-prop shape, both for a check that happens
 while someone types rather than when they submit. `TextInput` takes a

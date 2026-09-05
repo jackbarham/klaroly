@@ -18,9 +18,17 @@
       :aria-invalid="invalid ? 'true' : undefined"
     >
 
+    <!--
+      The mark takes the status colours rather than the text colour, and the
+      cross takes the same danger-text the field's error message uses, so the
+      shape and the words that follow it say the same thing. Neither is the
+      only thing saying it: the mark is aria-hidden and the field announces
+      the answer in words beside it.
+    -->
     <span
       v-if="status"
-      class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-text-strong"
+      class="pointer-events-none absolute inset-y-0 right-4 flex items-center"
+      :class="status === 'valid' ? 'text-success-text' : 'text-danger-text'"
       aria-hidden="true"
     >
       <svg

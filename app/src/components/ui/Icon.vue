@@ -36,6 +36,7 @@ export type IconName =
   | 'help'
   | 'chevron-left'
   | 'chevron-right'
+  | 'chevron-down'
   | 'sign-out'
   | 'page'
   | 'sink'
@@ -61,11 +62,15 @@ const paths: Record<IconName, string[]> = {
     'M16 5.6a3 3 0 0 1 0 5.8',
     'M17.5 15.1c1.8.7 3 2.3 3 4.4',
   ],
-  // Three dots. A very short line with a round cap draws a circle.
+  // Three dots, solid rather than three capped points. A zero-length path
+  // stroked with a round cap draws a dot exactly as wide as the stroke, which
+  // next to the icons made of real lines reads as a hairline. These are
+  // circles of radius 0.875, half the stroke width, so the stroke closes the
+  // middle and each dot comes out solid at twice the width of a line.
   more: [
-    'M6 11.95v.1',
-    'M12 11.95v.1',
-    'M18 11.95v.1',
+    'M6 12.875a.875.875 0 1 0 0-1.75.875.875 0 0 0 0 1.75Z',
+    'M12 12.875a.875.875 0 1 0 0-1.75.875.875 0 0 0 0 1.75Z',
+    'M18 12.875a.875.875 0 1 0 0-1.75.875.875 0 0 0 0 1.75Z',
   ],
   plus: [
     'M12 5.5v13',
@@ -94,6 +99,9 @@ const paths: Record<IconName, string[]> = {
   ],
   'chevron-right': [
     'M9.5 6l6 6-6 6',
+  ],
+  'chevron-down': [
+    'M6 9.5l6 6 6-6',
   ],
   'sign-out': [
     'M14 7.5v-2A1.5 1.5 0 0 0 12.5 4h-6A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20h6a1.5 1.5 0 0 0 1.5-1.5v-2',

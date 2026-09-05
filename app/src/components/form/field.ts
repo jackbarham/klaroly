@@ -55,4 +55,10 @@ export function edgeClasses(invalid: boolean): string {
 // form, so the row is wider than the text without the text moving. Hover is
 // the words turning accent rather than a grey box: the colour is set here and
 // inherited, so anything that has claimed a colour of its own keeps it.
-export const optionRowClasses = '-mx-3 flex min-h-11 cursor-pointer items-start gap-3 rounded-control px-3 py-2.5 text-text-strong transition-colors hover:text-accent-text'
+//
+// The words are the same size and weight as a FormField's label, because a
+// checkbox carrying its own label and a checkbox named by a field's label sit
+// beside each other on a form and must not read as two different things. The
+// box is centred against them rather than pinned to the first line, which is
+// what a one-line option, the only kind either control is written with, wants.
+export const optionRowClasses = '-mx-3 flex min-h-11 cursor-pointer items-center gap-2 rounded-control px-3 py-2.5 text-sm font-medium text-text-strong transition-colors hover:text-accent-text'
