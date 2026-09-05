@@ -71,7 +71,10 @@ export const sheetRowIconClasses = 'h-6 w-6 text-text-placeholder transition-col
 //
 // While it is open, focus starts inside the panel and stays there, Escape
 // and the scrim close it, and closing puts focus back on whatever opened it.
-import { nextTick, useTemplateRef, watch } from 'vue'
+// That behaviour is useDialogBehaviour in src/lib/dialog.ts, because the month
+// jump sheet needs the same thing and cannot use this component.
+import { useTemplateRef } from 'vue'
+import { useDialogBehaviour } from '@/lib/dialog'
 
 // The anchor only means anything at lg, where the panel is a menu in the
 // sidebar's column rather than a sheet along the bottom of a phone.
@@ -111,76 +114,13 @@ const open = defineModel<boolean>('open', { required: true })
 
 const panel = useTemplateRef<HTMLElement>('panel')
 
-// Whatever had focus when the panel opened, so that closing can give it back.
-let trigger: HTMLElement | null = null
-
-const selector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-
-function focusable(): HTMLElement[] {
-  if (!panel.value) {
-    return []
-  }
-
-  return Array.from(panel.value.querySelectorAll<HTMLElement>(selector))
-}
+// Escape closes, Tab cycles inside the panel, and closing returns focus to
+// whatever opened it.
+const { onKeydown } = useDialogBehaviour(panel, open)
 
 function close(): void {
   open.value = false
 }
-
-// Escape closes. Tab cycles inside the panel: from the last item forwards
-// and from the first item backwards, focus wraps rather than leaving.
-function onKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Escape') {
-    close()
-
-    return
-  }
-
-  if (event.key !== 'Tab') {
-    return
-  }
-
-  const items = focusable()
-
-  if (items.length === 0) {
-    event.preventDefault()
-
-    return
-  }
-
-  const first = items[0]
-  const last = items[items.length - 1]
-  const active = document.activeElement
-
-  if (event.shiftKey && (active === first || active === panel.value)) {
-    event.preventDefault()
-    last.focus()
-  } else if (!event.shiftKey && active === last) {
-    event.preventDefault()
-    first.focus()
-  }
-}
-
-watch(open, async (isOpen) => {
-  if (isOpen) {
-    trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    await nextTick()
-
-    const items = focusable()
-
-    if (items.length > 0) {
-      items[0].focus()
-    } else {
-      panel.value?.focus()
-    }
-
-    return
-  }
-
-  trigger?.focus()
-  trigger = null
-}, { immediate: true })
 </script>
 
 <style scoped>

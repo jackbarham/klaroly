@@ -153,7 +153,16 @@
   --text-figure: 24px;
   --text-figure--line-height: 40px;
 
-  /* Widths, named so no component ever needs an arbitrary value. */
+  /* Widths, named so no component ever needs an arbitrary value.
+
+     --container-split is the one that is not a width. Tailwind takes its
+     container-query variant names from this namespace, so @split: is how a
+     component asks "is my container at least this wide", and the alternative,
+     @min-[760px], is an arbitrary value that styleRules.test.ts fails on. The
+     name is deliberately generic: it is the list-beside-detail breakpoint for
+     every screen that has one, so Enquiries and Contacts read this rather than
+     inventing a second number twenty pixels away from it. */
+  --container-split: 760px;
   --container-content: 1096px;
   --container-panel: 640px;
   --container-auth: 464px;
@@ -248,11 +257,18 @@
   --color-success-subtle: var(--success-subtle);
   --color-success-text: var(--success-text);
   --color-warning: var(--warning);
+  --color-warning-solid: var(--warning-solid);
   --color-warning-subtle: var(--warning-subtle);
   --color-warning-text: var(--warning-text);
   --color-info: var(--info);
   --color-info-subtle: var(--info-subtle);
   --color-info-text: var(--info-text);
+
+  /* The calendar's two. Both are semantic names for a job no existing token
+     does: a rule that has to be fainter than --border, and a row hover that
+     has to be fainter than --surface-sunken. */
+  --color-cal-line: var(--cal-line);
+  --color-row-hover: var(--row-hover);
 
   /* shape */
   --radius-control: var(--radius-control-value);
@@ -319,11 +335,29 @@
   --success-subtle: var(--color-success-50);
   --success-text: var(--color-success-900);
   --warning: var(--color-warning-500);
+  /* A warning fill carrying a white label, which is the count badge on a
+     calendar day. It is a separate token for the reason --danger-solid is:
+     white on --warning is 4.1:1 and fails AA at badge size, and on the 800 it
+     is 6.2:1. Fixed across both themes, as --danger-solid is. */
+  --warning-solid: var(--color-warning-800);
   --warning-subtle: var(--color-warning-50);
   --warning-text: var(--color-warning-900);
   --info: var(--color-info-500);
   --info-subtle: var(--color-info-50);
   --info-text: var(--color-info-800);
+
+  /* The rule between days on the calendar. The same value as --border here,
+     and a step fainter in dark, where seven columns by six rows of white 12%
+     reads as a table rather than as a diary. It is its own token rather than
+     an alias for --border because it has already diverged once, and because
+     the grid is the one place in the app that repeats a line eighty times. */
+  --cal-line: var(--color-neutral-100);
+  /* A list row under the pointer. Half the strength of the sunken grey, so it
+     lands between the page and the sticky group headers instead of matching
+     them and making a hovered row look like a heading. The same expression
+     serves both themes, because it is derived from a token that already
+     moves. */
+  --row-hover: color-mix(in oklab, var(--surface-sunken) 50%, transparent);
 
   --shadow-card-value: none;
   --shadow-input-value: var(--shadow-control);
@@ -340,6 +374,13 @@
   --radius-card-value: var(--radius-md);
   --border-width-control: 1px;
   --border-width-focus: 2px;
+  /* The same 2px under a name that is not about focus. A mark that wants a
+     heavy edge and has nothing to do with focus, such as the ring on a
+     provisional day in the calendar, reads this instead, so an accessibility
+     review that takes the focus ring to 3px does not silently thicken it. Two
+     widths is still the whole system: this is a second name for one of them,
+     not a third one. */
+  --border-width-strong: 2px;
 
   --space-field-gap: 24px;
   --space-label-gap: 8px;
@@ -408,11 +449,17 @@
   --success-subtle: var(--color-white-a10);
   --success-text: var(--color-success-500);
   --warning: var(--color-warning-500);
+  --warning-solid: var(--color-warning-800);
   --warning-subtle: var(--color-white-a10);
   --warning-text: var(--color-warning-500);
   --info: var(--color-info-500);
   --info-subtle: var(--color-white-a10);
   --info-text: var(--color-info-500);
+
+  /* In dark the rule is a white alpha over the base, like every other line,
+     so it stacks correctly whatever the calendar is sitting on. */
+  --cal-line: var(--color-white-a08);
+  --row-hover: color-mix(in oklab, var(--surface-sunken) 50%, transparent);
 
   --shadow-card-value: none;
   --shadow-input-value: var(--shadow-control-dark);
@@ -563,4 +610,19 @@ body {
 /* A sticky row of form actions sits directly on top of the tab bar. */
 @utility above-bar {
   bottom: calc(env(safe-area-inset-bottom) + var(--spacing) * 20);
+}
+
+/* Where a sticky block comes to rest. Plain top-0 tucks under the status bar
+   the moment a native shell asks for an edge-to-edge layout, which is what
+   viewport-fit=cover in index.html already sets the app up for. No spacing
+   step is added: a sticky block brings its own padding, and a gap here would
+   show the page scrolling through it.
+
+   --stick-offset is for a second sticky block that has to rest under the
+   first rather than behind it: the bookings list's group headings sit under
+   the calendar while it is a band above them, and level with it once it is a
+   column beside them. Whoever sets the offset owns measuring it; unset it is
+   zero and this is simply the inset. */
+@utility stick-top {
+  top: calc(env(safe-area-inset-top) + var(--stick-offset, 0px));
 }

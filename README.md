@@ -111,13 +111,15 @@ npm test
 
 | Folder | What is in it |
 | --- | --- |
-| `lib/` | Everything that is not a component: `api.ts` (the only caller of `fetch`), `auth.ts`, `platform.ts`, `navigation.ts` (the one list of destinations, used by both navigations), `form.ts` (the one way a screen submits a form), and `testMount.ts` and `testHelpers.ts`, which tests use to mount and drive a component |
-| `stores/` | Pinia. `auth.ts` is the only way a screen reads or changes who is signed in |
+| `lib/` | Everything that is not a component: `api.ts` (the only caller of `fetch`), `auth.ts`, `platform.ts`, `navigation.ts` (the one list of destinations, used by both navigations), `form.ts` (the one way a screen submits a form), `dialog.ts` (the focus trap every modal shares), `monthGrid.ts` and `dayMarks.ts` (the calendar's arithmetic), `bookingFixtures.ts` (temporary, see below), and `testMount.ts` and `testHelpers.ts`, which tests use to mount and drive a component |
+| `stores/` | Pinia. `auth.ts` is the only way a screen reads or changes who is signed in; `bookings.ts` is the only way a screen reads the calendar's events |
 | `router/` | One explicit routes array. Everything behind the sign-in is a child of the layout route |
 | `components/layout/` | The app shell: `AppLayout`, `AppSidebar`, `AppTabBar`, `CreateMenu`, `SettingsNav` |
 | `components/ui/` | PageHeader, Card, EmptyState, AppButton, IconButton, Sheet, Icon, StatusPill, ListRow, DataTable, SectionBand. Registered globally by `components/kit.ts`, so no screen imports them |
+| `components/bookings/` | The bookings screen: `MonthGrid` (presentational, and it has never heard of a booking), `BookingsCalendar`, `MonthJumpSheet`, `BookingList`, `BookingRow`. Not in the global kit, because they belong to one screen |
 | `components/form/` | FormSection, FormField, FormActions, FormError, RadioCard and the controls, also global. FormField owns the label, hint, error and id wiring; the controls do not |
 | `views/` | One file per page. Pages that are not built yet share `PlaceholderView.vue` |
+| `types/` | The shapes the API returns: `auth.ts` for the signed-in person, `bookings.ts` for a calendar event |
 | `locales/` | `en-GB.json`. Every user-facing string is a key here |
 | `assets/app.css` | The `@theme` block, which is where every colour, font, radius and spacing step is defined |
 
@@ -125,6 +127,13 @@ Two rules worth knowing before you open any of it: a component or a view
 never calls the API (it goes through a store, and `src/lib/boundary.test.ts`
 enforces that), and the shell is greyscale (the `--color-neutral-*` tokens
 only), because the brand work has not landed yet.
+
+**The bookings screen has no API behind it yet.** There is no bookings
+endpoint, so `src/lib/bookingFixtures.ts` stands in for one: it exports a
+single `loadBookingEvents()`, the Pinia store calls it once, and no component
+may import it (`src/lib/bookings.guards.test.ts` fails if one does). When the
+endpoint exists, that one function body becomes a request and nothing else on
+the screen changes. `CLAUDE.md` covers how the screen is put together.
 
 **Signing in locally.** With the API seeded (`php artisan db:seed`), open
 http://app.klaroly.test/login and sign in as `ellie@example.com` with the

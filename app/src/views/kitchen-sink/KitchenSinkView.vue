@@ -54,6 +54,7 @@
 import { computed, onBeforeUnmount, ref, type Component } from 'vue'
 import KsBands from '@/views/kitchen-sink/KsBands.vue'
 import KsButtons from '@/views/kitchen-sink/KsButtons.vue'
+import KsCalendar from '@/views/kitchen-sink/KsCalendar.vue'
 import KsCards from '@/views/kitchen-sink/KsCards.vue'
 import KsForm from '@/views/kitchen-sink/KsForm.vue'
 import KsHeaders from '@/views/kitchen-sink/KsHeaders.vue'
@@ -136,6 +137,12 @@ const sections: Section[] = [
     id: 'overlays',
     title: 'Sheet and CreateMenu',
     component: KsOverlays,
+  },
+  {
+    id: 'calendar',
+    title: 'The bookings screen',
+    note: 'The one place the marks can be judged against each other. They differ by shape first and colour second, which is what keeps the grid readable for the roughly one man in twelve with red-green colour vision deficiency: turn the page to greyscale and filled, outlined and badged all still read.',
+    component: KsCalendar,
   },
   {
     id: 'shell',

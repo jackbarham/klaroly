@@ -104,11 +104,14 @@ Semantic tokens and what they resolve to in each theme.
 | `--color-success-subtle` | `#eefbf4` | `white 10%` | Success pill background |
 | `--color-success-text` | `#004f23` | `#2dca72` | Success pill text. 9.2:1 on its fill. |
 | `--color-warning` | `#ff7d52` | `#ff7d52` | Awaiting, due |
+| `--color-warning-solid` | `#c21200` | `#c21200` | A warning **fill** carrying a white label, which is the enquiry count badge on a calendar day. Separate from `--color-warning` for the same reason `--color-danger-solid` is: white on `#ff7d52` is 4.1:1 and fails AA at badge size, and on this it is 6.2:1. Fixed across both themes |
 | `--color-warning-subtle` | `#fff2ee` | `white 10%` | Warning pill background |
 | `--color-warning-text` | `#9e0000` | `#ff7d52` | Warning pill text. 7.8:1 on its fill. |
 | `--color-info` | `#00acff` | `#00acff` | Informational |
 | `--color-info-subtle` | `#f0faff` | `white 10%` | Info pill background |
 | `--color-info-text` | `#005d8e` | `#00acff` | Info pill text. 6.7:1 on its fill. |
+| `--cal-line` | `#e8e8ed` | `white 8%` | The rule between days on the month calendar, drawn as 1px gaps over this colour rather than as a border on each cell. It is the same value as `--color-border` in light and a step fainter in dark, where seven columns by six rows of `white 12%` reads as a table rather than as a diary. It is its own token rather than an alias because it has already diverged once, and because the grid is the one place in the app where a line is repeated eighty times |
+| `--row-hover` | `color-mix(in oklab, var(--surface-sunken) 50%, transparent)` | same | A booking row under the pointer. Half the strength of the sunken grey in both themes, so it lands between the page and the sticky group headings above it instead of matching them and making a hovered row look like a heading |
 
 **Which primitives move between themes, and which stay fixed.** This distinction
 is the whole architecture of the dark mode and it is worth stating plainly.
@@ -271,8 +274,13 @@ at 8px, so buttons, inputs and menus are still faithful to the source.
 | --- | --- | --- |
 | `--border-width-control` | 1px | Every border in the app |
 | `--border-width-focus` | 2px | Focus rings and error rings |
+| `--border-width-strong` | 2px | The same width under a name that is not about focus, for a heavy edge that is not a focus state: the ring on a provisional day in the calendar, and the ring on the selected one |
 
-Two widths, and that is the whole system.
+Two widths, and that is the whole system. `--border-width-strong` is a second
+name for the second of them rather than a third width, and it exists so that an
+accessibility review taking the focus ring to 3px does not silently thicken
+every mark in the calendar that merely wanted a heavy edge. If the two ever do
+need to differ, they now can.
 
 ### Shadow
 
@@ -330,6 +338,7 @@ and 3% would leave the panel with no edge at all.
 | `--container-auth` | 464px | Auth column, 400px of field inside 32px padding |
 | `--container-copy` | 400px | Centred supporting copy |
 | `--container-action` | 280px | Minimum width of a lone primary action |
+| `--container-split` | 760px | **Not a width.** The list-beside-detail breakpoint, for every screen that has one. Tailwind takes its container-query variant names from this namespace, so `@split:` is how a component asks whether its container is at least this wide; `@min-[760px]` would be an arbitrary value. Deliberately generic: a second screen inventing `--container-enquiries: 780px` gives the app two breakpoints that mean the same thing and disagree by 20px |
 | Page gutter | 40px desktop, 16px phone | |
 | Page header to content | 40px | |
 | Header bar | none | The sidebar is full height; there is no top bar |

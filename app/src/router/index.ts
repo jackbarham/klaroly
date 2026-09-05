@@ -66,7 +66,7 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'bookings',
         name: 'bookings',
-        component: () => import('@/views/PlaceholderView.vue'),
+        component: () => import('@/views/bookings/BookingsView.vue'),
         meta: { titleKey: 'bookings.title' },
       },
       {

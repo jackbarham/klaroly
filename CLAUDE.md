@@ -311,11 +311,17 @@ Hand-written routes live in `routes/api.php` under `/api`:
   that list because a control has to be the size it has to be, but keep them
   on the same grid.
 - `env(safe-area-inset-*)` cannot live in `@theme`, so `src/assets/app.css`
-  defines five utilities with `@utility` and they are the only place an inset
+  defines six utilities with `@utility` and they are the only place an inset
   is read: `page-top`, `page-bottom` (clears the tab bar), `bar-bottom` (where
-  the tab bar floats), `sheet-bottom` and `above-bar` (a sticky row of form
-  actions). Compose them with Tailwind variants, for example
-  `max-lg:page-bottom`.
+  the tab bar floats), `sheet-bottom`, `above-bar` (a sticky row of form
+  actions) and `stick-top` (where a sticky block comes to rest). Compose them
+  with Tailwind variants, for example `max-lg:page-bottom`.
+  **A sticky block uses `stick-top`, never `top-0`**, which tucks under the
+  status bar the moment a native shell asks for an edge-to-edge layout, which
+  `viewport-fit=cover` in `index.html` already sets the app up for. It also
+  reads `--stick-offset`, for the second sticky block on a screen that has to
+  rest under the first rather than behind it; whoever sets that offset owns
+  measuring it.
 - The focus ring is a sixth `@utility`, `focus-ring`, written as
   `focus-visible:focus-ring` on anything that takes focus and has no edge of
   its own to recolour (a button, a link, a navigation item, a checkbox), and
@@ -853,7 +859,7 @@ built says so.
   and an empty state), `MoreView` (the phone's overflow list and sign out),
   the settings index, `/settings/travel`, which is the one honest example of
   the form kit doing a section's work and saves nothing because there is no
-  settings API yet, and all of My account.
+  settings API yet, all of My account, and `/bookings`.
 - **My account is the first section that reads and writes real data.** Its
   index is a list built from `accountGroups`, and its four pages are: your
   details, which is one form over two endpoints and sends only the half that
@@ -882,13 +888,102 @@ back on a failure. Then the three tests that read the source of the app rather
 than run it:
 `boundary.test.ts`, which stops business logic leaking into components,
 `styleRules.test.ts`, which stops a `dark:` variant, an arbitrary value or a
-hex colour reaching a component, and `router/routeNames.test.ts`, which fails
+hex colour reaching a component, `lib/bookings.guards.test.ts`, which stops a
+component importing the fixtures and stops a day key being built from
+`toISOString`, and `router/routeNames.test.ts`, which fails
 if any route name written down anywhere is not a route that exists. Renaming
 a route is the change that breaks a `router.push` in a screen nobody opened,
 and a route name is a string, so nothing else can catch it. Component tests
 mount through `src/lib/testMount.ts`, a few lines of `createApp` with the
 real router, i18n, pinia and the global kit, because there is no component
 testing library and there is not going to be one.
+
+### The bookings screen
+
+`/bookings` is a month calendar and a list, two views of one set of events on
+one screen, per business logic 19.1. It is the first screen built against a
+seam rather than against the API: there is no bookings API yet, so
+`src/lib/bookingFixtures.ts` stands in for one and says at the top that it
+goes when the request is real. `src/stores/bookings.ts` calls its
+`loadBookingEvents()` once and holds the result, components read the store,
+and `src/lib/bookings.guards.test.ts` fails if a component or a view imports
+the fixtures. The swap is that one function body.
+
+**The unit is an event, not a booking.** A booking is one record at a stage
+and its dates live in `events`, normally a trial and a `main`, so a row in the
+list and a mark on a day are both an event carrying its booking's stage,
+client and total. `src/types/bookings.ts` is that view model, and every field
+in it is a column in `docs/database-schema.md`: the wedding day is `main` and
+there is no `wedding` type, money is `totalMinor` beside its `currency`, and
+`lastTouchedAt` is the UTC instant rather than a day count, which would go
+stale in an open tab.
+
+- **A mark answers one question: is this day spoken for.** So a stage that no
+  longer holds the date carries nothing. `confirmed`, `completed` and `closed`
+  are a filled circle, `provisional` is a ring, `possible` and `quoted` are a
+  count badge that appears *alongside* either rather than instead of one, and
+  `new`, `in_conversation`, `lost` and `cancelled` carry no mark at all.
+  `in_conversation` has none because business logic 5.1 puts the soft hold at
+  Possible, and cancelled has none because the date is free again. The three
+  differ by shape before they differ by colour, because roughly one man in
+  twelve cannot separate them by hue. Strength is computed in
+  `src/lib/dayMarks.ts` and never stored, per schema section 8.
+- **`MonthGrid.vue` has never heard of a booking.** It takes a month, a marks
+  map keyed `'YYYY-MM-DD'`, a selected day and a density, and emits a date.
+  That is what would let it draw availability or blocked-out days later: a
+  caller with a different idea of what a day means builds a different map.
+- **The grid is built by walking calendar dates, never by adding 24 hours,**
+  and a day key is `format(d, 'yyyy-MM-dd')`, never `toISOString()`, which is
+  UTC and would file an evening event under the previous day for the eight
+  months the clocks are forward. `src/lib/monthGrid.ts` is the only place
+  either happens, and the guard test bans `toISOString` everywhere in the
+  feature except the fixtures, where it serialises a UTC instant and is
+  correct. **The obvious version of the DST test cannot fail**: both British
+  clock changes are on a Sunday, so with Monday-first weeks they are always
+  the last day of their week, and a naive build anchored at midnight survives
+  the spring forward too. It is the October month grid that breaks, repeating
+  the 25th, and that is the assertion carrying the weight.
+- A month renders the four, five or six rows it actually needs and is never
+  padded to 42 cells. On a 375px phone a row saved is 49px, which is most of
+  another booking on screen.
+- **The two halves sync in one direction only.** Scrolling the list moves the
+  calendar; nothing the calendar does ever scrolls the list, and anything the
+  calendar drives holds the sync off for 450ms so the two cannot chase each
+  other. The scroll handler changes the month and nothing else, so the list's
+  props do not change and Vue leaves it alone: a full re-render would rebuild
+  the list and throw away the scroll position the handler is reading from.
+  The sync is off in week mode, because a seven-day strip cannot meaningfully
+  follow a list spanning three months.
+- **The month's height is animated by a watcher, not by the caller.** There
+  are five ways to change the month, the arrows, the swipe, a day in the
+  padding, the jump sheet and Today, and the first version wrapped only the
+  one that went through the tap handler.
+- The layout switches on a **container query** at `--container-split`, not a
+  media query, so the calendar is a band above the list below it and a column
+  beside it above. The container is `<main>`, which is the viewport minus the
+  sidebar once the sidebar appears, so at 1024px the screen is stacked with a
+  688px container: the calendar therefore carries a maximum width, or it draws
+  97px cells and pushes the list off the bottom.
+- **The list's group headings rest under the calendar, not behind it.** Both
+  are sticky, so on a phone, where the calendar is a band across the top, a
+  heading pinned to the same line is invisible. The list wrapper sets
+  `--stick-offset` from a measurement, and the test is geometric rather than a
+  second copy of the breakpoint: if the calendar's right edge is left of the
+  list they are side by side and the offset is zero. Each band is also its own
+  list item wrapping its own rows, because a sticky element is bounded by its
+  containing block, and in one flat list every heading pins to the top of the
+  page at once and only paint order decides which is visible.
+- **`MonthJumpSheet.vue` is not `ui/Sheet.vue`** and must not be merged into
+  it: Sheet's anchor is a closed set of two fixed sidebar geometries and this
+  panel hangs off a button whose position is measured. What they share, the
+  focus trap, Escape, the scrim and returning focus to the trigger, is
+  `useDialogBehaviour` in `src/lib/dialog.ts`, which both call. It is
+  teleported to the body, because `container-type: inline-size` makes an
+  element the containing block for its fixed descendants and the scrim would
+  otherwise stop at the page's edges.
+
+Not built yet on that screen: the Upcoming, Past and All tabs and the status
+filter from 19.2, the clash warning from 5.2, and the booking detail screen.
 
 Not built yet: passkeys and two-factor enforcement (configured, unused),
 Sign in with Apple or Google, switching between accounts, collaborator

@@ -16,6 +16,7 @@
     "ship": "npm run build && wrangler deploy"
   },
   "dependencies": {
+    "date-fns": "^4.4.0",
     "dexie": "^4.4.5",
     "pinia": "^4.0.3",
     "vue": "^3.5.42",

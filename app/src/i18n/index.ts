@@ -18,6 +18,15 @@ const i18n = createI18n({
       date: { day: 'numeric', month: 'long', year: 'numeric' },
     },
   },
+  // Money, so that no screen ever builds an amount by putting a pound sign in
+  // front of a number. The currency here is only the default: every amount in
+  // the app sits beside its own ISO 4217 code and passes it, because an
+  // account can be billing in euros.
+  numberFormats: {
+    'en-GB': {
+      currency: { style: 'currency', currency: 'GBP' },
+    },
+  },
 })
 
 export default i18n
