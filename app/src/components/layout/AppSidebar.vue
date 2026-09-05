@@ -72,7 +72,7 @@
     -->
     <div class="mt-auto pt-6">
       <button
-        class="flex h-10 w-full items-center gap-3 rounded-control px-4 text-body font-medium text-text-strong hover:bg-surface-sunken focus-visible:focus-ring"
+        class="flex h-10 w-full items-center gap-3 rounded-control px-4 text-body font-medium text-text-strong transition-colors hover:bg-surface-sunken focus-visible:focus-ring"
         type="button"
         aria-haspopup="dialog"
         :aria-expanded="accountOpen"

@@ -187,6 +187,16 @@
 
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
 
+  /*
+    Tailwind's own defaults for every transition utility, re-pointed at the
+    app's tokens. This is what makes the timing global: a plain
+    transition-colors anywhere in the app is already --duration-base on the
+    app's one easing curve, so no component says duration-300 and changing the
+    lever below moves every hover, toggle and slide at once.
+  */
+  --default-transition-duration: var(--duration-base);
+  --default-transition-timing-function: var(--ease-out);
+
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
@@ -342,8 +352,13 @@
   --control-height-lg: 56px;
   --tap-target-min: 44px;
 
+  /*
+    The motion levers. Base is everything you watch move: a hover, a toggle,
+    a sheet sliding up, the tab bar pill. Fast is for a mark that should land
+    rather than glide, which is the tick arriving in a box.
+  */
   --duration-fast: 100ms;
-  --duration-base: 200ms;
+  --duration-base: 250ms;
 }
 
 /* --- Dark, a redefinition of the semantic layer only -----------------------
@@ -424,6 +439,20 @@ body {
 }
 
 /*
+  The focus ring's colour, set before there is a ring to colour.
+
+  transition-colors includes outline-color, so anything carrying it fades its
+  ring in from whatever the text colour happens to be. At 150ms that was a
+  flicker; at --duration-base it is a keyboard user watching a white ring on a
+  white page turn purple. Setting the colour on the resting state leaves focus
+  changing only outline-style, which does not animate, so the ring is there the
+  instant it is asked for and its colour is already right.
+*/
+:where(a, button, input, select, textarea, summary, [tabindex]) {
+  outline-color: var(--border-focus);
+}
+
+/*
   Tailwind 4's reset gives a button the ordinary arrow cursor rather than the
   pointing hand, so nothing in the app looked clickable on hover. This puts
   the hand back in one place, which is the whole app: AppButton and
@@ -474,7 +503,7 @@ body {
   background-color: var(--surface);
   cursor: pointer;
   transition: background-color var(--duration-fast) var(--ease-out),
-              border-color var(--duration-fast) var(--ease-out);
+              border-color var(--duration-base) var(--ease-out);
 
   &:checked {
     background-color: var(--accent);

@@ -188,3 +188,18 @@ export const borderWidths: BorderWidth[] = [
   { className: 'border-2', use: 'an invalid control, and FormError' },
   { className: 'focus-visible:focus-ring', use: 'the ring on anything that takes focus and has no edge to recolour. Tab to the box to see it' },
 ]
+
+export interface MotionToken {
+  token: string
+  use: string
+}
+
+// Motion is one duration and one curve, and the duration is wired to
+// Tailwind's own default for every transition utility. That is why no
+// component in the app writes a duration of its own: changing --duration-base
+// changes every hover, toggle and slide at once.
+export const motionTokens: MotionToken[] = [
+  { token: '--duration-base', use: 'every hover, every colour change, the toggle, the tab bar pill, the sheet' },
+  { token: '--duration-fast', use: 'a mark that should land rather than glide, which is the tick arriving in a box' },
+  { token: '--ease-out', use: 'the one curve, on all of it' },
+]

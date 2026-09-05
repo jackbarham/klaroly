@@ -8,7 +8,7 @@
     -->
     <RouterLink
       v-if="backTo"
-      class="mb-4 inline-flex items-center gap-1 text-sm text-text-muted hover:text-text-strong focus-visible:focus-ring lg:hidden"
+      class="mb-4 inline-flex items-center gap-1 text-sm text-text-muted transition-colors hover:text-text-strong focus-visible:focus-ring lg:hidden"
       :to="backTo"
     >
       <Icon

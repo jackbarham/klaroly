@@ -53,7 +53,7 @@
 
         <RouterLink
           v-else
-          class="relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-full text-xs focus-visible:focus-ring"
+          class="relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-full text-xs transition-colors focus-visible:focus-ring"
           :class="isCurrent(item) ? 'font-medium text-accent-text' : 'text-text-muted'"
           :to="{ name: item.routeName }"
           :aria-current="isCurrent(item) ? 'page' : undefined"
@@ -161,7 +161,8 @@ watch(activeIndex, async () => {
   left: 0;
   width: var(--pill-w);
   transform: translate(var(--pill-x), -50%);
-  transition: transform 250ms ease, width 250ms ease;
+  transition: transform var(--duration-base) var(--ease-out),
+              width var(--duration-base) var(--ease-out);
 }
 
 @media (prefers-reduced-motion: reduce) {

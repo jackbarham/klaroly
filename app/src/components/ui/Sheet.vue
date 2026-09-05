@@ -196,12 +196,12 @@ watch(open, async (isOpen) => {
 */
 .sheet-enter-active,
 .sheet-leave-active {
-  transition: opacity 200ms ease;
+  transition: opacity var(--duration-base) var(--ease-out);
 }
 
 .sheet-enter-active .sheet-panel,
 .sheet-leave-active .sheet-panel {
-  transition: transform 200ms ease;
+  transition: transform var(--duration-base) var(--ease-out);
 }
 
 .sheet-enter-from,

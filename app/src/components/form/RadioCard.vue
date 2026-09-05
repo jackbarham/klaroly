@@ -22,7 +22,7 @@
       outside the edge instead, so the three states stay distinguishable.
     -->
     <span
-      class="block rounded-card border p-4 transition-colors duration-200 peer-focus-visible:focus-ring peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+      class="block rounded-card border p-4 transition-colors peer-focus-visible:focus-ring peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
       :class="selected ? 'border-accent ring-1 ring-accent' : 'border-border-strong peer-enabled:hover:border-border-accent-soft'"
     >
       <span class="block text-body font-medium text-text-strong">{{ title }}</span>

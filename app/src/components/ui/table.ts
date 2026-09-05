@@ -17,7 +17,7 @@ export interface TableColumn {
 // The hover is the divider the row already has, recoloured. Nothing is added,
 // nothing is filled and the row does not move: a second line above a grey one
 // reads as three pixels of rule and pulls the eye out of the table.
-export const tableRowClasses = 'border-b border-border transition-colors duration-200 hover:border-accent'
+export const tableRowClasses = 'border-b border-border transition-colors hover:border-accent'
 
 // The first and last cells are flush with the edges of the table, so the right
 // padding comes off the last one.

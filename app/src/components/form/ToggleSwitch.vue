@@ -13,7 +13,7 @@
     @click="model = !model"
   >
     <span
-      class="h-5 w-5 rounded-full bg-text-on-accent transition-transform duration-200 ease-out motion-reduce:transition-none"
+      class="h-5 w-5 rounded-full bg-text-on-accent transition-transform motion-reduce:transition-none"
       :class="model ? 'translate-x-5' : 'translate-x-0'"
       aria-hidden="true"
     />

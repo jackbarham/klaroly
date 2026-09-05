@@ -23,7 +23,12 @@ export interface ChoiceOption {
 // drawing a ring outside it, and it means none of those states moves the box
 // or the text inside it by a pixel. The transparent border is what keeps the
 // content box where it was.
-export const controlClasses = 'w-full rounded-control border border-transparent bg-surface px-4 text-text-strong placeholder:text-text-placeholder focus:outline-hidden disabled:cursor-not-allowed disabled:bg-surface-disabled disabled:text-text-muted'
+//
+// transition-shadow is what makes that edge move rather than snap between its
+// four states. It is safe to ease here in a way an outline is not: the edge is
+// on the screen at rest, so easing changes its colour rather than deciding
+// when it appears.
+export const controlClasses = 'w-full rounded-control border border-transparent bg-surface px-4 text-text-strong placeholder:text-text-placeholder transition-shadow focus:outline-hidden disabled:cursor-not-allowed disabled:bg-surface-disabled disabled:text-text-muted'
 
 // Every state of the edge lives in one function on purpose. If the resting
 // string carried the focus edge and the invalid string carried its own, two

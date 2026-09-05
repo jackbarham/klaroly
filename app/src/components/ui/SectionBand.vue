@@ -18,7 +18,7 @@
       <Icon
         v-if="collapsible"
         name="chevron-right"
-        class="h-5 w-5 shrink-0 text-text-muted transition-transform duration-200"
+        class="h-5 w-5 shrink-0 text-text-muted transition-transform"
         :class="open ? 'rotate-90' : ''"
       />
     </component>

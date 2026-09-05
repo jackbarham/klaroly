@@ -342,12 +342,39 @@ Breakpoints are stock Tailwind: 640, 768, 1024, 1280.
 
 | Token | Value | Used for |
 | --- | --- | --- |
-| `--duration-fast` | 100ms | Popover and menu fades |
-| `--duration-base` | 200ms | Hovers, transforms, toggles |
+| `--duration-fast` | 100ms | A mark that should land rather than glide: the tick arriving in a tick box |
+| `--duration-base` | **250ms** | Everything else that moves: hovers, colour changes, toggles, the tab bar pill, the sheet |
 | `--ease-out` | `cubic-bezier(0, 0, 0.2, 1)` | Everything |
 
-One easing curve. Their compiled CSS also ships 75ms, 300ms and an ease-in curve;
-none of the three is used anywhere in the application.
+One easing curve. **Klaroly runs the base at 250ms, not the 200ms measured at
+source**, because the slower ease reads as considered rather than eager, which
+is what this product is trying to be.
+
+**The base duration is wired to Tailwind's own defaults**, in the theme block:
+
+```css
+--default-transition-duration: var(--duration-base);
+--default-transition-timing-function: var(--ease-out);
+```
+
+Every `transition-*` utility resolves its duration and its curve through those,
+so a plain `transition-colors` anywhere in the app is already the app's timing.
+**No component writes a duration**, and changing `--duration-base` moves every
+hover, toggle and slide at once. The two hand-written style blocks that animate,
+the sheet and the tab bar pill, read `var(--duration-base)` directly for the
+same reason.
+
+**One thing to know before adding a transition to a focusable element.**
+`transition-colors` includes `outline-color`, so anything carrying it fades its
+focus ring in from whatever the text colour happens to be, and at the base
+duration that is a keyboard user watching a white ring on a white page turn
+purple. The fix is
+in the base layer and applies everywhere: focusable elements carry
+`outline-color: var(--border-focus)` at rest, so focus changes only
+`outline-style`, which does not animate, and the ring is there the instant it
+is asked for. A control whose edge is an inset shadow eases that edge with
+`transition-shadow` instead, which is safe because the edge is on the screen at
+rest: easing changes its colour rather than deciding when it appears.
 
 ---
 

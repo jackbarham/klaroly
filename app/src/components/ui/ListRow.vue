@@ -4,7 +4,7 @@
     carries a top one as well, so an ordinary ul gets the hairline above it
     without a wrapper component to remember.
   -->
-  <li class="border-b border-border transition-colors duration-200 first:border-t hover:border-accent">
+  <li class="border-b border-border transition-colors first:border-t hover:border-accent">
     <!--
       A row that goes somewhere is one link across its whole width, which is
       the right target for a thumb. The ring is inset because the row is as

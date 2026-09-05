@@ -155,6 +155,44 @@
     </div>
 
     <div class="space-y-4">
+      <div class="space-y-2">
+        <h3 class="text-sm font-medium text-text">
+          Motion
+        </h3>
+        <p class="text-xs text-text-muted">
+          One duration and one curve. They are wired to Tailwind's own defaults
+          for every transition utility, so no component writes a duration and
+          changing the base moves the whole app. Hover the two below: the first
+          is what everything does, the second is the tick landing.
+        </p>
+      </div>
+      <ul class="space-y-2">
+        <li
+          v-for="motion in motionTokens"
+          :key="motion.token"
+          class="flex flex-wrap items-baseline gap-x-6 gap-y-2"
+        >
+          <code class="w-40 shrink-0 font-mono text-xs text-text-muted">{{ motion.token }}</code>
+          <span class="font-mono text-xs text-text-muted">{{ values[motion.token] }}</span>
+          <span class="text-xs text-text-muted">{{ motion.use }}</span>
+        </li>
+      </ul>
+      <div class="flex flex-wrap gap-4">
+        <span class="flex h-12 items-center rounded-control bg-surface-sunken px-4 text-body text-text transition-colors hover:bg-accent hover:text-text-on-accent">
+          Hover me at the base duration
+        </span>
+        <label :class="optionRowClasses">
+          <input
+            v-model="ticked"
+            class="check focus-visible:focus-ring"
+            type="checkbox"
+          >
+          Tick me at the fast one
+        </label>
+      </div>
+    </div>
+
+    <div class="space-y-4">
       <h3 class="text-sm font-medium text-text">
         Shadow
       </h3>
@@ -198,9 +236,13 @@
 // which is the mechanism that lets the dark class redefine one layer and move
 // the whole app; a token reading "not generated" is a real finding.
 import { onMounted, ref, type ComponentPublicInstance } from 'vue'
-import { borderWidths, colourGroups, radiusTokens, shadowTokens, spacingSteps, typeSteps } from '@/views/kitchen-sink/tokens'
+import { optionRowClasses } from '@/components/form/field'
+import { borderWidths, colourGroups, motionTokens, radiusTokens, shadowTokens, spacingSteps, typeSteps } from '@/views/kitchen-sink/tokens'
 
 const values = ref<Record<string, string>>({})
+
+// Somewhere for the tick in the motion demo to go.
+const ticked = ref(false)
 const typeDetails = ref<string[]>([])
 const spacingWidths = ref<string[]>([])
 const shadowValues = ref<string[]>([])
@@ -248,7 +290,7 @@ onMounted(() => {
 
   const colours = colourGroups.flatMap((group) => group.tokens)
 
-  for (const item of [...colours, ...radiusTokens]) {
+  for (const item of [...colours, ...radiusTokens, ...motionTokens]) {
     found[item.token] = readVariable(item.token)
   }
 
