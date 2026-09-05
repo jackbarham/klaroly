@@ -245,16 +245,20 @@ controls stay put.
 | --- | --- | --- |
 | `--radius-xs` | 4px | Thumbnails, small indicators |
 | `--radius-control` | 8px | Buttons, inputs, selects, menus, pills, nav items |
-| `--radius-card` | 8px | Cards and panels |
+| `--radius-card` | **12px in Klaroly**, 8px at source | Cards and panels |
 | `--radius-pill` | 9999px | Avatars, toggles, round icon buttons |
+| `--radius-sheet` | 24px | **Klaroly only.** The tab bar and the create sheet, which have no equivalent at source |
 
 8px accounts for **76%** of every rounded corner in their application. Their
 `rounded-full` is `100%`, which turns any non-square box into an ellipse; this
 guide uses `9999px` instead.
 
-`--radius-card` deliberately equals `--radius-control` today, which is faithful to
-the source. They are separate tokens so that cards can diverge later without
-touching a component.
+**Klaroly deviation: `--radius-card` is 12px, not 8px.** The app arrived at 12px
+before this system did, and on a phone, where a card is nearly full width, the
+softer corner reads better against the page than the control radius does. They
+were always separate tokens so that cards could diverge from controls without a
+component being touched; this is that happening. `--radius-control` is unchanged
+at 8px, so buttons, inputs and menus are still faithful to the source.
 
 ### Border
 
@@ -274,8 +278,16 @@ never a shadow.
 | --- | --- | --- |
 | `--shadow-input` | `0 0 0 1px rgb(10 10 46/.24) inset` | `0 0 0 1px rgb(255 255 255/.24) inset` |
 | `--shadow-input-hover` | same at 36% | same at 40% |
+| `--shadow-input-focus` | `0 0 0 var(--border-width-focus) var(--border-focus) inset` | identical |
+| `--shadow-input-invalid` | `0 0 0 var(--border-width-focus) var(--danger) inset` | identical |
 | `--shadow-menu` | five layers, see below | ring plus two soft layers |
 | `--shadow-card` | `none` | `none` |
+
+The last two are the focus and error edges, and they are written as `var()`
+rather than as values on purpose: both read `--border-width-focus`, so
+thickening every form edge in the app is one variable rather than a hunt
+through components. They are declared in `@theme inline`, which is what keeps
+those references live so each one resolves in the theme it is drawn in.
 
 **Klaroly drops the drop shadow under fields.** Theirs carries a `0 1px 1px` lift
 under the inset ring. It reads as fussy at this density, it does nothing at all on
@@ -655,6 +667,18 @@ control can be toggled, the label toggles it and the label shows a hover.
 description. Selected is a 1px `accent` border plus a 1px `accent` ring, which
 gives a 2px edge without the box moving.
 
+**Focus on a radio card is an outer ring, and it is the one exception to the
+rule below.** Everywhere else, a control with a visible edge recolours that
+edge on focus. Here the edge is already carrying a meaning: it is how the card
+says it is selected. Recolouring it on focus would make a focused card that is
+not selected look exactly like a selected one, and the person tabbing through
+would have no way to tell which of the two they were looking at. So the card
+takes a ring at `--border-focus`, `--border-width-focus` thick, offset 2px, and
+the ring sits outside the edge without touching it. All four combinations then
+read differently: selected, focused, both, and neither. The radio inside the
+card is visually hidden but focusable, so several cards sharing a `name` are
+one arrow-key group like any other radio set.
+
 **Toggle.** Track 44 × 26, 3px inset, knob 20px white, `--radius-pill`, 200ms
 transform. Off is `border-strong`, on is `accent`.
 
@@ -689,13 +713,19 @@ never wrap a settings form, a stat row or a list in a card. Their dashboard "sta
 cards" are a `border-top` with 40px of vertical padding. Their form sections are a
 sunken bar with a 40px height, not a bordered box. See the deviation rules below.
 
-**Section band**, which is their answer to a panel header:
+**Section band**, which is their answer to a panel header. **Klaroly builds it
+at 48px, not the 40px measured at source**, so that it matches the control
+height everything else on a form is on:
 
 ```html
-<div class="flex h-10 items-center justify-between rounded-control bg-surface-sunken px-4">
+<div class="flex h-12 items-center justify-between rounded-control bg-surface-sunken px-4">
   <span class="text-body font-medium text-text-strong">Pricing</span>
 </div>
 ```
+
+Optionally collapsible, in which case the bar is a real button carrying
+`aria-expanded` and `aria-controls`, and it takes a focus ring like any other
+button.
 
 ### Table and list row
 
@@ -836,6 +866,14 @@ failed AA outright, to 5.7:1.
 ```html
 <span class="k-pill bg-success-subtle text-success-text">Confirmed</span>
 ```
+
+**A fifth tone, neutral, is Klaroly's and not theirs.** It is
+`surface-sunken` behind `text-muted`, and it exists because this product has
+states that are not good news, bad news or a warning. An enquiry at New or In
+conversation is simply where it is, and colouring it as a success or a warning
+would be saying something about it that is not true. The tone is what the
+component takes; which booking mark or enquiry stage maps to which tone is the
+screen's decision, and no component knows the names of any of them.
 
 ### Empty state
 
@@ -1002,7 +1040,22 @@ Where they have two ways of doing something, take the plainer one.
    edge, focus recolours that edge to `--color-border-focus` at
    `--border-width-focus`. If it does not, focus draws a ring at the same colour
    and width, offset 2px. Never `outline: none` without putting one of the two
-   back.
+   back. The radio card is the one documented exception, and the reason is in
+   its own paragraph above.
+
+   **Where a control recolours its edge, suppress the browser's ring with
+   `outline-hidden`, never `outline-none`.** The two are not the same thing.
+   `outline-hidden` leaves a transparent outline in place, which a forced
+   colours mode turns back into a real ring; `outline-none` removes the outline
+   outright. An inset box-shadow is not painted in forced colours at all, so a
+   control that carries its edge as a shadow and its focus as that same shadow
+   would, with `outline-none`, leave somebody in that mode with no focus
+   indicator whatsoever.
+
+   And removing the classes is not the same as removing the ring. Taking
+   `focus-visible:outline-*` off a control does not leave it ringless: it hands
+   the job to the browser's own stylesheet, and the control then draws a ring
+   and a recoloured edge at once. Suppress it deliberately or not at all.
 6. **It works in both themes.** Check dark before opening a pull request. If a
    colour has no dark value, it is not a semantic token and it does not belong in
    a component.

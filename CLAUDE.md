@@ -201,29 +201,43 @@ Hand-written routes live in `routes/api.php` under `/api`:
   rule is set to `['template', 'script', 'style']`.
 - Vue Router with an explicit routes array in `src/router/index.ts`. No
   file-based routing. Do not install `unplugin-vue-router`.
-- Tailwind 4 is configured CSS-first: `@import "tailwindcss"` and one
-  `@theme` block in `src/assets/app.css`. There is no `tailwind.config.js`
-  and there must not be one. The palette, font stack and spacing scale are
-  `@theme` custom properties. The default Tailwind palette is switched off,
-  so nothing outside the theme block can use a hardcoded colour or spacing
-  value. This matches the marketing site, so both share one way of defining
-  tokens.
-- There is one grey family and one accent colour, and that is the whole
-  palette. `--color-neutral-0` through `--color-neutral-900` are what new
-  work is built from, with `--color-surface` for the page itself.
-  `--color-brand` is the primary action and nothing else: `AppButton`'s
-  primary variant applies it, and the tab bar's create button is the one
-  hand-rolled twin of that button, so a screen never decides for itself that
-  something deserves colour. Never add a colour outside the theme block, and
-  never reach for the brand colour to make something stand out.
-- There is deliberately no danger or success token. A form says what is wrong
-  in words, and shows it with a heavier border and a heavier weight: an
-  invalid control is `border-2 border-neutral-900` plus `aria-invalid`, and a
-  form-level failure is `FormError`, which uses the same treatment. Colour on
-  its own tells a screen reader nothing, so it was never what carried the
-  meaning, and one way of saying "this is wrong" beats one per screen. When a
-  semantic red and green are wanted they arrive with the brand work, as a
-  text, border, background and hover tint each, checked for contrast.
+- Tailwind 4 is configured CSS-first, in `src/assets/app.css`: an
+  `@import "tailwindcss"`, two `@theme` blocks and the `:root` and `.dark`
+  value sets. There is no `tailwind.config.js` and there must not be one. The
+  default Tailwind palette and font stacks are switched off, so nothing
+  outside the theme block can use a hardcoded colour or spacing value. This
+  matches the marketing site, so both share one way of defining tokens.
+- **The palette is two layers and a component only ever touches the second.**
+  Layer one is the primitives: the raw ramps, `--color-neutral-*`,
+  `--color-accent-*`, the status hues, the translucent whites the dark theme
+  is built from. Nothing outside the theme block may name one. Layer two is
+  the semantics, declared with `@theme inline` so that each utility points at
+  a variable rather than at a resolved value: `surface`, `surface-sunken`,
+  `surface-hover`, `surface-raised`, `surface-overlay`, `surface-disabled`,
+  `scrim`, `text`, `text-strong`, `text-muted`, `text-subtle`,
+  `text-placeholder`, `text-on-accent`, `border`, `border-strong`,
+  `border-focus`, `accent`, `accent-hover`, `accent-text`, `accent-subtle`
+  and the four status families. A screen writes `bg-surface-raised` or
+  `text-text-muted`, and never a primitive, never a hex.
+- **Dark mode is those two layers and nothing else.** `:root` and `.dark` give
+  the semantic names different values; the primitives never move. **There is
+  no `dark:` variant anywhere in the app and there must not be one.** Wanting
+  to write one means the element is still holding a raw colour, and the token
+  is the fix. The class is never set: the theme is wired and deliberately not
+  exposed yet.
+- `accent` is the primary action and nothing else: `AppButton`'s primary
+  variant applies it, and the tab bar's create button is the one hand-rolled
+  twin of that button, so a screen never decides for itself that something
+  deserves colour. `accent-text` is the accent as words, and it is a separate
+  token because a fill that can be read on white cannot be read on the dark
+  ground.
+- A form says what is wrong in words first. An invalid control is
+  `border-2 border-danger` plus `aria-invalid`, and a form-level failure is
+  `FormError`, which uses the same heavy border with `text-danger-text`. The
+  border and the words carry the meaning and the colour helps, because colour
+  on its own tells a screen reader nothing. `success`, `warning` and `info`
+  exist as tokens and nothing uses them yet: the status pill and the booking
+  states are still to build.
 - Spacing comes off an eight pixel grid. Use Tailwind steps 2, 4, 6, 8, 10,
   12, 16, 20 and 24 for padding, margins and gaps. Step 1 is allowed only
   inside a control, such as between an icon and its label. Heights, widths and
@@ -367,15 +381,16 @@ radius, border, shadow or duration is in doubt, that document wins, and a change
 to any of them is made there first. `docs/style-guide-screens/` is what each
 component should look like in both themes.
 
-**It is staged, not applied.** Its tokens live in `docs/tokens.css` and have not
-replaced `src/assets/app.css`. Until the restyle lands, the palette described
-under App rules above is what the app actually uses, and that description is the
-current truth. Do not part-apply the style guide: the theme block and every
-component that references it move in one change.
-`docs/kitchen-sink-reference.html` is a standalone render of the target system;
-delete it once `/kitchen-sink` reflects the same thing.
+**It is applied.** `src/assets/app.css` carries the two token layers and every
+component reads them, so the rules below are live rather than aspirational.
+`docs/tokens.css` is the record of where the system came from; the app's own
+theme block is what actually runs, and the two differ in one deliberate place,
+which is `--radius-card`.
 
-Once the restyle has landed, these are the rules:
+Control heights, the type scale and the button size ramp have not moved yet.
+The app is on the new palette and still on Tailwind's own sizes.
+
+The rules:
 
 - Every colour, size, space, radius, border, shadow and duration comes from the
   semantic tokens in `src/assets/app.css`. Never hardcode a value and never use

@@ -3,7 +3,7 @@
     v-model:open="open"
     :label="t('create.title')"
   >
-    <p class="px-4 pb-2 text-sm font-medium text-neutral-500">
+    <p class="px-4 pb-2 text-sm font-medium text-text-muted">
       {{ t('create.title') }}
     </p>
     <ul>
@@ -12,13 +12,13 @@
         :key="row.key"
       >
         <button
-          class="flex w-full items-center gap-4 rounded-control px-4 py-4 text-left text-neutral-900 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+          class="flex w-full items-center gap-4 rounded-control px-4 py-4 text-left text-text-strong hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
           type="button"
           @click="choose"
         >
           <Icon
             :name="row.icon"
-            class="h-5 w-5 text-neutral-500"
+            class="h-5 w-5 text-text-muted"
           />
           {{ t(row.labelKey) }}
         </button>

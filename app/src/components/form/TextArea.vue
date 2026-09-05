@@ -3,7 +3,7 @@
     :id="id"
     v-model="model"
     class="min-h-32 py-2"
-    :class="[controlClasses, borderClasses(invalid)]"
+    :class="[controlClasses, edgeClasses(invalid)]"
     :rows="rows"
     :disabled="disabled"
     :aria-labelledby="labelledBy"
@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 // Several lines of text. Same wiring as the text input.
-import { borderClasses, controlClasses } from '@/components/form/field'
+import { controlClasses, edgeClasses } from '@/components/form/field'
 
 withDefaults(defineProps<{
   id: string

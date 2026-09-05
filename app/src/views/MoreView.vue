@@ -3,37 +3,37 @@
     <PageHeader :title="t('more.title')" />
 
     <Card>
-      <ul class="-my-2 divide-y divide-neutral-200">
+      <ul class="-my-2 divide-y divide-border">
         <li
           v-for="item in moreItems"
           :key="item.key"
         >
           <RouterLink
-            class="flex items-center justify-between gap-4 py-4 text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+            class="flex items-center justify-between gap-4 py-4 text-text-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
             :to="{ name: item.routeName }"
           >
             <span class="flex items-center gap-4">
               <Icon
                 :name="item.icon"
-                class="h-5 w-5 text-neutral-500"
+                class="h-5 w-5 text-text-muted"
               />
               {{ t(item.labelKey) }}
             </span>
             <Icon
               name="chevron-right"
-              class="h-5 w-5 text-neutral-400"
+              class="h-5 w-5 text-text-subtle"
             />
           </RouterLink>
         </li>
         <li>
           <button
-            class="flex w-full items-center gap-4 py-4 text-left text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+            class="flex w-full items-center gap-4 py-4 text-left text-text-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
             type="button"
             @click="signOut"
           >
             <Icon
               name="sign-out"
-              class="h-5 w-5 text-neutral-500"
+              class="h-5 w-5 text-text-muted"
             />
             {{ t('auth.sign_out_action') }}
           </button>

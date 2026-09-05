@@ -9,7 +9,7 @@
       :id="id"
       v-model="model"
       class="h-12"
-      :class="[controlClasses, borderClasses(invalid), status ? 'pr-12' : '']"
+      :class="[controlClasses, edgeClasses(invalid), status ? 'pr-12' : '']"
       :type="type"
       :autocomplete="autocomplete"
       :disabled="disabled"
@@ -20,7 +20,7 @@
 
     <span
       v-if="status"
-      class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-neutral-900"
+      class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-text-strong"
       aria-hidden="true"
     >
       <svg
@@ -64,7 +64,7 @@
 // a shape, not a colour, and it is hidden from a screen reader: the same
 // thing in words is FormField's statusMessage, and a status passed without
 // one is a tick nobody can hear. Pass the pair or pass neither.
-import { borderClasses, controlClasses } from '@/components/form/field'
+import { controlClasses, edgeClasses } from '@/components/form/field'
 
 withDefaults(defineProps<{
   id: string

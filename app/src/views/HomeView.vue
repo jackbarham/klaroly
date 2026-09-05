@@ -8,7 +8,7 @@
     <div class="space-y-6">
       <p
         v-if="verifiedMessage"
-        class="rounded-card border border-neutral-200 bg-neutral-0 p-4 text-sm text-neutral-700"
+        class="rounded-card border border-border bg-surface-raised p-4 text-sm text-text"
         role="status"
       >
         {{ t('auth.email_verified') }}

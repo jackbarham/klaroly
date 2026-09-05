@@ -5,7 +5,7 @@
 
       <p class="text-sm">
         <RouterLink
-          class="font-medium text-brand hover:text-brand-strong"
+          class="font-medium text-accent-text hover:underline"
           :to="{ name: 'forgot-password' }"
         >
           {{ t('auth.forgot_password_link') }}

@@ -9,10 +9,10 @@
     button put the bottom of the New button 136 pixels down. See Sheet.vue.
   -->
   <nav
-    class="fixed inset-y-0 left-0 z-10 hidden w-72 flex-col border-r border-neutral-200 bg-neutral-0 page-top px-6 pb-6 lg:flex"
+    class="fixed inset-y-0 left-0 z-10 hidden w-72 flex-col border-r border-border bg-surface page-top px-6 pb-6 lg:flex"
     :aria-label="t('nav.primary_label')"
   >
-    <p class="flex h-8 items-center text-lg font-semibold text-neutral-900">
+    <p class="flex h-8 items-center text-lg font-semibold text-text-strong">
       {{ t('app.name') }}
     </p>
 
@@ -44,7 +44,7 @@
       </li>
     </ul>
 
-    <hr class="my-6 border-t border-neutral-200">
+    <hr class="my-6 border-t border-border">
 
     <ul class="space-y-2">
       <li
@@ -98,9 +98,9 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
-const linkClasses = 'flex h-12 items-center gap-4 rounded-control px-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900'
-const currentClasses = 'bg-neutral-100 font-medium text-neutral-900'
-const idleClasses = 'text-neutral-700 hover:bg-neutral-50'
+const linkClasses = 'flex h-12 items-center gap-4 rounded-control px-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus'
+const currentClasses = 'bg-surface-sunken font-medium text-accent-text'
+const idleClasses = 'text-text hover:bg-surface-sunken'
 
 // A booking's page marks Bookings, a settings group marks Settings, and so
 // on, which is what sectionKey works out.

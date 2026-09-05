@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen">
     <a
-      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-30 focus:rounded-control focus:bg-neutral-900 focus:px-4 focus:py-2 focus:text-neutral-0"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-30 focus:rounded-control focus:bg-accent focus:px-4 focus:py-2 focus:text-text-on-accent"
       href="#main"
     >{{ t('nav.skip_to_content') }}</a>
 

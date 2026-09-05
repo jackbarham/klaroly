@@ -1,19 +1,19 @@
 <template>
   <div class="space-y-8">
     <div class="space-y-2">
-      <p class="text-xs font-medium text-neutral-500">
+      <p class="text-xs font-medium text-text-muted">
         Title only
       </p>
-      <div class="rounded-card border border-neutral-200 p-6">
+      <div class="rounded-card border border-border p-6">
         <PageHeader title="Bookings" />
       </div>
     </div>
 
     <div class="space-y-2">
-      <p class="text-xs font-medium text-neutral-500">
+      <p class="text-xs font-medium text-text-muted">
         With a description
       </p>
-      <div class="rounded-card border border-neutral-200 p-6">
+      <div class="rounded-card border border-border p-6">
         <PageHeader
           title="Bookings"
           description="Everything you have in the diary, soonest first."
@@ -22,10 +22,10 @@
     </div>
 
     <div class="space-y-2">
-      <p class="text-xs font-medium text-neutral-500">
+      <p class="text-xs font-medium text-text-muted">
         With actions
       </p>
-      <div class="rounded-card border border-neutral-200 p-6">
+      <div class="rounded-card border border-border p-6">
         <PageHeader title="Bookings">
           <template #actions>
             <IconButton
@@ -41,12 +41,12 @@
     </div>
 
     <div class="space-y-2">
-      <p class="text-xs font-medium text-neutral-500">
+      <p class="text-xs font-medium text-text-muted">
         With a description, actions and a back link. The back link is drawn
         below the lg breakpoint only, because a wide screen has the sidebar
         to go back to instead.
       </p>
-      <div class="rounded-card border border-neutral-200 p-6">
+      <div class="rounded-card border border-border p-6">
         <PageHeader
           title="Travel"
           description="Where you are based and what you charge to get to a booking."

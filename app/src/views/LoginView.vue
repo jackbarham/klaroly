@@ -2,7 +2,7 @@
   <AuthCard :title="t('auth.sign_in_title')">
     <p
       v-if="notice"
-      class="text-sm text-neutral-600"
+      class="text-sm text-text-muted"
       role="status"
     >
       {{ t(notice) }}
@@ -65,12 +65,12 @@
       side of the rule do not look equal. Same as the register screen.
     -->
     <div class="space-y-5 pt-1">
-      <hr class="border-t border-neutral-200">
+      <hr class="border-t border-border">
 
       <div class="space-y-2 text-center text-sm">
         <p>
           <RouterLink
-            class="font-medium text-brand hover:text-brand-strong"
+            class="font-medium text-accent-text hover:underline"
             :to="{ name: 'forgot-password' }"
           >
             {{ t('auth.forgot_password_link') }}
@@ -78,7 +78,7 @@
         </p>
         <p>
           <RouterLink
-            class="font-medium text-brand hover:text-brand-strong"
+            class="font-medium text-accent-text hover:underline"
             :to="{ name: 'register' }"
           >
             {{ t('auth.register_link') }}

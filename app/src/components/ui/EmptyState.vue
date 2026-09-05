@@ -2,9 +2,9 @@
   <div class="flex flex-col items-center gap-4 py-12 text-center">
     <Icon
       :name="icon"
-      class="h-8 w-8 text-neutral-400"
+      class="h-8 w-8 text-text-subtle"
     />
-    <p class="text-neutral-500">
+    <p class="text-text-muted">
       {{ text }}
     </p>
     <div v-if="$slots.action">

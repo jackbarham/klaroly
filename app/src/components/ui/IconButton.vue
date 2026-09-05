@@ -1,6 +1,6 @@
 <template>
   <button
-    class="inline-flex h-12 w-12 items-center justify-center rounded-control text-neutral-700 transition-colors hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:cursor-not-allowed disabled:opacity-50"
+    class="inline-flex h-12 w-12 items-center justify-center rounded-control text-text transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus disabled:cursor-not-allowed disabled:opacity-50"
     :type="type"
     :disabled="disabled"
     :aria-label="label"

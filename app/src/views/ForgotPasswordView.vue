@@ -15,7 +15,7 @@
       novalidate
       @submit.prevent="submit"
     >
-      <p class="text-sm text-neutral-600">
+      <p class="text-sm text-text-muted">
         {{ t('auth.forgot_password_intro') }}
       </p>
 
@@ -45,7 +45,7 @@
 
     <p class="text-sm">
       <RouterLink
-        class="font-medium text-brand hover:text-brand-strong"
+        class="font-medium text-accent-text hover:underline"
         :to="{ name: 'login' }"
       >
         {{ t('auth.sign_in_link') }}

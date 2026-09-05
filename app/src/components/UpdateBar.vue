@@ -1,12 +1,12 @@
 <template>
   <div
     v-if="updateAvailable"
-    class="fixed inset-x-0 bottom-0 z-10 flex items-center justify-center gap-4 bg-brand p-3 text-sm text-on-brand"
+    class="fixed inset-x-0 bottom-0 z-10 flex items-center justify-center gap-4 bg-accent p-3 text-sm text-text-on-accent"
     role="status"
   >
     <p>{{ t('updates.available') }}</p>
     <button
-      class="rounded-control border border-on-brand px-3 py-1 hover:bg-brand-strong disabled:opacity-60"
+      class="rounded-control border border-text-on-accent px-3 py-1 hover:bg-accent-hover disabled:opacity-60"
       type="button"
       :disabled="pending"
       @click="reload"

@@ -1,16 +1,15 @@
 <template>
-  <div
-    class="flex items-center rounded-control border bg-neutral-0"
-    :class="borderClasses(invalid)"
-  >
-    <span
-      class="pl-4 text-neutral-500"
-      aria-hidden="true"
-    >{{ currency }}</span>
+  <!--
+    The same shape as the text input: the input itself is the control and
+    carries the shared classes, and the currency symbol is drawn inside its
+    left edge. The wrapper exists only to position that symbol.
+  -->
+  <div class="relative">
     <input
       :id="id"
       v-model="model"
-      class="h-12 w-full rounded-control bg-neutral-0 px-2 text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
+      class="h-12 pl-8"
+      :class="[controlClasses, edgeClasses(invalid)]"
       type="text"
       inputmode="decimal"
       :disabled="disabled"
@@ -18,6 +17,11 @@
       :aria-describedby="describedBy"
       :aria-invalid="invalid ? 'true' : undefined"
     >
+
+    <span
+      class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-text-muted"
+      aria-hidden="true"
+    >{{ currency }}</span>
   </div>
 </template>
 
@@ -27,9 +31,9 @@
 // number of minor units, and turning what someone types into that is a job
 // for the prompt that first saves a price.
 //
-// The symbol is decorative, so it is hidden from a screen reader; the field's
-// label says which currency it is.
-import { borderClasses } from '@/components/form/field'
+// The symbol is decorative, so it is hidden from a screen reader and takes no
+// clicks; the field's label says which currency it is.
+import { controlClasses, edgeClasses } from '@/components/form/field'
 
 withDefaults(defineProps<{
   id: string

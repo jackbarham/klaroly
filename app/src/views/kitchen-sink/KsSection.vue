@@ -7,12 +7,12 @@
     :id="id"
     class="scroll-mt-24"
   >
-    <h2 class="text-lg font-semibold text-neutral-900">
+    <h2 class="text-lg font-semibold text-text-strong">
       {{ title }}
     </h2>
     <p
       v-if="note"
-      class="mt-2 text-sm text-neutral-500"
+      class="mt-2 text-sm text-text-muted"
     >
       {{ note }}
     </p>

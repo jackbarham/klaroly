@@ -1,8 +1,8 @@
 <template>
   <button
     :id="id"
-    class="inline-flex h-8 w-14 shrink-0 items-center rounded-full border p-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:cursor-not-allowed disabled:opacity-50"
-    :class="model ? 'justify-end border-neutral-900 bg-neutral-900' : 'justify-start border-neutral-300 bg-neutral-100'"
+    class="inline-flex h-8 w-14 shrink-0 items-center rounded-full border p-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus disabled:cursor-not-allowed disabled:opacity-50"
+    :class="model ? 'justify-end border-accent bg-accent' : 'justify-start border-border-strong bg-border-strong'"
     type="button"
     role="switch"
     :aria-checked="model"
@@ -13,7 +13,7 @@
     @click="toggle"
   >
     <span
-      class="h-6 w-6 rounded-full bg-neutral-0"
+      class="h-6 w-6 rounded-full bg-text-on-accent"
       aria-hidden="true"
     />
   </button>

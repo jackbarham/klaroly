@@ -5,6 +5,44 @@
     @submit.prevent
   >
     <FormSection
+      title="The edge of a control"
+      description="A control's edge is an inset shadow rather than a border, so focus and error recolour the edge it already has and the box never moves by a pixel. Focus cannot be drawn standing still: click into the middle field to see it, and notice the edge changes the moment you click rather than when the pointer leaves."
+    >
+      <div class="grid gap-6 sm:grid-cols-3">
+        <FormField
+          v-slot="field"
+          label="At rest"
+        >
+          <TextInput
+            v-bind="field"
+            v-model="demo.edgeResting"
+          />
+        </FormField>
+
+        <FormField
+          v-slot="field"
+          label="Focused: click in here"
+        >
+          <TextInput
+            v-bind="field"
+            v-model="demo.edgeFocused"
+          />
+        </FormField>
+
+        <FormField
+          v-slot="field"
+          label="Invalid"
+          error="It stays red while the cursor is in it."
+        >
+          <TextInput
+            v-bind="field"
+            v-model="demo.edgeInvalid"
+          />
+        </FormField>
+      </div>
+    </FormSection>
+
+    <FormSection
       title="TextInput"
       description="A single line of text. Every control below takes its id, its description and its invalid flag from FormField, so a field is one line of markup."
     >
@@ -162,36 +200,45 @@
 
     <FormSection
       title="CheckboxInput"
-      description="A tick box carries its own label, because it reads as the sentence beside it, so it is normally used on its own rather than inside a field."
+      description="Two shapes, side by side, and never both at once: a box that carries its own label, and a box inside a field that is named by the field's label. Passing both, or neither, throws while the screen is being written."
     >
-      <CheckboxInput
-        id="kitchen-sink-standalone-checkbox"
-        v-model="demo.confirmed"
+      <div class="grid gap-6 sm:grid-cols-2">
+        <div class="space-y-2">
+          <p class="text-xs font-medium text-text-muted">
+            On its own, carrying its own label
+          </p>
+          <CheckboxInput
+            id="kitchen-sink-standalone-checkbox"
+            v-model="demo.confirmed"
+            label="Send the client a confirmation email"
+          />
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-xs font-medium text-text-muted">
+            Inside a FormField, named by the field alone
+          </p>
+          <FormField
+            v-slot="field"
+            label="Send the client a confirmation email"
+          >
+            <CheckboxInput
+              v-bind="field"
+              v-model="demo.confirmedWithHint"
+            />
+          </FormField>
+        </div>
+      </div>
+
+      <FormField
+        v-slot="field"
         label="Send the client a confirmation email"
-      />
-
-      <FormField
-        v-slot="field"
-        label="Confirmation"
-        hint="Inside a field the label is said twice: once by the field and once by the box."
-      >
-        <CheckboxInput
-          v-bind="field"
-          v-model="demo.confirmedWithHint"
-          label="Send the client a confirmation email"
-        />
-      </FormField>
-
-      <FormField
-        v-slot="field"
-        label="Confirmation"
-        hint="Inside a field the label is said twice: once by the field and once by the box."
+        hint="The confirmation goes out as soon as the booking is saved."
         error="Confirm how the client should be told."
       >
         <CheckboxInput
           v-bind="field"
           v-model="demo.confirmedWithError"
-          label="Send the client a confirmation email"
         />
       </FormField>
     </FormSection>
@@ -380,6 +427,9 @@ import ToggleSwitch from '@/components/form/ToggleSwitch.vue'
 // thirty separate refs, because none of it means anything: it is demo
 // content, and the page is deleted before launch.
 const demo = reactive({
+  edgeResting: '',
+  edgeFocused: '',
+  edgeInvalid: '',
   name: 'Ellie Marsh',
   nameWithHint: '',
   nameWithError: '',

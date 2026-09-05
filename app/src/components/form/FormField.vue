@@ -8,7 +8,7 @@
     -->
     <label
       :id="labelId"
-      class="block text-sm font-medium text-neutral-700"
+      class="block text-sm font-medium text-text"
       :for="fieldId"
     >{{ label }}</label>
 
@@ -22,7 +22,7 @@
     <p
       v-if="hint"
       :id="hintId"
-      class="text-sm text-neutral-500"
+      class="text-sm text-text-muted"
     >
       {{ hint }}
     </p>
@@ -43,7 +43,7 @@
     <p
       v-if="error"
       :id="errorId"
-      class="text-sm font-medium text-neutral-900"
+      class="text-sm font-medium text-danger-text"
     >
       {{ error }}
     </p>

@@ -5,7 +5,7 @@
     of a long form. On a wide screen there is no tab bar and the row simply
     ends the form.
   -->
-  <div class="above-bar sticky -mx-6 flex items-center justify-end gap-2 border-t border-neutral-200 bg-surface px-6 py-4 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0 lg:pb-0">
+  <div class="above-bar sticky -mx-6 flex items-center justify-end gap-2 border-t border-border bg-surface px-6 py-4 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0 lg:pb-0">
     <AppButton
       variant="secondary"
       @click="emit('cancel')"

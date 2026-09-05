@@ -8,7 +8,7 @@
     -->
     <RouterLink
       v-if="backTo"
-      class="mb-4 inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 lg:hidden"
+      class="mb-4 inline-flex items-center gap-1 text-sm text-text-muted hover:text-text-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus lg:hidden"
       :to="backTo"
     >
       <Icon
@@ -20,12 +20,12 @@
 
     <div class="flex items-start justify-between gap-4">
       <div class="space-y-2">
-        <h1 class="text-2xl font-semibold text-neutral-900">
+        <h1 class="text-2xl font-semibold text-text-strong">
           {{ title }}
         </h1>
         <p
           v-if="description"
-          class="text-neutral-500"
+          class="text-text-muted"
         >
           {{ description }}
         </p>

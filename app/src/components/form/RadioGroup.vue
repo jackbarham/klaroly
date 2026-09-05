@@ -7,14 +7,20 @@
     :aria-describedby="describedBy"
     :aria-invalid="invalid ? 'true' : undefined"
   >
+    <!--
+      Each option is the row, not the dot: a 20px control is smaller than a
+      thumb, so the whole row is the hit area and the whole row responds. The
+      words carry no colour of their own, so they inherit the row's and turn
+      accent with it on hover.
+    -->
     <label
       v-for="option in options"
       :key="option.value"
-      class="flex items-start gap-2 text-neutral-900"
+      :class="rowClasses"
     >
       <input
         v-model="model"
-        class="mt-1 h-5 w-5 shrink-0 accent-neutral-900"
+        class="mt-1 h-5 w-5 shrink-0 accent-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
         type="radio"
         :name="id"
         :value="option.value"
@@ -49,4 +55,9 @@ withDefaults(defineProps<{
 })
 
 const model = defineModel<string>({ required: true })
+
+// The same option row the checkbox uses, from the style guide. The negative
+// margin pulls the row's padding back out to the edge of the form, so the row
+// is wider than the text without the text moving.
+const rowClasses = '-mx-3 flex min-h-11 cursor-pointer items-start gap-3 rounded-control px-3 py-2.5 text-text-strong transition-colors hover:text-accent-text'
 </script>

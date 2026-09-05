@@ -1,12 +1,12 @@
 <template>
   <section class="space-y-6">
     <div class="space-y-2">
-      <h2 class="text-lg font-semibold text-neutral-900">
+      <h2 class="text-lg font-semibold text-text-strong">
         {{ title }}
       </h2>
       <p
         v-if="description"
-        class="text-sm text-neutral-500"
+        class="text-sm text-text-muted"
       >
         {{ description }}
       </p>

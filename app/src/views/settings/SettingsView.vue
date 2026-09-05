@@ -6,19 +6,19 @@
     />
 
     <Card>
-      <ul class="-my-2 divide-y divide-neutral-200">
+      <ul class="-my-2 divide-y divide-border">
         <li
           v-for="group in settingsGroups"
           :key="group.key"
         >
           <RouterLink
-            class="flex items-center justify-between gap-4 py-4 text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+            class="flex items-center justify-between gap-4 py-4 text-text-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
             :to="{ name: group.routeName }"
           >
             {{ t(group.labelKey) }}
             <Icon
               name="chevron-right"
-              class="h-5 w-5 text-neutral-400"
+              class="h-5 w-5 text-text-subtle"
             />
           </RouterLink>
         </li>

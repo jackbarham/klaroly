@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-card border border-neutral-200 bg-neutral-0 p-6">
+  <div class="rounded-card border border-border bg-surface-raised p-6">
     <slot />
   </div>
 </template>

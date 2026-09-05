@@ -7,7 +7,7 @@
       <p>{{ t('auth.email_unverified') }}</p>
       <p
         v-if="message"
-        :class="messageIsError ? 'font-medium text-neutral-900' : 'text-neutral-600'"
+        :class="messageIsError ? 'font-medium text-danger-text' : 'text-text-muted'"
       >
         {{ t(message) }}
       </p>

@@ -12,27 +12,89 @@ import type { IconName } from '@/components/ui/Icon.vue'
 // and cannot see a name that was assembled at runtime.
 
 export interface ColourToken {
+  // The custom property that holds the value, which is what the theme file
+  // and the style guide call it.
   token: string
+  // The utility that paints the swatch. A component reaches the same token as
+  // bg-, text-, border- or outline-, whichever it needs.
   className: string
   use: string
 }
 
-export const colourTokens: ColourToken[] = [
-  { token: '--color-brand', className: 'bg-brand', use: 'the primary action, and nothing else' },
-  { token: '--color-brand-strong', className: 'bg-brand-strong', use: 'the primary action, hovered' },
-  { token: '--color-on-brand', className: 'bg-on-brand', use: 'the text and icons on the brand colour' },
-  { token: '--color-surface', className: 'bg-surface', use: 'the page itself, behind every card' },
-  { token: '--color-neutral-0', className: 'bg-neutral-0', use: 'a card, a control, the sidebar' },
-  { token: '--color-neutral-50', className: 'bg-neutral-50', use: 'a hovered row, a disabled control' },
-  { token: '--color-neutral-100', className: 'bg-neutral-100', use: 'the current navigation item, a hovered ghost button' },
-  { token: '--color-neutral-200', className: 'bg-neutral-200', use: 'every border and divider' },
-  { token: '--color-neutral-300', className: 'bg-neutral-300', use: 'a control border, the sheet grab handle' },
-  { token: '--color-neutral-400', className: 'bg-neutral-400', use: 'placeholder text, an empty state icon' },
-  { token: '--color-neutral-500', className: 'bg-neutral-500', use: 'a hint, a description, a secondary line' },
-  { token: '--color-neutral-600', className: 'bg-neutral-600', use: 'an idle tab bar label' },
-  { token: '--color-neutral-700', className: 'bg-neutral-700', use: 'a field label, a ghost button, an idle sidebar link' },
-  { token: '--color-neutral-800', className: 'bg-neutral-800', use: 'nothing in the app uses this one today' },
-  { token: '--color-neutral-900', className: 'bg-neutral-900', use: 'body text, headings, the focus ring, an invalid border' },
+export interface ColourGroup {
+  title: string
+  note: string
+  tokens: ColourToken[]
+}
+
+// The semantic layer, which is the only layer a component may touch. The
+// primitives underneath it are not on this page on purpose: nothing is allowed
+// to reach them, so showing them would invite it.
+export const colourGroups: ColourGroup[] = [
+  {
+    title: 'Surfaces',
+    note: 'What things sit on. The three whites are one colour in light and three different values in dark, which is why they are three tokens.',
+    tokens: [
+      { token: '--surface', className: 'bg-surface', use: 'the page, a control, the sidebar' },
+      { token: '--surface-sunken', className: 'bg-surface-sunken', use: 'a hover on something transparent, the current navigation item' },
+      { token: '--surface-hover', className: 'bg-surface-hover', use: 'the second step of hover, for something already sunken. Nothing uses it yet' },
+      { token: '--surface-raised', className: 'bg-surface-raised', use: 'a card, the tab bar' },
+      { token: '--surface-overlay', className: 'bg-surface-overlay', use: 'the create sheet, and menus when they arrive' },
+      { token: '--surface-disabled', className: 'bg-surface-disabled', use: 'a control nobody can use' },
+      { token: '--scrim', className: 'bg-scrim', use: 'behind the sheet. Ten per cent black in light, fifty in dark' },
+    ],
+  },
+  {
+    title: 'Text',
+    note: 'Four weights of quiet, plus the one that goes on top of a filled accent.',
+    tokens: [
+      { token: '--text', className: 'bg-text', use: 'body copy, and what the page inherits' },
+      { token: '--text-strong', className: 'bg-text-strong', use: 'headings, labels, a value that matters' },
+      { token: '--text-muted', className: 'bg-text-muted', use: 'a hint, a description, a secondary line' },
+      { token: '--text-subtle', className: 'bg-text-subtle', use: 'the quietest copy, an empty state icon' },
+      { token: '--text-placeholder', className: 'bg-text-placeholder', use: 'what a control says before anything is typed' },
+      { token: '--text-on-accent', className: 'bg-text-on-accent', use: 'text and icons on a filled accent, and the toggle knob' },
+    ],
+  },
+  {
+    title: 'Lines',
+    note: 'Every hairline in the app is the first of these three.',
+    tokens: [
+      { token: '--border', className: 'bg-border', use: 'every border and divider' },
+      { token: '--border-strong', className: 'bg-border-strong', use: "a control's edge, the sheet's grabber, the toggle when it is off" },
+      { token: '--border-focus', className: 'bg-border-focus', use: 'the focus ring, on everything that takes focus' },
+    ],
+  },
+  {
+    title: 'Accent',
+    note: 'One accent carries every primary action. The text value is darker than the fill in light and lighter in dark, because the same purple cannot be read on both.',
+    tokens: [
+      { token: '--accent', className: 'bg-accent', use: 'the primary action, and nothing else' },
+      { token: '--accent-hover', className: 'bg-accent-hover', use: 'a filled accent, hovered. Darker, so the white label stays legible' },
+      { token: '--accent-text', className: 'bg-accent-text', use: 'the accent as words: a link, the current navigation item' },
+      { token: '--accent-subtle', className: 'bg-accent-subtle', use: 'a tinted accent background. Nothing uses it yet' },
+    ],
+  },
+  {
+    title: 'Status',
+    note: 'Only the danger family is in use, on an invalid control and on a form-level error. The rest arrive with the status pill and the booking states.',
+    tokens: [
+      { token: '--danger', className: 'bg-danger', use: "an invalid control's border, and FormError's" },
+      { token: '--danger-text', className: 'bg-danger-text', use: 'the words of an error' },
+      { token: '--danger-hover', className: 'bg-danger-hover', use: 'a danger tint, hovered. Not used yet' },
+      { token: '--danger-solid', className: 'bg-danger-solid', use: 'a destructive button, which needs a readable white label. Not used yet' },
+      { token: '--danger-subtle', className: 'bg-danger-subtle', use: 'an error or cancelled pill. Not used yet' },
+      { token: '--success', className: 'bg-success', use: 'confirmed, paid. Not used yet' },
+      { token: '--success-text', className: 'bg-success-text', use: 'the words on a success pill. Not used yet' },
+      { token: '--success-subtle', className: 'bg-success-subtle', use: 'a success pill. Not used yet' },
+      { token: '--warning', className: 'bg-warning', use: 'awaiting, due. Not used yet' },
+      { token: '--warning-text', className: 'bg-warning-text', use: 'the words on a warning pill. Not used yet' },
+      { token: '--warning-subtle', className: 'bg-warning-subtle', use: 'a warning pill. Not used yet' },
+      { token: '--info', className: 'bg-info', use: 'informational. Not used yet' },
+      { token: '--info-text', className: 'bg-info-text', use: 'the words on an info pill. Not used yet' },
+      { token: '--info-subtle', className: 'bg-info-subtle', use: 'an info pill. Not used yet' },
+    ],
+  },
 ]
 
 export interface TypeStep {
@@ -82,14 +144,25 @@ export interface ShapeToken {
   use: string
 }
 
+// The radius levers. Changing one of these squares off every button, or every
+// card, in one edit and with no component touched.
 export const radiusTokens: ShapeToken[] = [
-  { token: '--radius-control', className: 'rounded-control', use: 'a button, an input, a menu row, a navigation link' },
-  { token: '--radius-card', className: 'rounded-card', use: 'a card' },
+  { token: '--radius-control-value', className: 'rounded-control', use: 'a button, an input, a menu row, a navigation link' },
+  { token: '--radius-card-value', className: 'rounded-card', use: 'a card. Klaroly runs this at 12px, where the style guide says 8' },
   { token: '--radius-sheet', className: 'rounded-sheet', use: 'the tab bar and the create sheet' },
 ]
 
+// A control's edge is four of these, and every one is an inset ring rather
+// than a drop shadow, which is what lets focus and error recolour the edge
+// without the box moving. The two state shadows read --border-width-focus, so
+// thickening every form edge in the app is one variable.
 export const shadowTokens: ShapeToken[] = [
   { token: '--shadow-raised', className: 'shadow-raised', use: 'the tab bar, the create button, the create sheet' },
+  { token: '--shadow-input', className: 'shadow-input', use: "a control's edge at rest" },
+  { token: '--shadow-input-hover', className: 'shadow-input-hover', use: 'the same edge hovered, when the control is neither disabled nor focused' },
+  { token: '--shadow-input-focus', className: 'shadow-input-focus', use: 'the same edge focused. There is no ring around the control' },
+  { token: '--shadow-input-invalid', className: 'shadow-input-invalid', use: 'the same edge on a control that is wrong, and it stays while the control is focused' },
+  { token: '--shadow-menu-value', className: 'shadow-menu', use: 'a menu or popover. Not used yet' },
 ]
 
 export interface BorderWidth {
@@ -97,8 +170,10 @@ export interface BorderWidth {
   use: string
 }
 
-// Border widths are Tailwind's own, not tokens. There are two of them in the
-// whole app, and the heavier one is how a form says something is wrong.
+// The two widths are tokens now, as --border-width-control and
+// --border-width-focus, but no Tailwind utility can read a variable for a
+// border width, so a component still writes border and border-2. That is the
+// one thing waiting on the control layer.
 export const borderWidths: BorderWidth[] = [
   { className: 'border', use: 'every border in the app' },
   { className: 'border-2', use: 'an invalid control, and FormError' },

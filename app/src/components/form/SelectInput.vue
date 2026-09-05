@@ -3,7 +3,7 @@
     :id="id"
     v-model="model"
     class="h-12"
-    :class="[controlClasses, borderClasses(invalid)]"
+    :class="[controlClasses, edgeClasses(invalid)]"
     :disabled="disabled"
     :aria-labelledby="labelledBy"
     :aria-describedby="describedBy"
@@ -22,7 +22,7 @@
 <script setup lang="ts">
 // One of a list. The browser's own select, so that a phone shows the picker
 // its owner already knows how to use.
-import { borderClasses, controlClasses } from '@/components/form/field'
+import { controlClasses, edgeClasses } from '@/components/form/field'
 
 // A script setup block cannot export, so callers pass a plain array of
 // objects with these two keys and TypeScript matches it up by shape.

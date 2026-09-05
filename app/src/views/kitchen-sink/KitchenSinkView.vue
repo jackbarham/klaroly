@@ -1,10 +1,10 @@
 <template>
   <div>
     <header class="mb-8 space-y-2">
-      <h1 class="text-2xl font-semibold text-neutral-900">
+      <h1 class="text-2xl font-semibold text-text-strong">
         Kitchen sink
       </h1>
-      <p class="text-neutral-500">
+      <p class="text-text-muted">
         Every component the app owns, in every variant and state it supports,
         on one page. It is a development page: nothing links to it, it makes
         no requests, and it is removed before launch.
@@ -16,7 +16,7 @@
       is meant to be scrolled. The negative margin lets the bar reach the
       edges of the column, which has px-6 from the layout.
     -->
-    <div class="sticky top-0 z-10 -mx-6 mb-12 flex flex-wrap items-center gap-4 border-b border-neutral-200 bg-surface px-6 py-4">
+    <div class="sticky top-0 z-10 -mx-6 mb-12 flex flex-wrap items-center gap-4 border-b border-border bg-surface px-6 py-4">
       <nav
         class="min-w-0 sm:flex-1"
         aria-label="Sections"
@@ -27,7 +27,7 @@
             :key="section.id"
           >
             <a
-              class="text-sm text-neutral-700 underline hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+              class="text-sm text-text underline hover:text-text-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
               :href="`#${section.id}`"
             >{{ section.title }}</a>
           </li>
@@ -77,12 +77,16 @@
 // page itself cannot drift apart.
 import { computed, onBeforeUnmount, ref, type Component } from 'vue'
 import AppButton from '@/components/ui/AppButton.vue'
+import KsBands from '@/views/kitchen-sink/KsBands.vue'
 import KsButtons from '@/views/kitchen-sink/KsButtons.vue'
 import KsCards from '@/views/kitchen-sink/KsCards.vue'
 import KsForm from '@/views/kitchen-sink/KsForm.vue'
 import KsHeaders from '@/views/kitchen-sink/KsHeaders.vue'
 import KsIcons from '@/views/kitchen-sink/KsIcons.vue'
 import KsOverlays from '@/views/kitchen-sink/KsOverlays.vue'
+import KsPills from '@/views/kitchen-sink/KsPills.vue'
+import KsRadioCards from '@/views/kitchen-sink/KsRadioCards.vue'
+import KsRows from '@/views/kitchen-sink/KsRows.vue'
 import KsSection from '@/views/kitchen-sink/KsSection.vue'
 import KsShell from '@/views/kitchen-sink/KsShell.vue'
 import KsTokens from '@/views/kitchen-sink/KsTokens.vue'
@@ -104,7 +108,7 @@ const sections: Section[] = [
   {
     id: 'buttons',
     title: 'AppButton',
-    note: 'Pending disables the button and says so with aria-busy. Nothing in the app draws a spinner.',
+    note: 'Pending is still disabled and still says so with aria-busy, but it is not dimmed: half opacity is how this app says unavailable, and a button doing what it was asked is not unavailable. It draws a spinner instead, which stops moving under prefers-reduced-motion. Each disabled row sits directly above its pending twin.',
     component: KsButtons,
   },
   {
@@ -119,6 +123,12 @@ const sections: Section[] = [
     component: KsForm,
   },
   {
+    id: 'radio-cards',
+    title: 'RadioCard',
+    note: 'The one control whose focus is a ring rather than a recoloured edge, because its edge is already saying whether it is selected.',
+    component: KsRadioCards,
+  },
+  {
     id: 'page-header',
     title: 'PageHeader',
     note: 'Each example brings its own h1, so this page has more than one. That is the price of showing the component instead of drawing it again.',
@@ -126,8 +136,26 @@ const sections: Section[] = [
   },
   {
     id: 'cards',
-    title: 'Card and EmptyState',
+    title: 'Card, EmptyState, and the thing to use instead of a card',
+    note: 'A card is for a group that genuinely needs lifting off the page. The default is a heading and a hairline.',
     component: KsCards,
+  },
+  {
+    id: 'pills',
+    title: 'StatusPill',
+    note: 'A tone, not a state. Which booking mark or enquiry stage reads as success and which as neutral is a screen\'s decision, and no screen has made it yet.',
+    component: KsPills,
+  },
+  {
+    id: 'rows',
+    title: 'ListRow and DataTable',
+    note: 'The same data twice: rows on a phone, a table on a wide screen. Both hover by recolouring the hairline they already have.',
+    component: KsRows,
+  },
+  {
+    id: 'bands',
+    title: 'SectionBand',
+    component: KsBands,
   },
   {
     id: 'overlays',

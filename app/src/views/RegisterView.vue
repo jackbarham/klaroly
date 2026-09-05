@@ -101,11 +101,11 @@
       side of the rule do not look equal.
     -->
     <div class="space-y-5 pt-1">
-      <hr class="border-t border-neutral-200">
+      <hr class="border-t border-border">
 
       <p class="text-center text-sm">
         <RouterLink
-          class="font-medium text-brand hover:text-brand-strong"
+          class="font-medium text-accent-text hover:underline"
           :to="{ name: 'login' }"
         >
           {{ t('auth.sign_in_link') }}

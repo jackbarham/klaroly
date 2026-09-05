@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-8">
     <div class="space-y-2">
-      <p class="text-xs font-medium text-neutral-500">
+      <p class="text-xs font-medium text-text-muted">
         Sheet. Below the lg breakpoint it is a sheet along the bottom edge;
         at lg it is a small panel under the sidebar's New button, which is
         the geometry it is built to sit in.
@@ -17,7 +17,7 @@
         label="An example sheet"
       >
         <div class="space-y-4 pb-2">
-          <p class="text-sm font-medium text-neutral-500">
+          <p class="text-sm font-medium text-text-muted">
             An example sheet
           </p>
           <p>
@@ -36,7 +36,7 @@
     </div>
 
     <div class="space-y-2">
-      <p class="text-xs font-medium text-neutral-500">
+      <p class="text-xs font-medium text-text-muted">
         CreateMenu, which is the Sheet with the app's three create actions in
         it. This is a second copy of the one the shell already owns, so it
         opens in the same place the New button's does. None of the three rows

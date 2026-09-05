@@ -7,13 +7,13 @@
   -->
   <div class="overflow-x-auto">
     <div class="grid min-w-2xl grid-cols-4 items-center gap-4">
-      <p class="text-xs font-medium text-neutral-500">
+      <p class="text-xs font-medium text-text-muted">
         State
       </p>
       <p
         v-for="variant in variants"
         :key="variant"
-        class="text-xs font-medium text-neutral-500"
+        class="text-xs font-medium text-text-muted"
       >
         {{ variant }}
       </p>
@@ -22,7 +22,7 @@
         v-for="row in rows"
         :key="row.label"
       >
-        <p class="text-xs text-neutral-500">
+        <p class="text-xs text-text-muted">
           {{ row.label }}
         </p>
         <div
@@ -65,9 +65,11 @@ const rows: ButtonRow[] = [
   { label: 'Medium', size: 'medium', icon: undefined, disabled: false, pending: false },
   { label: 'Small, icon', size: 'small', icon: 'plus', disabled: false, pending: false },
   { label: 'Medium, icon', size: 'medium', icon: 'plus', disabled: false, pending: false },
+  // Disabled and pending sit next to each other on purpose: they used to be
+  // the same picture, and the point of the pair is that they no longer are.
   { label: 'Disabled', size: 'medium', icon: undefined, disabled: true, pending: false },
-  { label: 'Disabled, icon', size: 'medium', icon: 'plus', disabled: true, pending: false },
   { label: 'Pending', size: 'medium', icon: undefined, disabled: false, pending: true },
+  { label: 'Disabled, icon', size: 'medium', icon: 'plus', disabled: true, pending: false },
   { label: 'Pending, icon', size: 'medium', icon: 'plus', disabled: false, pending: true },
 ]
 </script>

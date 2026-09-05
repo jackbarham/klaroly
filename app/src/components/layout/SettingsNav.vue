@@ -9,8 +9,8 @@
         :key="group.key"
       >
         <RouterLink
-          class="flex items-center rounded-control px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
-          :class="route.name === group.routeName ? 'bg-neutral-100 font-medium text-neutral-900' : 'text-neutral-700 hover:bg-neutral-50'"
+          class="flex items-center rounded-control px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+          :class="route.name === group.routeName ? 'bg-surface-sunken font-medium text-accent-text' : 'text-text hover:bg-surface-sunken'"
           :to="{ name: group.routeName }"
           :aria-current="route.name === group.routeName ? 'page' : undefined"
         >

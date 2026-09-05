@@ -12,7 +12,7 @@
         the panel.
       -->
       <div
-        class="absolute inset-0 bg-neutral-900/40 lg:bg-transparent"
+        class="absolute inset-0 bg-scrim lg:bg-transparent"
         @click="close"
       />
 
@@ -25,14 +25,14 @@
       -->
       <div
         ref="panel"
-        class="sheet-panel sheet-bottom absolute inset-x-0 bottom-0 rounded-t-sheet border-t border-neutral-200 bg-neutral-0 px-4 pt-4 shadow-raised lg:inset-x-auto lg:bottom-auto lg:left-6 lg:top-36 lg:w-60 lg:rounded-sheet lg:border lg:pb-4"
+        class="sheet-panel sheet-bottom absolute inset-x-0 bottom-0 rounded-t-sheet border-t border-border bg-surface-overlay px-4 pt-4 shadow-raised lg:inset-x-auto lg:bottom-auto lg:left-6 lg:top-36 lg:w-60 lg:rounded-sheet lg:border lg:pb-4"
         role="dialog"
         aria-modal="true"
         :aria-label="label"
         tabindex="-1"
       >
         <div
-          class="mx-auto mb-4 h-1 w-10 rounded-full bg-neutral-300 lg:hidden"
+          class="mx-auto mb-4 h-1 w-10 rounded-full bg-border-strong lg:hidden"
           aria-hidden="true"
         />
         <slot />

@@ -1,5 +1,15 @@
 <template>
-  <main class="flex min-h-screen flex-col items-center justify-center p-6">
+  <!--
+    Standalone is what the four authentication screens are: the page itself,
+    the main landmark, filling the window. Anything showing this component
+    inside a page of its own passes false, so that one main landmark does not
+    end up inside another.
+  -->
+  <component
+    :is="standalone ? 'main' : 'section'"
+    class="flex flex-col items-center justify-center p-6"
+    :class="standalone ? 'min-h-screen' : ''"
+  >
     <p class="mb-6 text-2xl font-bold">
       {{ t('app.name') }}
     </p>
@@ -11,7 +21,7 @@
         <slot />
       </div>
     </Card>
-  </main>
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -22,13 +32,18 @@
 // It is the UI kit's Card, so a signed-out page and a signed-in one share a
 // border, a radius and a padding step. It stays a component of its own
 // because it is also the main landmark and the heading of four screens, and
-// that is four copies of the same eight lines otherwise.
+// that is four copies of the same eight lines otherwise. That landmark is why
+// it takes a standalone prop: on a page that already has a main, it renders a
+// section instead.
 import { useI18n } from 'vue-i18n'
 import Card from '@/components/ui/Card.vue'
 
-defineProps<{
+withDefaults(defineProps<{
   title: string
-}>()
+  standalone?: boolean
+}>(), {
+  standalone: true,
+})
 
 const { t } = useI18n()
 </script>

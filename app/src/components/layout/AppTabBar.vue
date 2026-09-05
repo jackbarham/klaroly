@@ -10,7 +10,7 @@
   >
     <div
       ref="bar"
-      class="relative flex h-16 items-center rounded-sheet border border-neutral-200 bg-neutral-0/75 px-2 shadow-raised backdrop-blur"
+      class="relative flex h-16 items-center rounded-sheet border border-border bg-surface-raised/75 px-2 shadow-raised backdrop-blur"
     >
       <!--
         The active indicator. It is one element that moves, rather than a
@@ -20,7 +20,7 @@
       -->
       <span
         v-show="activeIndex >= 0"
-        class="pill h-12 rounded-full bg-neutral-100"
+        class="pill h-12 rounded-full bg-surface-sunken"
         :style="pillStyle"
         aria-hidden="true"
       />
@@ -34,13 +34,13 @@
         <!--
           The create button is not a destination: it never takes the pill and
           it never marks itself as the current page. It is larger than the
-          other items, it lifts above the top edge of the bar, and it is the
-          brand colour, because it is the primary action on a phone in the
-          same way the sidebar's New button is on a wide screen.
+          other items, it lifts above the top edge of the bar, and it carries
+          the accent, because it is the primary action on a phone in the same
+          way the sidebar's New button is on a wide screen.
         -->
         <button
           v-if="item.routeName === null"
-          class="-translate-y-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand text-on-brand shadow-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+          class="-translate-y-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent text-text-on-accent shadow-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
           type="button"
           :aria-label="t(item.labelKey)"
           @click="emit('create')"
@@ -53,8 +53,8 @@
 
         <RouterLink
           v-else
-          class="relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-full text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
-          :class="isCurrent(item) ? 'font-medium text-neutral-900' : 'text-neutral-600'"
+          class="relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-full text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+          :class="isCurrent(item) ? 'font-medium text-accent-text' : 'text-text-muted'"
           :to="{ name: item.routeName }"
           :aria-current="isCurrent(item) ? 'page' : undefined"
         >
