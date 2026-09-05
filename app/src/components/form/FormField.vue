@@ -53,28 +53,23 @@
 <script setup lang="ts">
 // The wrapper that owns everything around a form control: the label, the
 // hint, the error and the ids that tie the three together. The controls
-// themselves take an id, an aria-describedby and an invalid flag and do no
-// wiring of their own, so the wiring is written once and is right everywhere.
+// take those through ControlProps and do no wiring of their own, so a field
+// is written as one line:
 //
-// Every control takes the same four things, so a field is written as
-// <FormField v-slot="field"><TextInput v-bind="field" v-model="x" /></FormField>
-// and no caller has to remember which control needs which attribute.
-import { computed, useId } from 'vue'
-
+//   <FormField v-slot="field" label="..."><TextInput v-bind="field" v-model="x" /></FormField>
+//
 // statusMessage is the words for a control that shows a live check as
 // someone types, which TextInput draws as a tick or a cross. The mark is
 // inside the control's box, so the control draws it; the words belong out
 // here with the hint and the error, so the field says them.
-const props = withDefaults(defineProps<{
+import { computed, useId } from 'vue'
+
+const props = defineProps<{
   label: string
   hint?: string
   error?: string
   statusMessage?: string
-}>(), {
-  hint: undefined,
-  error: undefined,
-  statusMessage: undefined,
-})
+}>()
 
 // Vue generates an id that is unique in the page, so a field can appear
 // twice on one page without the two labels pointing at the same control.

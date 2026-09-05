@@ -150,11 +150,6 @@
   --text-figure: 24px;
   --text-figure--line-height: 40px;
 
-  /* Two weights carry the whole app. The heavier stock weights are left in
-     place because four screens still use them. */
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-
   /* Widths, named so no component ever needs an arbitrary value. */
   --container-content: 1096px;
   --container-panel: 640px;
@@ -163,9 +158,6 @@
   --container-sidebar: 264px;
   --container-copy: 400px;
   --container-action: 280px;
-  --container-field: 400px;
-  --shell-header-row: 40px;
-  --shell-nav-row: 40px;
 
   /*
     Shadows. Only one of these is a real drop shadow: a control's edge is an
@@ -174,7 +166,6 @@
   */
   --shadow-control: 0 0 0 1px rgb(10 10 46 / 0.24) inset;
   --shadow-control-hover: 0 0 0 1px rgb(10 10 46 / 0.36) inset;
-  --shadow-button: 0 1px 1px rgb(10 10 46 / 0.06);
   --shadow-popover: 0 0 0 1px rgb(18 18 23 / 0.10), 0 24px 48px rgb(18 18 23 / 0.03),
     0 10px 18px rgb(18 18 23 / 0.03), 0 5px 8px rgb(18 18 23 / 0.04),
     0 2px 4px rgb(18 18 23 / 0.04);
@@ -344,10 +335,6 @@
 
   --duration-fast: 100ms;
   --duration-base: 200ms;
-
-  --layout-sidebar: var(--container-sidebar);
-  --layout-content-max: var(--container-content);
-  --layout-auth-column: var(--container-auth);
 }
 
 /* --- Dark, a redefinition of the semantic layer only -----------------------
@@ -424,6 +411,18 @@
 
 body {
   @apply bg-surface font-sans text-text antialiased;
+}
+
+/*
+  The focus ring, for anything that takes focus and has no edge of its own to
+  recolour: a button, a link, a navigation item, a checkbox. It is written as
+  focus-visible:focus-ring, or peer-focus-visible:focus-ring on the radio
+  card, so every ring in the app is this one rule and it reads the same width
+  lever as the recoloured edges do.
+*/
+@utility focus-ring {
+  outline: var(--border-width-focus) solid var(--border-focus);
+  outline-offset: 2px;
 }
 
 /*

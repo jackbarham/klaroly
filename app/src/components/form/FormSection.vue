@@ -20,10 +20,8 @@
 <script setup lang="ts">
 // A titled group of fields. A long form is a handful of these rather than
 // one list, so that a heading tells someone where they are.
-withDefaults(defineProps<{
+defineProps<{
   title: string
   description?: string
-}>(), {
-  description: undefined,
-})
+}>()
 </script>

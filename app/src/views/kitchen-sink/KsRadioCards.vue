@@ -48,7 +48,6 @@
 // sentence each. Selected is an accent border plus an accent ring, which is a
 // two pixel edge that costs no layout.
 import { ref } from 'vue'
-import RadioCard from '@/components/form/RadioCard.vue'
 
 const rules = [
   { value: 'included', title: 'Included', description: 'No separate charge for travel.' },

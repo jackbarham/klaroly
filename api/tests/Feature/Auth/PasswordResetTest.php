@@ -1,27 +1,11 @@
 <?php
 
-use App\Models\User;
 use App\Notifications\PasswordChanged;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
-
-function sessionRow(User $user, ?string $id = null): string
-{
-    $id ??= Str::random(40);
-
-    DB::table('sessions')->insert([
-        'id' => $id,
-        'user_id' => $user->id,
-        'payload' => '',
-        'last_activity' => now()->timestamp,
-    ]);
-
-    return $id;
-}
 
 it('answers known and unknown addresses identically', function () {
     Notification::fake();

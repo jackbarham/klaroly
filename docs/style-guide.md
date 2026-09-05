@@ -1043,6 +1043,11 @@ Where they have two ways of doing something, take the plainer one.
    back. The radio card is the one documented exception, and the reason is in
    its own paragraph above.
 
+   In the app the ring is one utility, `focus-ring` in `src/assets/app.css`,
+   written as `focus-visible:focus-ring` (or `peer-focus-visible:focus-ring`
+   on the radio card). It reads `--border-width-focus` and `--border-focus`,
+   so the width lever moves every ring as well as every recoloured edge.
+
    **Where a control recolours its edge, suppress the browser's ring with
    `outline-hidden`, never `outline-none`.** The two are not the same thing.
    `outline-hidden` leaves a transparent outline in place, which a forced
@@ -1053,7 +1058,7 @@ Where they have two ways of doing something, take the plainer one.
    indicator whatsoever.
 
    And removing the classes is not the same as removing the ring. Taking
-   `focus-visible:outline-*` off a control does not leave it ringless: it hands
+   `focus-visible:focus-ring` off a control does not leave it ringless: it hands
    the job to the browser's own stylesheet, and the control then draws a ring
    and a recoloured edge at once. Suppress it deliberately or not at all.
 6. **It works in both themes.** Check dark before opening a pull request. If a

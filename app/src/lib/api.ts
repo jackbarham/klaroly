@@ -11,7 +11,7 @@ import * as tokenStorage from '@/lib/tokenStorage'
 
 const baseUrl: string = import.meta.env.VITE_API_URL
 
-type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
 interface RequestOptions {
   method?: Method
@@ -68,11 +68,7 @@ export function onUnauthenticated(handler: UnauthenticatedHandler): void {
 
 // Web builds must fetch the CSRF cookie before the first request that changes
 // state. Harmless to call more than once.
-export async function ensureCsrfCookie(): Promise<void> {
-  if (isNative) {
-    return
-  }
-
+async function ensureCsrfCookie(): Promise<void> {
   await fetch(`${baseUrl}/sanctum/csrf-cookie`, {
     headers: { Accept: 'application/json' },
     credentials: 'include',
@@ -148,7 +144,6 @@ export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) => request<T>(path, { method: 'POST', body }),
   put: <T>(path: string, body?: unknown) => request<T>(path, { method: 'PUT', body }),
-  patch: <T>(path: string, body?: unknown) => request<T>(path, { method: 'PATCH', body }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
 }
 

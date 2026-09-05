@@ -1,13 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import RadioCard from '@/components/form/RadioCard.vue'
-import { mount, unmount, type Mounted } from '@/lib/testMount'
+import { mountWithCleanup } from '@/lib/testMount'
 
 // A radio card is a real radio underneath, and that is the thing worth
 // testing: it reports its value, it can be reached and moved between by the
 // keyboard, and the edge that says it is selected is not the edge that says it
 // is focused.
-
-let mounted: Mounted | null = null
 
 function input(host: HTMLElement): HTMLInputElement {
   const found = host.querySelector('input')
@@ -19,16 +17,11 @@ function input(host: HTMLElement): HTMLInputElement {
   return found
 }
 
-afterEach(() => {
-  if (mounted) {
-    unmount(mounted)
-    mounted = null
-  }
-})
+const mount = mountWithCleanup()
 
 describe('a radio card', () => {
   it('is a real radio in a named group', async () => {
-    mounted = await mount(RadioCard, '/', {
+    const mounted = await mount(RadioCard, '/', {
       name: 'travel',
       value: 'included',
       title: 'Included',
@@ -42,7 +35,7 @@ describe('a radio card', () => {
   it('reports its value when it is chosen', async () => {
     let chosen = ''
 
-    mounted = await mount(RadioCard, '/', {
+    const mounted = await mount(RadioCard, '/', {
       'name': 'travel',
       'value': 'per_mile',
       'title': 'A rate for every mile',
@@ -60,7 +53,7 @@ describe('a radio card', () => {
   // Hidden from sight but not from the keyboard: sr-only leaves the radio
   // focusable and arrow-navigable, which display:none or hidden would not.
   it('stays reachable by the keyboard', async () => {
-    mounted = await mount(RadioCard, '/', {
+    const mounted = await mount(RadioCard, '/', {
       name: 'travel',
       value: 'included',
       title: 'Included',
@@ -79,7 +72,7 @@ describe('a radio card', () => {
   })
 
   it('says it is selected with the edge, and takes focus on a ring outside it', async () => {
-    mounted = await mount(RadioCard, '/', {
+    const mounted = await mount(RadioCard, '/', {
       name: 'travel',
       value: 'included',
       title: 'Included',
@@ -91,12 +84,12 @@ describe('a radio card', () => {
 
     expect(box?.className).toContain('border-accent')
     expect(box?.className).toContain('ring-1')
-    expect(box?.className).toContain('peer-focus-visible:outline-border-focus')
+    expect(box?.className).toContain('peer-focus-visible:focus-ring')
     expect(mounted.host.textContent).toContain('No separate charge for travel.')
   })
 
   it('carries the resting edge when it is not selected', async () => {
-    mounted = await mount(RadioCard, '/', {
+    const mounted = await mount(RadioCard, '/', {
       name: 'travel',
       value: 'included',
       title: 'Included',

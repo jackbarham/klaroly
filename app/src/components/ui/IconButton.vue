@@ -1,10 +1,9 @@
 <template>
   <button
-    class="inline-flex h-12 w-12 items-center justify-center rounded-control text-text transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus disabled:cursor-not-allowed disabled:opacity-50"
+    class="inline-flex h-12 w-12 items-center justify-center rounded-control text-text transition-colors hover:bg-surface-sunken focus-visible:focus-ring disabled:cursor-not-allowed disabled:opacity-50"
     :type="type"
     :disabled="disabled"
     :aria-label="label"
-    @click="emit('click')"
   >
     <Icon
       :name="icon"
@@ -16,7 +15,7 @@
 <script setup lang="ts">
 // A square button with an icon and no visible text. The label is required
 // and becomes the accessible name, because an icon on its own says nothing
-// to a screen reader.
+// to a screen reader. A click is the native event on the root element.
 import Icon, { type IconName } from '@/components/ui/Icon.vue'
 
 withDefaults(defineProps<{
@@ -26,10 +25,5 @@ withDefaults(defineProps<{
   disabled?: boolean
 }>(), {
   type: 'button',
-  disabled: false,
 })
-
-const emit = defineEmits<{
-  click: []
-}>()
 </script>

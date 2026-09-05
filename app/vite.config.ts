@@ -41,10 +41,10 @@ export default defineConfig(({ mode }) => {
           short_name: 'Klaroly',
           start_url: '/',
           display: 'standalone',
-          // Keep these in step with --color-surface and --color-brand in
+          // Keep these in step with --surface and --accent in
           // src/assets/app.css. A manifest cannot read CSS variables.
-          background_color: '#faf9f7',
-          theme_color: '#7a3e8c',
+          background_color: '#ffffff',
+          theme_color: '#7047eb',
           // Icons are added when the brand assets exist.
           icons: [],
         },

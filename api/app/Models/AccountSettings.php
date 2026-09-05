@@ -41,8 +41,6 @@ class AccountSettings extends Model
             'travel_charging' => TravelCharging::class,
             'travel_rate_per_mile_minor' => MoneyCast::class,
             'travel_flat_fee_minor' => MoneyCast::class,
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Http\Middleware\NormaliseEmail;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -19,7 +20,7 @@ class PasswordAuthenticator
         // so comparing lower(email) uses that index and is safe even for a
         // row written before normalisation existed.
         $user = User::query()
-            ->whereRaw('lower(email) = ?', [mb_strtolower(trim($email))])
+            ->whereRaw('lower(email) = ?', [NormaliseEmail::normalise($email)])
             ->first();
 
         // A user who signed in with a provider may have no password at all.

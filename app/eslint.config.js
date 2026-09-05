@@ -41,6 +41,10 @@ export default defineConfig(
       'vue/block-order': ['error', { order: ['template', 'script', 'style'] }],
       // View components are named by their route, for example LoginView.
       'vue/multi-word-component-names': 'off',
+      // Props are typed, so an optional prop already says it may be absent.
+      // The rule would want `labelledBy: undefined` written out under every
+      // control, which adds nothing a reader does not already know.
+      'vue/require-default-prop': 'off',
     },
   },
 )

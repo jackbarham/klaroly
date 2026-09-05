@@ -33,8 +33,6 @@ class ContractTemplate extends Model
         return [
             'effective_from' => 'immutable_date',
             'retired_at' => 'immutable_date',
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 

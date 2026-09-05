@@ -33,21 +33,11 @@
 //
 // The symbol is decorative, so it is hidden from a screen reader and takes no
 // clicks; the field's label says which currency it is.
-import { controlClasses, edgeClasses } from '@/components/form/field'
+import { controlClasses, edgeClasses, type ControlProps } from '@/components/form/field'
 
-withDefaults(defineProps<{
-  id: string
+defineProps<ControlProps & {
   currency: string
-  labelledBy?: string
-  describedBy?: string
-  invalid?: boolean
-  disabled?: boolean
-}>(), {
-  labelledBy: undefined,
-  describedBy: undefined,
-  invalid: false,
-  disabled: false,
-})
+}>()
 
 const model = defineModel<string>({ required: true })
 </script>

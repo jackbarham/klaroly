@@ -36,7 +36,6 @@
 // it takes a standalone prop: on a page that already has a main, it renders a
 // section instead.
 import { useI18n } from 'vue-i18n'
-import Card from '@/components/ui/Card.vue'
 
 withDefaults(defineProps<{
   title: string

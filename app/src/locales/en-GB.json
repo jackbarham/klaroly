@@ -7,7 +7,9 @@
     "save": "Save changes",
     "cancel": "Cancel",
     "not_built_yet": "This section is not built yet.",
-    "reference": "Reference {id}"
+    "reference": "Reference {id}",
+    "too_many_attempts": "Too many attempts. Wait a minute and try again.",
+    "request_failed": "Something went wrong. Check your connection and try again."
   },
   "nav": {
     "primary_label": "Main",
@@ -57,8 +59,6 @@
     "reset_password_action": "Save new password",
     "password_reset_done": "Your password has been changed. Sign in with the new one.",
     "reset_link_invalid": "This reset link is not valid or has expired. Request a new one.",
-    "too_many_attempts": "Too many attempts. Wait a minute and try again.",
-    "request_failed": "Something went wrong. Check your connection and try again.",
     "signed_out": "You have been signed out.",
     "email_unverified": "Your email address has not been verified yet. Check your inbox for the link.",
     "resend_verification_action": "Resend the email",

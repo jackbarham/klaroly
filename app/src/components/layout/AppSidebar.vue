@@ -84,8 +84,6 @@
 // sections a phone's tab bar cannot show and every one of them is here.
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import AppButton from '@/components/ui/AppButton.vue'
-import Icon from '@/components/ui/Icon.vue'
 import { createItem, sectionKey, sidebarMain, sidebarSecondary, type Destination } from '@/lib/navigation'
 import { useAuthStore } from '@/stores/auth'
 
@@ -98,7 +96,7 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
-const linkClasses = 'flex h-12 items-center gap-4 rounded-control px-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus'
+const linkClasses = 'flex h-12 items-center gap-4 rounded-control px-4 focus-visible:focus-ring'
 const currentClasses = 'bg-surface-sunken font-medium text-accent-text'
 const idleClasses = 'text-text hover:bg-surface-sunken'
 

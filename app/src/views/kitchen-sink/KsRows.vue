@@ -82,9 +82,7 @@
 // A list and a table of the same three bookings, with the pill in place in
 // both. None of this is real: there is no bookings API and no screen behind
 // these rows yet.
-import DataTable from '@/components/ui/DataTable.vue'
-import ListRow from '@/components/ui/ListRow.vue'
-import StatusPill, { type PillTone } from '@/components/ui/StatusPill.vue'
+import type { PillTone } from '@/components/ui/StatusPill.vue'
 import { tableCellClasses, tableRowClasses, type TableColumn } from '@/components/ui/table'
 
 interface Booking {

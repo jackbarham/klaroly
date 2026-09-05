@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { defineComponent, h, ref, type PropType } from 'vue'
 import CheckboxInput from '@/components/form/CheckboxInput.vue'
 import FormField from '@/components/form/FormField.vue'
 import TextInput from '@/components/form/TextInput.vue'
-import { mount, unmount, type Mounted } from '@/lib/testMount'
+import { element } from '@/lib/testHelpers'
+import { mountWithCleanup } from '@/lib/testMount'
 
 interface SlotProps {
   id: string
@@ -57,28 +58,11 @@ const Host = defineComponent({
   },
 })
 
-let mounted: Mounted | null = null
-
-function element(host: HTMLElement, selector: string): HTMLElement {
-  const found = host.querySelector<HTMLElement>(selector)
-
-  if (found === null) {
-    throw new Error(`The test expected to find ${selector}`)
-  }
-
-  return found
-}
-
-afterEach(() => {
-  if (mounted) {
-    unmount(mounted)
-    mounted = null
-  }
-})
+const mount = mountWithCleanup()
 
 describe('a form field', () => {
   it('ties its label to the control by id', async () => {
-    mounted = await mount(Host, '/', { label: 'Base postcode' })
+    const mounted = await mount(Host, '/', { label: 'Base postcode' })
 
     const label = element(mounted.host, 'label')
     const input = element(mounted.host, 'input')
@@ -89,7 +73,7 @@ describe('a form field', () => {
   })
 
   it('announces the hint with the control', async () => {
-    mounted = await mount(Host, '/', { label: 'Base postcode', hint: 'The postcode you set off from.' })
+    const mounted = await mount(Host, '/', { label: 'Base postcode', hint: 'The postcode you set off from.' })
 
     const input = element(mounted.host, 'input')
     const describedBy = input.getAttribute('aria-describedby') ?? ''
@@ -103,7 +87,7 @@ describe('a form field', () => {
   })
 
   it('marks the control invalid and announces the error as well as the hint', async () => {
-    mounted = await mount(Host, '/', {
+    const mounted = await mount(Host, '/', {
       label: 'Base postcode',
       hint: 'The postcode you set off from.',
       error: 'Enter a postcode.',
@@ -126,7 +110,7 @@ describe('a form field', () => {
 // and was announced twice.
 describe('a checkbox', () => {
   it('carries its own label when it stands on its own', async () => {
-    mounted = await mount(CheckboxInput, '/', {
+    const mounted = await mount(CheckboxInput, '/', {
       id: 'remember',
       label: 'Keep me signed in',
       modelValue: false,
@@ -140,7 +124,7 @@ describe('a checkbox', () => {
   })
 
   it('carries no label of its own when a field names it', async () => {
-    mounted = await mount(CheckboxInput, '/', {
+    const mounted = await mount(CheckboxInput, '/', {
       id: 'remember',
       labelledBy: 'remember-label',
       modelValue: false,
@@ -169,7 +153,7 @@ describe('a checkbox', () => {
   })
 
   it('is named once, by the field, when it sits inside one', async () => {
-    mounted = await mount(Host, '/', { label: 'Send a confirmation email', control: 'checkbox' })
+    const mounted = await mount(Host, '/', { label: 'Send a confirmation email', control: 'checkbox' })
 
     const labels = mounted.host.querySelectorAll('label')
     const input = element(mounted.host, 'input')

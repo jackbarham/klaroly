@@ -1,15 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, api, onUnauthenticated } from '@/lib/api'
+import { jsonResponse } from '@/lib/testHelpers'
 
 // The web branch: platform.ts is not mocked here, and without VITE_TARGET
 // set the app thinks it is the web target.
-
-function jsonResponse(status: number, body: unknown = null): Response {
-  return new Response(body === null ? '' : JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  })
-}
 
 function clearCookies(): void {
   document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT'

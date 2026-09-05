@@ -22,28 +22,11 @@
 <script setup lang="ts">
 // One of a list. The browser's own select, so that a phone shows the picker
 // its owner already knows how to use.
-import { controlClasses, edgeClasses } from '@/components/form/field'
+import { controlClasses, edgeClasses, type ChoiceOption, type ControlProps } from '@/components/form/field'
 
-// A script setup block cannot export, so callers pass a plain array of
-// objects with these two keys and TypeScript matches it up by shape.
-interface SelectOption {
-  value: string
-  label: string
-}
-
-withDefaults(defineProps<{
-  id: string
-  options: SelectOption[]
-  labelledBy?: string
-  describedBy?: string
-  invalid?: boolean
-  disabled?: boolean
-}>(), {
-  labelledBy: undefined,
-  describedBy: undefined,
-  invalid: false,
-  disabled: false,
-})
+defineProps<ControlProps & {
+  options: ChoiceOption[]
+}>()
 
 const model = defineModel<string>({ required: true })
 </script>

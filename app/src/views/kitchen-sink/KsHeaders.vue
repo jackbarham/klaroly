@@ -73,7 +73,4 @@
 //
 // The actions slot is shown here for the first time: no screen in the app
 // passes one yet.
-import AppButton from '@/components/ui/AppButton.vue'
-import IconButton from '@/components/ui/IconButton.vue'
-import PageHeader from '@/components/ui/PageHeader.vue'
 </script>

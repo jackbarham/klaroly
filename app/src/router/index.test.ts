@@ -3,10 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { sampleMe } from '@/lib/auth.sample'
 import router, { destinationAfterSignIn } from '@/router'
 import { useAuthStore } from '@/stores/auth'
-
-function jsonResponse(status: number, body: unknown = null): Response {
-  return new Response(body === null ? '' : JSON.stringify(body), { status })
-}
+import { jsonResponse } from '@/lib/testHelpers'
 
 const fetchMock = vi.fn<typeof fetch>()
 

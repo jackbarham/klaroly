@@ -8,7 +8,7 @@
     -->
     <RouterLink
       v-if="backTo"
-      class="mb-4 inline-flex items-center gap-1 text-sm text-text-muted hover:text-text-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus lg:hidden"
+      class="mb-4 inline-flex items-center gap-1 text-sm text-text-muted hover:text-text-strong focus-visible:focus-ring lg:hidden"
       :to="backTo"
     >
       <Icon
@@ -48,14 +48,11 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink, type RouteLocationRaw } from 'vue-router'
 import Icon from '@/components/ui/Icon.vue'
 
-withDefaults(defineProps<{
+defineProps<{
   title: string
   description?: string
   backTo?: RouteLocationRaw
-}>(), {
-  description: undefined,
-  backTo: undefined,
-})
+}>()
 
 const { t } = useI18n()
 </script>

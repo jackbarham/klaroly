@@ -1,23 +1,11 @@
 <?php
 
-use App\Models\User;
 use App\Notifications\PasswordChanged;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
-
-function mobileSessionRow(User $user): void
-{
-    DB::table('sessions')->insert([
-        'id' => Str::random(40),
-        'user_id' => $user->id,
-        'payload' => '',
-        'last_activity' => now()->timestamp,
-    ]);
-}
 
 it('answers known and unknown addresses identically, and identically to the web route', function () {
     Notification::fake();
@@ -53,8 +41,8 @@ it('resets the password and signs every device and browser out without issuing a
     $user = createOwner(['email' => 'ellie@example.com']);
     $user->createToken('Phone');
     $user->createToken('Tablet');
-    mobileSessionRow($user);
-    mobileSessionRow($user);
+    sessionRow($user);
+    sessionRow($user);
 
     $token = Password::broker()->createToken($user);
 

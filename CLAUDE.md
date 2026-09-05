@@ -32,6 +32,12 @@ write code here.
 - Plain, obvious code over clever code. The project has a handover goal. If
   a reader would need to know a trick to follow the code, write it the long
   way and add a comment.
+- A comment says why, never what the next line already says. A docblock that
+  restates a method's name is deleted, not kept for symmetry.
+- The second copy of a helper is the moment it moves: to `src/lib` or
+  `src/components/form/field.ts` in the app, to `tests/Pest.php` or a service
+  in the API. Two files carrying the same ten lines is how the previous
+  passes drifted.
 - npm, not pnpm or yarn. Every `package.json` carries a `packageManager`
   field pinning the npm version.
 - No script is named `deploy`. The script that ships a build is `ship`.
@@ -132,8 +138,10 @@ Hand-written routes live in `routes/api.php` under `/api`:
   the tenant for a request.
 - **Email is normalised on the way in.** `NormaliseEmail` lowercases and trims
   the `email` input on every Fortify route and on the token endpoint, and
-  `CreateNewUser` and `UpdateUserProfileInformation` do it again before
-  validating. The `lower(email)` index is the backstop, not the mechanism.
+  `CreateNewUser`, `UpdateUserProfileInformation` and `PasswordAuthenticator`
+  call its `normalise()` again on their own input, so there is one definition
+  of a normalised address. The `lower(email)` index is the backstop, not the
+  mechanism.
 - **Four Fortify routes have stateless JSON twins under `/api/auth`**
   (decision 87): register, forgot-password, reset-password and
   email/verification-notification. Fortify's routes sit in the `web` group
@@ -161,11 +169,13 @@ Hand-written routes live in `routes/api.php` under `/api`:
   `sanctum:prune-expired` runs daily.
 - **Passwords**: `Password::defaults()` in `AppServiceProvider` is the only
   policy (ten characters plus the breach check, which is off in testing).
-  Changing a password revokes every token and every other session; resetting
-  one revokes every token and every session. Both send the queued
-  `App\Notifications\PasswordChanged` email from inside the action, so the
-  web routes and the mobile twins cannot differ. Its strings live in
-  `lang/en-GB/mail.php`, one group per notification class.
+  `App\Services\PasswordChanger` is the one place a password is replaced:
+  it saves the hash, revokes every token and every session except the one it
+  is told to keep, and sends the queued `App\Notifications\PasswordChanged`
+  email. `UpdateUserPassword` keeps the current session; `ResetUserPassword`
+  keeps none. Both actions call it, so the web routes and the mobile twins
+  cannot differ. Its strings live in `lang/en-GB/mail.php`, one group per
+  notification class.
 - **Email verification is sent, not enforced** (decision 83). The `verified`
   alias goes on the authenticated group in `routes/api.php` when enforcement
   arrives, and nowhere else.
@@ -199,6 +209,15 @@ Hand-written routes live in `routes/api.php` under `/api`:
   then `<style>` if one is needed. Every component, without exception. This
   is the opposite of the Vue tooling default, so ESLint's `vue/block-order`
   rule is set to `['template', 'script', 'style']`.
+- Props are typed with `defineProps<{ ... }>()`. An optional prop is `name?:`
+  and nothing more: a boolean is false when absent and anything else is
+  `undefined`, which is what the type already says. `withDefaults` is used
+  only for a default that means something, such as a button's variant. ESLint's
+  `vue/require-default-prop` is switched off for that reason; it would want
+  `labelledBy: undefined` written under every control.
+- A component that wraps a native element declares no event the element
+  already fires. `AppButton` has no `click` emit: the parent's `@click` falls
+  through to the `<button>` as a native listener.
 - Vue Router with an explicit routes array in `src/router/index.ts`. No
   file-based routing. Do not install `unplugin-vue-router`.
 - Tailwind 4 is configured CSS-first, in `src/assets/app.css`: an
@@ -249,6 +268,13 @@ Hand-written routes live in `routes/api.php` under `/api`:
   the tab bar floats), `sheet-bottom` and `above-bar` (a sticky row of form
   actions). Compose them with Tailwind variants, for example
   `max-lg:page-bottom`.
+- The focus ring is a sixth `@utility`, `focus-ring`, written as
+  `focus-visible:focus-ring` on anything that takes focus and has no edge of
+  its own to recolour (a button, a link, a navigation item, a checkbox), and
+  as `peer-focus-visible:focus-ring` on the radio card. It reads
+  `--border-width-focus` and `--border-focus`, so every ring in the app is one
+  rule. A control with a visible edge recolours that edge instead, through
+  `edgeClasses` in `src/components/form/field.ts`.
 - A component and a view never talk to the API. They read and change state
   through a Pinia store; the store calls `src/lib/auth.ts`, which calls
   `src/lib/api.ts`. The single exception is `ApiError`, which a screen may
@@ -256,9 +282,19 @@ Hand-written routes live in `routes/api.php` under `/api`:
   `src/lib/boundary.test.ts` reads the source of every file under
   `src/components` and `src/views` and fails if anything else appears, because
   the point of the rule is what happens when nobody is looking.
+  `src/lib/styleRules.test.ts` reads the same files for a `dark:` variant, a
+  Tailwind arbitrary value or a hex colour, for the same reason.
 - No UI component framework of any kind. Not Ionic, not a Tailwind component
   library. There is a small kit of the app's own in `src/components/ui` and
-  `src/components/form`, described below.
+  `src/components/form`, described below. **The kit is registered globally**
+  by `src/components/kit.ts`, which `main.ts` and the test mounter both
+  install, so a screen writes `<AppButton>` or `<FormField>` without an
+  import. `src/components/global.d.ts` declares the same list for vue-tsc, so
+  a wrong prop on a global component is still a type error; a component is
+  added to both files, and to `/kitchen-sink`, in the same change. Inside the
+  kit a component still imports the sibling it uses, so each one is complete
+  on its own. Everything outside the kit, the shell, `AuthCard`, the banners,
+  is imported where it is used, because each of those belongs to one place.
 - Every user-facing string is a key in `src/locales/en-GB.json`, with the
   same naming rule as the API.
 - Never derive the API base URL from `window.location`. It is always
@@ -331,18 +367,23 @@ screen.
 ### The UI kit and the form kit
 
 `src/components/ui` is PageHeader, Card, EmptyState, AppButton, IconButton,
-Sheet and Icon. `AppButton` is the only button component in the app: anything
-that looks like a button is that with a different variant or size. `Icon` is
-the only place an icon lives, as a list of SVG paths on a 24 by 24 grid,
-stroked with `currentColor`. There is no icon package and there will not be
-one.
+Sheet, Icon, StatusPill, ListRow, DataTable and SectionBand. `AppButton` is
+the only button component in the app: anything that looks like a button is
+that with a different variant or size. A click on it, or on `IconButton`, is
+the native event on the root element; neither declares an event of its own.
+`Icon` is the only place an icon lives, as a list of SVG paths on a 24 by 24
+grid, stroked with `currentColor`, and it exports `iconNames` so the kitchen
+sink draws the set from the same list. There is no icon package and there
+will not be one.
 
-`src/components/form` is FormSection, FormField, FormActions, FormError and
-the controls.
+`src/components/form` is FormSection, FormField, FormActions, FormError,
+RadioCard and the controls: TextInput, TextArea, SelectInput, CheckboxInput,
+RadioGroup, ToggleSwitch, DateInput and MoneyInput.
 **FormField owns every piece of wiring around a control**: it generates the
 id, ties the label to it, puts the hint and the error into
 `aria-describedby` in that order and sets `aria-invalid`. The controls take
-`id`, `labelledBy`, `describedBy` and `invalid` and do none of that
+`id`, `labelledBy`, `describedBy`, `invalid` and `disabled`, which is the
+`ControlProps` interface in `src/components/form/field.ts`, and do none of that
 themselves, so a field is written as one line:
 
 ```vue
@@ -368,10 +409,15 @@ the per-field kind and this is the rest.
 
 Neither kit validates anything itself. What a screen does with a rejected
 submit is settled and is the same on every one: a 422's field messages go
-into `FormField`'s `error`, anything else goes into `FormError`, and
-`focusFirstInvalid` from `src/lib/form.ts` then moves focus to the first
-control carrying `aria-invalid`. The authentication screens are the worked
-example.
+into `FormField`'s `error`, anything else goes into `FormError`, and focus
+moves to the first control carrying `aria-invalid`. That rule is written once,
+as `useSubmit` in `src/lib/form.ts`: a screen puts `ref="form"` on its form,
+binds the `pending`, `errors` and `formError` it returns, and calls
+`submit()` with the request it wants made. A screen with something of its own
+to do with a failure passes a second function, which sees the `ApiError`
+first and returns true when it has dealt with it. The authentication screens
+are the worked example. The two generic messages, `common.too_many_attempts`
+and `common.request_failed`, are the only strings the helper knows.
 
 ### The style guide
 
@@ -401,6 +447,15 @@ The rules:
   `/kitchen-sink`. They do not drift apart. Change the control radius once and
   every button, input, select and menu in the app and on that page moves
   together, because they all read the same variable.
+- **A token the guide specifies stays, even while nothing reads it.** The type
+  scale, the spacing levers, the container widths and the success, warning
+  and info families are in the theme ahead of the screens that need them,
+  and the kitchen sink says "not used yet" beside each one. Removing one is a
+  style-guide change first. A variable that is in neither the guide nor a
+  component is the only kind that is simply deleted.
+- The PWA manifest in `vite.config.ts` carries `background_color` and
+  `theme_color` as hex, because a manifest cannot read CSS. They are copies of
+  `--surface` and `--accent` and change when those do.
 - Every component works in light and dark.
 - **Every new component is added to `/kitchen-sink` in the same change that
   creates it**, in every variant and state it supports. A component that is not
@@ -457,7 +512,10 @@ Vitest with happy-dom. Test files sit beside the file they test with a
 library. To test the native branch, `vi.mock('@/lib/platform')` in that
 test file, which is the approved way and the only way. `vitest.config.ts`
 is separate from `vite.config.ts` because the latter insists on a build
-target.
+target. A component test mounts through `mountWithCleanup` from
+`src/lib/testMount.ts`, which unmounts after each test on its own, and every
+test takes `jsonResponse`, `element`, `typeInto`, `submitForm` and `settle`
+from `src/lib/testHelpers.ts` rather than writing its own.
 
 ### The two build targets
 
@@ -556,6 +614,7 @@ What sits on top of the tables:
   `App\Services\InvoiceNumbering` (the only place an invoice gets a number),
   `App\Services\Features` (the only reader of feature toggles),
   `App\Services\PasswordAuthenticator` (the only credential check),
+  `App\Services\PasswordChanger` (the only place a password is replaced),
   `App\Services\AccountResolver` (the only place a user's account is chosen)
   and `App\Services\TokenIssuer` (the only place a token is minted).
 - `App\Rules\Username` with `config/reserved_usernames.php`. Its
@@ -572,7 +631,13 @@ What sits on top of the tables:
 - Pest tests in `api/tests` run against a real Postgres database named
   `klaroly_test`, because the check constraints and partial indexes are part
   of what is tested. Create it once with `createdb klaroly_test`. The
-  authentication tests live in `tests/Feature/Auth`.
+  authentication tests live in `tests/Feature/Auth`. `tests/Pest.php` holds
+  the helpers more than one file needs: `actingForAccount`, `createOwner`,
+  `sessionRow` and `registration`.
+- Every date the framework hands back is a `CarbonImmutable`, from
+  `Date::use()` in `AppServiceProvider`, so `created_at`, `updated_at` and
+  `deleted_at` are not listed in any model's casts. A model casts only the
+  columns the framework would not cast on its own.
 
 The app has its authentication screens: sign in, register (with a live
 username preview and availability check), forgot password, reset password,
@@ -618,14 +683,15 @@ puts the message on that field and moves focus to it, that a second submit
 sends nothing while the first is still going, that the username check is
 announced in words as well as drawn, and the two tests that read the source
 of the app rather than run it:
-`boundary.test.ts`, which stops business logic leaking into components, and
-`router/routeNames.test.ts`, which fails if any route name written down
-anywhere is not a route that exists. Renaming a route is the change that
-breaks a `router.push` in a screen nobody opened, and a route name is a
-string, so nothing else can catch it. Component tests mount through
-`src/lib/testMount.ts`, twenty lines of `createApp` with the real router,
-i18n and pinia, because there is no component testing library and there is
-not going to be one.
+`boundary.test.ts`, which stops business logic leaking into components,
+`styleRules.test.ts`, which stops a `dark:` variant, an arbitrary value or a
+hex colour reaching a component, and `router/routeNames.test.ts`, which fails
+if any route name written down anywhere is not a route that exists. Renaming
+a route is the change that breaks a `router.push` in a screen nobody opened,
+and a route name is a string, so nothing else can catch it. Component tests
+mount through `src/lib/testMount.ts`, a few lines of `createApp` with the
+real router, i18n, pinia and the global kit, because there is no component
+testing library and there is not going to be one.
 
 The device list, profile and password change screens are not built.
 

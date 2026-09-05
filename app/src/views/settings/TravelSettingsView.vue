@@ -91,15 +91,6 @@
 // are written.
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import FormActions from '@/components/form/FormActions.vue'
-import FormField from '@/components/form/FormField.vue'
-import FormSection from '@/components/form/FormSection.vue'
-import MoneyInput from '@/components/form/MoneyInput.vue'
-import SelectInput from '@/components/form/SelectInput.vue'
-import TextArea from '@/components/form/TextArea.vue'
-import TextInput from '@/components/form/TextInput.vue'
-import ToggleSwitch from '@/components/form/ToggleSwitch.vue'
-import PageHeader from '@/components/ui/PageHeader.vue'
 
 const { t } = useI18n()
 

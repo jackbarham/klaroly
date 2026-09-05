@@ -39,8 +39,6 @@ class Agreement extends Model
             'first_viewed_at' => 'immutable_datetime',
             'signed_at' => 'immutable_datetime',
             'signed_method' => SignedMethod::class,
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 

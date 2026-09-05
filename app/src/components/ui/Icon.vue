@@ -105,6 +105,10 @@ const paths: Record<IconName, string[]> = {
     'M9 14h4',
   ],
 }
+
+// Every icon, in the order above. The kitchen sink draws the set from this,
+// so an icon added here appears there without a second list to update.
+export const iconNames = Object.keys(paths) as IconName[]
 </script>
 
 <script setup lang="ts">

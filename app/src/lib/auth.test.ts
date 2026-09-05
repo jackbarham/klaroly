@@ -1,12 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as auth from '@/lib/auth'
 import { sampleMe } from '@/lib/auth.sample'
+import { jsonResponse } from '@/lib/testHelpers'
 
 // The web branch of src/lib/auth.ts.
-
-function jsonResponse(status: number, body: unknown = null): Response {
-  return new Response(body === null ? '' : JSON.stringify(body), { status })
-}
 
 const fetchMock = vi.fn<typeof fetch>()
 

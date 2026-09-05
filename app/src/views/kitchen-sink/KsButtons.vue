@@ -47,7 +47,6 @@
 <script setup lang="ts">
 // AppButton is the only button component in the app, so this grid is every
 // button the app has.
-import AppButton from '@/components/ui/AppButton.vue'
 import type { IconName } from '@/components/ui/Icon.vue'
 
 interface ButtonRow {

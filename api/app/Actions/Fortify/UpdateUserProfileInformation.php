@@ -2,6 +2,7 @@
 
 namespace App\Actions\Fortify;
 
+use App\Http\Middleware\NormaliseEmail;
 use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Facades\Validator;
@@ -20,10 +21,8 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
      */
     public function update(User $user, array $input): void
     {
-        // The NormaliseEmail middleware does this on HTTP requests. Doing it
-        // again here keeps the action safe when called from anywhere else.
         if (is_string($input['email'] ?? null)) {
-            $input['email'] = mb_strtolower(trim($input['email']));
+            $input['email'] = NormaliseEmail::normalise($input['email']);
         }
 
         Validator::make($input, [

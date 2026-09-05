@@ -1,24 +1,17 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import AppTabBar from '@/components/layout/AppTabBar.vue'
 import { tabBarItems } from '@/lib/navigation'
-import { mount, unmount, type Mounted } from '@/lib/testMount'
-
-let mounted: Mounted | null = null
+import { mountWithCleanup } from '@/lib/testMount'
 
 function pill(host: HTMLElement): HTMLElement | null {
   return host.querySelector('.pill')
 }
 
-afterEach(() => {
-  if (mounted) {
-    unmount(mounted)
-    mounted = null
-  }
-})
+const mount = mountWithCleanup()
 
 describe('the tab bar', () => {
   it('renders one item for every entry in the tab bar list, with the create action as a button', async () => {
-    mounted = await mount(AppTabBar, '/')
+    const mounted = await mount(AppTabBar, '/')
 
     const links = mounted.host.querySelectorAll('nav a')
     const buttons = mounted.host.querySelectorAll('nav button')
@@ -29,7 +22,7 @@ describe('the tab bar', () => {
   })
 
   it('marks the current destination and nothing else', async () => {
-    mounted = await mount(AppTabBar, '/')
+    const mounted = await mount(AppTabBar, '/')
 
     const current = mounted.host.querySelectorAll('[aria-current="page"]')
 
@@ -38,7 +31,7 @@ describe('the tab bar', () => {
   })
 
   it('lands on the right item when the app is opened straight at a deep route', async () => {
-    mounted = await mount(AppTabBar, '/enquiries')
+    const mounted = await mount(AppTabBar, '/enquiries')
 
     const current = mounted.host.querySelectorAll('[aria-current="page"]')
 
@@ -51,7 +44,7 @@ describe('the tab bar', () => {
   })
 
   it('marks More on a section the bar has no item for', async () => {
-    mounted = await mount(AppTabBar, '/settings/travel')
+    const mounted = await mount(AppTabBar, '/settings/travel')
 
     const current = mounted.host.querySelectorAll('[aria-current="page"]')
 
@@ -60,14 +53,14 @@ describe('the tab bar', () => {
   })
 
   it('hides the pill when no item matches the route', async () => {
-    mounted = await mount(AppTabBar, '/billing')
+    const mounted = await mount(AppTabBar, '/billing')
 
     expect(mounted.host.querySelectorAll('[aria-current="page"]')).toHaveLength(0)
     expect(pill(mounted.host)?.style.display).toBe('none')
   })
 
   it('is a navigation landmark with a name', async () => {
-    mounted = await mount(AppTabBar, '/')
+    const mounted = await mount(AppTabBar, '/')
 
     expect(mounted.host.querySelector('nav')?.getAttribute('aria-label')).toBe('Main')
   })

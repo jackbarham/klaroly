@@ -60,9 +60,6 @@ class Account extends Model
         return [
             'profile_enabled' => 'boolean',
             'trial_ends_at' => 'immutable_datetime',
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
-            'deleted_at' => 'immutable_datetime',
         ];
     }
 

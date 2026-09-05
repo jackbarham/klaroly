@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import AppButton from '@/components/ui/AppButton.vue'
-import { mount, unmount, type Mounted } from '@/lib/testMount'
+import { mountWithCleanup } from '@/lib/testMount'
 
 // The pending state is what stops a form being submitted twice, so it is
 // worth a test of its own: every screen that submits something relies on it.
@@ -9,8 +9,6 @@ import { mount, unmount, type Mounted } from '@/lib/testMount'
 // what a person can see of it is tested as well as what a screen reader is
 // told: pending draws a spinner and is not dimmed, disabled is dimmed and
 // draws nothing.
-
-let mounted: Mounted | null = null
 
 function button(host: HTMLElement): HTMLButtonElement {
   const found = host.querySelector('button')
@@ -43,44 +41,39 @@ function isDimmed(host: HTMLElement): boolean {
   return button(host).className.includes('opacity-50')
 }
 
-afterEach(() => {
-  if (mounted) {
-    unmount(mounted)
-    mounted = null
-  }
-})
+const mount = mountWithCleanup()
 
 describe('a button', () => {
   it('is enabled and not busy by default', async () => {
-    mounted = await mount(AppButton, '/')
+    const mounted = await mount(AppButton, '/')
 
     expect(button(mounted.host).disabled).toBe(false)
     expect(button(mounted.host).getAttribute('aria-busy')).toBeNull()
   })
 
   it('is disabled and busy while its request is in flight', async () => {
-    mounted = await mount(AppButton, '/', { pending: true })
+    const mounted = await mount(AppButton, '/', { pending: true })
 
     expect(button(mounted.host).disabled).toBe(true)
     expect(button(mounted.host).getAttribute('aria-busy')).toBe('true')
   })
 
   it('shows a spinner and is not dimmed while its request is in flight', async () => {
-    mounted = await mount(AppButton, '/', { pending: true })
+    const mounted = await mount(AppButton, '/', { pending: true })
 
     expect(spinner(mounted.host)).not.toBeNull()
     expect(isDimmed(mounted.host)).toBe(false)
   })
 
   it('is disabled without being busy when it is simply unavailable', async () => {
-    mounted = await mount(AppButton, '/', { disabled: true })
+    const mounted = await mount(AppButton, '/', { disabled: true })
 
     expect(button(mounted.host).disabled).toBe(true)
     expect(button(mounted.host).getAttribute('aria-busy')).toBeNull()
   })
 
   it('is dimmed and shows no spinner when it is simply unavailable', async () => {
-    mounted = await mount(AppButton, '/', { disabled: true })
+    const mounted = await mount(AppButton, '/', { disabled: true })
 
     expect(isDimmed(mounted.host)).toBe(true)
     expect(spinner(mounted.host)).toBeNull()
@@ -90,7 +83,7 @@ describe('a button', () => {
   // with the spinner laid over the top, so the button does not change width
   // halfway through a submit.
   it('hides what it says behind the spinner rather than replacing it', async () => {
-    mounted = await mount(AppButton, '/', { icon: 'plus', pending: true })
+    const mounted = await mount(AppButton, '/', { icon: 'plus', pending: true })
 
     expect(spinner(mounted.host)).not.toBeNull()
     expect(mounted.host.querySelectorAll('svg')).toHaveLength(1)
@@ -98,7 +91,7 @@ describe('a button', () => {
   })
 
   it('shows what it says when it is not busy', async () => {
-    mounted = await mount(AppButton, '/', { icon: 'plus' })
+    const mounted = await mount(AppButton, '/', { icon: 'plus' })
 
     expect(label(mounted.host).className).not.toContain('opacity-0')
   })

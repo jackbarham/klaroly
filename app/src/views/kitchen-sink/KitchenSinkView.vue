@@ -27,7 +27,7 @@
             :key="section.id"
           >
             <a
-              class="text-sm text-text underline hover:text-text-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+              class="text-sm text-text underline hover:text-text-strong focus-visible:focus-ring"
               :href="`#${section.id}`"
             >{{ section.title }}</a>
           </li>
@@ -40,7 +40,7 @@
           size="small"
           @click="toggleTheme"
         >
-          {{ dark ? 'Dark theme on, inert' : 'Dark theme off, inert' }}
+          {{ dark ? 'Switch to light' : 'Switch to dark' }}
         </AppButton>
       </div>
     </div>
@@ -76,7 +76,6 @@
 // The sections are listed once, as data, so the index at the top and the
 // page itself cannot drift apart.
 import { computed, onBeforeUnmount, ref, type Component } from 'vue'
-import AppButton from '@/components/ui/AppButton.vue'
 import KsBands from '@/views/kitchen-sink/KsBands.vue'
 import KsButtons from '@/views/kitchen-sink/KsButtons.vue'
 import KsCards from '@/views/kitchen-sink/KsCards.vue'
@@ -169,9 +168,9 @@ const sections: Section[] = [
   },
 ]
 
-// The dark class does nothing today: the app has one theme. The control is
-// here because the restyle brings a second one, and on the day it lands this
-// page has to be able to show both without being edited.
+// The dark class on the html element is what flips the semantic layer. The
+// app never sets it yet, so this page is the only place the second theme can
+// be seen.
 const dark = ref(false)
 
 const theme = computed(() => (dark.value ? 'dark' : 'light'))

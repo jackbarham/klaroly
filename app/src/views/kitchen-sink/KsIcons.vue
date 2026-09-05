@@ -68,7 +68,5 @@
 // Every icon the app owns. There is no icon package: this is the whole set,
 // and anything that needs a shape the app does not have is a conversation
 // rather than an npm install.
-import Icon from '@/components/ui/Icon.vue'
-import IconButton from '@/components/ui/IconButton.vue'
-import { iconNames } from '@/views/kitchen-sink/tokens'
+import { iconNames } from '@/components/ui/Icon.vue'
 </script>

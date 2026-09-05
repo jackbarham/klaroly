@@ -38,8 +38,6 @@ class MessageTemplate extends Model
             'enabled' => 'boolean',
             'mode' => TemplateMode::class,
             'trigger' => 'array',
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 

@@ -5,7 +5,7 @@
 
       <p class="text-sm">
         <RouterLink
-          class="font-medium text-accent-text hover:underline"
+          class="rounded-control font-medium text-accent-text hover:underline focus-visible:focus-ring"
           :to="{ name: 'forgot-password' }"
         >
           {{ t('auth.forgot_password_link') }}
@@ -18,7 +18,7 @@
       ref="form"
       class="space-y-6"
       novalidate
-      @submit.prevent="submit"
+      @submit.prevent="reset"
     >
       <!--
         The address comes from the emailed link and cannot be changed, so it
@@ -53,72 +53,48 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, useTemplateRef } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
-import FormError from '@/components/form/FormError.vue'
-import FormField from '@/components/form/FormField.vue'
-import TextInput from '@/components/form/TextInput.vue'
-import AppButton from '@/components/ui/AppButton.vue'
-import { ApiError } from '@/lib/api'
-import { focusFirstInvalid } from '@/lib/form'
+import { useSubmit } from '@/lib/form'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
-
-const form = useTemplateRef<HTMLFormElement>('form')
+const { pending, errors, formError, submit } = useSubmit()
 
 // Both come from the link in the reset email.
 const token = typeof route.query.token === 'string' ? route.query.token : ''
-const email = ref(typeof route.query.email === 'string' ? route.query.email : '')
+const email = typeof route.query.email === 'string' ? route.query.email : ''
 
-const linkInvalid = ref(token === '' || email.value === '')
+const linkInvalid = ref(token === '' || email === '')
 const password = ref('')
-const pending = ref(false)
-const errors = ref<Record<string, string>>({})
-const formError = ref<string | null>(null)
 
-async function submit(): Promise<void> {
-  if (pending.value) {
-    return
-  }
-
-  pending.value = true
-  errors.value = {}
-  formError.value = null
-
-  try {
-    await auth.resetPassword(token, email.value, password.value)
+async function reset(): Promise<void> {
+  await submit(async () => {
+    await auth.resetPassword(token, email, password.value)
     await signInWithNewPassword()
-
-    return
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 422) {
-      const fieldErrors = error.validationErrors()
-
-      // An error on the email field means the token is bad or expired.
-      if (fieldErrors.email) {
-        linkInvalid.value = true
-      } else {
-        errors.value = {
-          password: fieldErrors.password ?? fieldErrors.token ?? t('auth.request_failed'),
-        }
-      }
-    } else if (error instanceof ApiError && error.status === 429) {
-      formError.value = t('auth.too_many_attempts')
-    } else {
-      formError.value = t('auth.request_failed')
+  }, (error) => {
+    if (error.status !== 422) {
+      return false
     }
 
-    await nextTick()
-    focusFirstInvalid(form.value)
-  } finally {
-    pending.value = false
-  }
+    const fieldErrors = error.validationErrors()
+
+    // An error on the email field means the token is bad or expired.
+    if (fieldErrors.email) {
+      linkInvalid.value = true
+    } else {
+      errors.value = {
+        password: fieldErrors.password ?? fieldErrors.token ?? t('common.request_failed'),
+      }
+    }
+
+    return true
+  })
 }
 
 // The password has been changed, so the person is signed in with it
@@ -127,7 +103,7 @@ async function submit(): Promise<void> {
 // fallback, with a notice saying the change itself succeeded.
 async function signInWithNewPassword(): Promise<void> {
   try {
-    await auth.signIn(email.value, password.value, true)
+    await auth.signIn(email, password.value, true)
   } catch {
     // The store may already have left a notice (for example a login that
     // belongs to no account). Only set ours when it has not.

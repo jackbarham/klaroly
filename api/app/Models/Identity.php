@@ -27,8 +27,6 @@ class Identity extends Model
         return [
             'provider' => IdentityProvider::class,
             'email_is_private' => 'boolean',
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 

@@ -9,7 +9,7 @@
           :key="item.key"
         >
           <RouterLink
-            class="flex items-center justify-between gap-4 py-4 text-text-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+            class="flex items-center justify-between gap-4 py-4 text-text-strong focus-visible:focus-ring"
             :to="{ name: item.routeName }"
           >
             <span class="flex items-center gap-4">
@@ -27,7 +27,7 @@
         </li>
         <li>
           <button
-            class="flex w-full items-center gap-4 py-4 text-left text-text-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+            class="flex w-full items-center gap-4 py-4 text-left text-text-strong focus-visible:focus-ring"
             type="button"
             @click="signOut"
           >
@@ -49,9 +49,6 @@
 // appears here without this file changing.
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRouter } from 'vue-router'
-import Card from '@/components/ui/Card.vue'
-import Icon from '@/components/ui/Icon.vue'
-import PageHeader from '@/components/ui/PageHeader.vue'
 import { moreItems } from '@/lib/navigation'
 import { useAuthStore } from '@/stores/auth'
 

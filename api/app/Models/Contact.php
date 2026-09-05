@@ -21,18 +21,6 @@ class Contact extends Model
     /** @use HasFactory<ContactFactory> */
     use BelongsToAccount, HasFactory, SoftDeletes;
 
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
-            'deleted_at' => 'immutable_datetime',
-        ];
-    }
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

@@ -5,6 +5,8 @@ use App\Models\AccountUser;
 use App\Models\User;
 use App\Support\CurrentAccount;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 // Feature tests boot the application and run against the klaroly_test
@@ -50,4 +52,40 @@ function createOwner(array $userAttributes = [], ?Account $account = null): User
     ]);
 
     return $user;
+}
+
+/**
+ * A session row for a user, as the database session driver would write one.
+ * Returns its id so a test can name the session it expects to survive.
+ */
+function sessionRow(User $user, ?string $id = null): string
+{
+    $id ??= Str::random(40);
+
+    DB::table('sessions')->insert([
+        'id' => $id,
+        'user_id' => $user->id,
+        'payload' => '',
+        'last_activity' => now()->timestamp,
+    ]);
+
+    return $id;
+}
+
+/**
+ * A valid registration body. The mobile twin adds device_name through the
+ * overrides.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function registration(array $overrides = []): array
+{
+    return $overrides + [
+        'business_name' => 'Ellie Marsh Makeup',
+        'name' => 'Ellie Marsh',
+        'email' => 'ellie@example.com',
+        'password' => 'correct-horse-battery',
+        'password_confirmation' => 'correct-horse-battery',
+    ];
 }

@@ -39,8 +39,6 @@ class Event extends Model
             'latitude' => 'decimal:6',
             'longitude' => 'decimal:6',
             'travel_estimated_at' => 'immutable_datetime',
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 

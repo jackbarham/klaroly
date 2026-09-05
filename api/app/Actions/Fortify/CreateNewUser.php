@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Enums\AccountRole;
 use App\Enums\MarketingConsentSource;
+use App\Http\Middleware\NormaliseEmail;
 use App\Models\Account;
 use App\Models\AccountSettings;
 use App\Models\AccountUser;
@@ -40,10 +41,8 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
-        // The NormaliseEmail middleware does this on HTTP requests. Doing it
-        // again here keeps the action safe when called from anywhere else.
         if (is_string($input['email'] ?? null)) {
-            $input['email'] = mb_strtolower(trim($input['email']));
+            $input['email'] = NormaliseEmail::normalise($input['email']);
         }
 
         if (blank($input['username'] ?? null)) {

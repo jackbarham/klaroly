@@ -8,7 +8,7 @@
     <component
       :is="collapsible ? 'button' : 'div'"
       class="flex h-12 w-full items-center justify-between rounded-control bg-surface-sunken px-4 text-left"
-      :class="collapsible ? 'cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus' : ''"
+      :class="collapsible ? 'cursor-pointer focus-visible:focus-ring' : ''"
       :type="collapsible ? 'button' : undefined"
       :aria-expanded="collapsible ? open : undefined"
       :aria-controls="collapsible ? contentId : undefined"
@@ -41,12 +41,10 @@
 import { ref, useId } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   title: string
   collapsible?: boolean
-}>(), {
-  collapsible: false,
-})
+}>()
 
 // A band that does not collapse is always open, so the content is never hidden
 // by a state nobody can change.

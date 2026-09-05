@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import LoginView from '@/views/LoginView.vue'
-import { mount, unmount, type Mounted } from '@/lib/testMount'
+import { element, jsonResponse, settle, submitForm, typeInto } from '@/lib/testHelpers'
+import { mountWithCleanup, type Mounted } from '@/lib/testMount'
 
 // The sign-in screen, driven the way a person drives it: type, submit, and
 // see what the screen does with what the API said. What is tested here is
@@ -9,13 +10,9 @@ import { mount, unmount, type Mounted } from '@/lib/testMount'
 // lands on no field, or focus that stays where it was, looks like nothing
 // happening at all.
 
-function jsonResponse(status: number, body: unknown = null): Response {
-  return new Response(body === null ? '' : JSON.stringify(body), { status })
-}
-
 const fetchMock = vi.fn<typeof fetch>()
 
-let mounted: Mounted | null = null
+const mount = mountWithCleanup()
 
 beforeEach(() => {
   fetchMock.mockReset()
@@ -26,46 +23,15 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  if (mounted) {
-    unmount(mounted)
-    mounted = null
-  }
-
   vi.unstubAllGlobals()
 })
-
-function element<T extends HTMLElement>(host: HTMLElement, selector: string): T {
-  const found = host.querySelector<T>(selector)
-
-  if (found === null) {
-    throw new Error(`The test expected to find ${selector}`)
-  }
-
-  return found
-}
-
-// Typing, as far as v-model is concerned.
-function type(input: HTMLInputElement, value: string): void {
-  input.value = value
-  input.dispatchEvent(new Event('input', { bubbles: true }))
-}
-
-function submit(host: HTMLElement): void {
-  element(host, 'form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
-}
-
-// Lets every pending promise settle and Vue re-render afterwards.
-async function settle(): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 0))
-  await nextTick()
-}
 
 async function signInWith(credentials: { email: string, password: string }): Promise<Mounted> {
   const result = await mount(LoginView, '/login')
 
-  type(element<HTMLInputElement>(result.host, 'input[type="email"]'), credentials.email)
-  type(element<HTMLInputElement>(result.host, 'input[type="password"]'), credentials.password)
-  submit(result.host)
+  typeInto(element<HTMLInputElement>(result.host, 'input[type="email"]'), credentials.email)
+  typeInto(element<HTMLInputElement>(result.host, 'input[type="password"]'), credentials.password)
+  submitForm(result.host)
 
   return result
 }
@@ -77,7 +43,7 @@ describe('the sign-in screen', () => {
       errors: { email: ['These credentials do not match our records.'] },
     }))
 
-    mounted = await signInWith({ email: 'ellie@example.com', password: 'wrong-password' })
+    const mounted = await signInWith({ email: 'ellie@example.com', password: 'wrong-password' })
     await settle()
 
     const emailInput = element<HTMLInputElement>(mounted.host, 'input[type="email"]')
@@ -101,7 +67,7 @@ describe('the sign-in screen', () => {
   it('marks nothing invalid when the failure belongs to no field, and says so once', async () => {
     fetchMock.mockResolvedValue(jsonResponse(429, { message: 'Too many requests.' }))
 
-    mounted = await signInWith({ email: 'ellie@example.com', password: 'correct-horse-battery' })
+    const mounted = await signInWith({ email: 'ellie@example.com', password: 'correct-horse-battery' })
     await settle()
 
     expect(mounted.host.querySelectorAll('[aria-invalid="true"]')).toHaveLength(0)
@@ -121,7 +87,7 @@ describe('the sign-in screen', () => {
       request.answer = resolve
     }))
 
-    mounted = await signInWith({ email: 'ellie@example.com', password: 'correct-horse-battery' })
+    const mounted = await signInWith({ email: 'ellie@example.com', password: 'correct-horse-battery' })
     await nextTick()
 
     const button = element<HTMLButtonElement>(mounted.host, 'button[type="submit"]')
@@ -130,7 +96,7 @@ describe('the sign-in screen', () => {
     expect(button.getAttribute('aria-busy')).toBe('true')
 
     // A second submit, of the kind an impatient double click produces.
-    submit(mounted.host)
+    submitForm(mounted.host)
     await nextTick()
 
     expect(fetchMock).toHaveBeenCalledTimes(1)

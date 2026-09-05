@@ -33,5 +33,4 @@
 <script setup lang="ts">
 // The sunken heading bar that a section of a page gets instead of a nested
 // panel.
-import SectionBand from '@/components/ui/SectionBand.vue'
 </script>

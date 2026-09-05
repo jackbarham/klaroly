@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as auth from '@/lib/auth'
 import { sampleMe } from '@/lib/auth.sample'
 import * as tokenStorage from '@/lib/tokenStorage'
+import { jsonResponse } from '@/lib/testHelpers'
 
 // The native branch of src/lib/auth.ts. Mocking platform.ts is the one
 // approved way to test it.
@@ -12,10 +13,6 @@ vi.mock('@/lib/platform', () => ({
   isWeb: false,
   deviceName: () => 'Android',
 }))
-
-function jsonResponse(status: number, body: unknown = null): Response {
-  return new Response(body === null ? '' : JSON.stringify(body), { status })
-}
 
 const fetchMock = vi.fn<typeof fetch>()
 

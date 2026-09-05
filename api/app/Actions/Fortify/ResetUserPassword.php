@@ -3,9 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
-use App\Notifications\PasswordChanged;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use App\Services\PasswordChanger;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\ResetsUserPasswords;
@@ -14,10 +12,12 @@ class ResetUserPassword implements ResetsUserPasswords
 {
     use PasswordValidationRules;
 
+    public function __construct(private readonly PasswordChanger $changer) {}
+
     /**
      * Validate and reset the user's forgotten password, then sign every
      * device and browser out. There is no current session on a reset, so
-     * every session row goes (technical proposal section 5, gap 3).
+     * every session row goes.
      *
      * @param  array<string, string>  $input
      *
@@ -29,14 +29,6 @@ class ResetUserPassword implements ResetsUserPasswords
             'password' => $this->passwordRules(),
         ])->validate();
 
-        $user->forceFill([
-            'password' => Hash::make($input['password']),
-        ])->save();
-
-        $user->tokens()->delete();
-
-        DB::table('sessions')->where('user_id', $user->id)->delete();
-
-        $user->notify(new PasswordChanged);
+        $this->changer->change($user, $input['password']);
     }
 }

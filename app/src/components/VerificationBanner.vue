@@ -32,8 +32,6 @@
 // weight and by what it says, not by a colour.
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import AppButton from '@/components/ui/AppButton.vue'
-import Card from '@/components/ui/Card.vue'
 import { ApiError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
 
@@ -64,8 +62,8 @@ async function resend(): Promise<void> {
   } catch (error) {
     messageIsError.value = true
     message.value = error instanceof ApiError && error.status === 429
-      ? 'auth.too_many_attempts'
-      : 'auth.request_failed'
+      ? 'common.too_many_attempts'
+      : 'common.request_failed'
   } finally {
     pending.value = false
   }

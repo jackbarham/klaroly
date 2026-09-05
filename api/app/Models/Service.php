@@ -33,9 +33,6 @@ class Service extends Model
             'applies_to' => ServiceAppliesTo::class,
             'price_minor' => MoneyCast::class,
             'active' => 'boolean',
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
-            'deleted_at' => 'immutable_datetime',
         ];
     }
 

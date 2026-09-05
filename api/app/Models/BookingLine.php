@@ -30,8 +30,6 @@ class BookingLine extends Model
         return [
             'kind' => LineKind::class,
             'unit_price_minor' => MoneyCast::class,
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 

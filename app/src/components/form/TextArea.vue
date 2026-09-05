@@ -14,21 +14,12 @@
 
 <script setup lang="ts">
 // Several lines of text. Same wiring as the text input.
-import { controlClasses, edgeClasses } from '@/components/form/field'
+import { controlClasses, edgeClasses, type ControlProps } from '@/components/form/field'
 
-withDefaults(defineProps<{
-  id: string
+withDefaults(defineProps<ControlProps & {
   rows?: number
-  labelledBy?: string
-  describedBy?: string
-  invalid?: boolean
-  disabled?: boolean
 }>(), {
   rows: 4,
-  labelledBy: undefined,
-  describedBy: undefined,
-  invalid: false,
-  disabled: false,
 })
 
 const model = defineModel<string>({ required: true })

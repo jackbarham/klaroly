@@ -1,5 +1,3 @@
-import type { IconName } from '@/components/ui/Icon.vue'
-
 // The raw material the tokens section draws, listed once.
 //
 // Nothing here is new: every class name below already exists, either as a
@@ -103,10 +101,19 @@ export interface TypeStep {
   use: string
 }
 
-// The steps the app actually renders. There is no type scale in the theme
-// block, so these are Tailwind's own sizes and weights, and this is the set
-// that appears in the components as they stand.
+// The theme's own scale, from docs/style-guide.md, followed by the Tailwind
+// sizes and weights the components still mostly use. The two lists sit
+// together so that the move from one to the other can be judged here.
 export const typeSteps: TypeStep[] = [
+  { className: 'text-title font-medium', sample: 'Bookings', use: 'a page title, once the scale is adopted' },
+  { className: 'text-figure', sample: '£1,234.56', use: 'a large figure or a sum of money' },
+  { className: 'text-section font-medium', sample: 'Travel and charges', use: 'a section heading' },
+  { className: 'text-lead font-medium', sample: 'Ready by 12.30', use: 'a large button label, prominent copy' },
+  { className: 'text-control font-medium', sample: 'Ellie Marsh', use: 'the value typed into a control' },
+  { className: 'text-body font-medium', sample: 'Hannah Whitfield', use: 'a label, a name, a row title' },
+  { className: 'text-body', sample: 'Trial at 7am, ceremony at 1pm.', use: 'everything else: a row, a table cell, a pill' },
+  { className: 'text-meta', sample: 'Last updated three hours ago', use: 'a counter, a timestamp, a pill' },
+  { className: 'text-caption', sample: '14 Jun, 6:30am', use: 'dense phone meta' },
   { className: 'text-2xl font-bold', sample: 'Klaroly', use: 'the wordmark above an authentication card' },
   { className: 'text-2xl font-semibold', sample: 'Bookings', use: 'a page heading' },
   { className: 'text-xl font-semibold', sample: 'Sign in to Klaroly', use: 'an authentication screen heading' },
@@ -170,30 +177,12 @@ export interface BorderWidth {
   use: string
 }
 
-// The two widths are tokens now, as --border-width-control and
-// --border-width-focus, but no Tailwind utility can read a variable for a
-// border width, so a component still writes border and border-2. That is the
-// one thing waiting on the control layer.
+// The two widths are tokens, as --border-width-control and
+// --border-width-focus. The focus ring and the control edges read the second
+// one, but no Tailwind utility can read a variable for a border width, so a
+// component still writes border and border-2 for the rest.
 export const borderWidths: BorderWidth[] = [
   { className: 'border', use: 'every border in the app' },
   { className: 'border-2', use: 'an invalid control, and FormError' },
-]
-
-// Every icon in Icon.vue, in the order that file lists them. It is typed, so
-// renaming an icon breaks this list at compile time rather than drawing a
-// blank square.
-export const iconNames: IconName[] = [
-  'home',
-  'calendar',
-  'enquiries',
-  'contacts',
-  'more',
-  'plus',
-  'settings',
-  'account',
-  'help',
-  'chevron-left',
-  'chevron-right',
-  'sign-out',
-  'page',
+  { className: 'focus-visible:focus-ring', use: 'the ring on anything that takes focus and has no edge to recolour. Tab to the box to see it' },
 ]

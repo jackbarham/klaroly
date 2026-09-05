@@ -56,33 +56,20 @@
 </template>
 
 <script setup lang="ts">
-// A single line of text. The id, the aria-describedby and the invalid flag
-// come from FormField, which owns the label, the hint and the error.
-//
-// The optional status draws a tick or a cross inside the right edge, for a
-// check that happens while someone types rather than when they submit. It is
-// a shape, not a colour, and it is hidden from a screen reader: the same
-// thing in words is FormField's statusMessage, and a status passed without
-// one is a tick nobody can hear. Pass the pair or pass neither.
-import { controlClasses, edgeClasses } from '@/components/form/field'
+// A single line of text. The optional status draws a tick or a cross inside
+// the right edge, for a check that happens while someone types rather than
+// when they submit. It is a shape, not a colour, and it is hidden from a
+// screen reader: the same thing in words is FormField's statusMessage, and a
+// status passed without one is a tick nobody can hear. Pass the pair or pass
+// neither.
+import { controlClasses, edgeClasses, type ControlProps } from '@/components/form/field'
 
-withDefaults(defineProps<{
-  id: string
+withDefaults(defineProps<ControlProps & {
   type?: 'text' | 'email' | 'password' | 'tel' | 'url' | 'date'
   autocomplete?: string
-  labelledBy?: string
-  describedBy?: string
-  invalid?: boolean
-  disabled?: boolean
   status?: 'valid' | 'invalid'
 }>(), {
   type: 'text',
-  autocomplete: undefined,
-  labelledBy: undefined,
-  describedBy: undefined,
-  invalid: false,
-  disabled: false,
-  status: undefined,
 })
 
 const model = defineModel<string>({ required: true })

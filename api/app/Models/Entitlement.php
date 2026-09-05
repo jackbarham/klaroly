@@ -29,8 +29,6 @@ class Entitlement extends Model
             'source' => EntitlementSource::class,
             'status' => EntitlementStatus::class,
             'current_period_end' => 'immutable_datetime',
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 

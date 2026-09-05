@@ -17,7 +17,7 @@
       </p>
       <p>
         <RouterLink
-          class="font-medium text-text-strong underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+          class="font-medium text-text-strong underline focus-visible:focus-ring"
           :to="{ name: 'settings-travel' }"
         >
           Open the travel settings page

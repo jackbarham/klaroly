@@ -111,12 +111,12 @@ npm test
 
 | Folder | What is in it |
 | --- | --- |
-| `lib/` | Everything that is not a component: `api.ts` (the only caller of `fetch`), `auth.ts`, `platform.ts`, `navigation.ts` (the one list of destinations, used by both navigations) and `testMount.ts`, which tests use to mount a component |
+| `lib/` | Everything that is not a component: `api.ts` (the only caller of `fetch`), `auth.ts`, `platform.ts`, `navigation.ts` (the one list of destinations, used by both navigations), `form.ts` (the one way a screen submits a form), and `testMount.ts` and `testHelpers.ts`, which tests use to mount and drive a component |
 | `stores/` | Pinia. `auth.ts` is the only way a screen reads or changes who is signed in |
 | `router/` | One explicit routes array. Everything behind the sign-in is a child of the layout route |
 | `components/layout/` | The app shell: `AppLayout`, `AppSidebar`, `AppTabBar`, `CreateMenu`, `SettingsNav` |
-| `components/ui/` | PageHeader, Card, EmptyState, AppButton, IconButton, Sheet, Icon |
-| `components/form/` | FormSection, FormField, FormActions and the controls. FormField owns the label, hint, error and id wiring; the controls do not |
+| `components/ui/` | PageHeader, Card, EmptyState, AppButton, IconButton, Sheet, Icon, StatusPill, ListRow, DataTable, SectionBand. Registered globally by `components/kit.ts`, so no screen imports them |
+| `components/form/` | FormSection, FormField, FormActions, FormError, RadioCard and the controls, also global. FormField owns the label, hint, error and id wiring; the controls do not |
 | `views/` | One file per page. Pages that are not built yet share `PlaceholderView.vue` |
 | `locales/` | `en-GB.json`. Every user-facing string is a key here |
 | `assets/app.css` | The `@theme` block, which is where every colour, font, radius and spacing step is defined |

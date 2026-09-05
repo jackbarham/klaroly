@@ -40,7 +40,7 @@
         -->
         <button
           v-if="item.routeName === null"
-          class="-translate-y-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent text-text-on-accent shadow-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+          class="-translate-y-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent text-text-on-accent shadow-raised focus-visible:focus-ring"
           type="button"
           :aria-label="t(item.labelKey)"
           @click="emit('create')"
@@ -53,7 +53,7 @@
 
         <RouterLink
           v-else
-          class="relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-full text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+          class="relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-full text-xs focus-visible:focus-ring"
           :class="isCurrent(item) ? 'font-medium text-accent-text' : 'text-text-muted'"
           :to="{ name: item.routeName }"
           :aria-current="isCurrent(item) ? 'page' : undefined"
@@ -81,7 +81,6 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch, type ComponentPublicInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
-import Icon from '@/components/ui/Icon.vue'
 import { activeTabIndex, activeTabKey, tabBarItems, type NavItem } from '@/lib/navigation'
 
 const emit = defineEmits<{

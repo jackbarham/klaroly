@@ -10,20 +10,6 @@ use App\Models\UsernameHistory;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Notification;
 
-/**
- * @return array<string, mixed>
- */
-function registration(array $overrides = []): array
-{
-    return $overrides + [
-        'business_name' => 'Ellie Marsh Makeup',
-        'name' => 'Ellie Marsh',
-        'email' => 'ellie@example.com',
-        'password' => 'correct-horse-battery',
-        'password_confirmation' => 'correct-horse-battery',
-    ];
-}
-
 it('creates the user, account, settings, membership and history in one go', function () {
     Notification::fake();
 

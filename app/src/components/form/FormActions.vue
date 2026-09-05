@@ -13,7 +13,6 @@
       {{ t('common.cancel') }}
     </AppButton>
     <AppButton
-      variant="primary"
       :pending="pending"
       @click="emit('save')"
     >
@@ -27,11 +26,9 @@
 import { useI18n } from 'vue-i18n'
 import AppButton from '@/components/ui/AppButton.vue'
 
-withDefaults(defineProps<{
+defineProps<{
   pending?: boolean
-}>(), {
-  pending: false,
-})
+}>()
 
 const emit = defineEmits<{
   save: []

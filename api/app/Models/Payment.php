@@ -30,8 +30,6 @@ class Payment extends Model
             'amount_minor' => MoneyCast::class,
             'paid_on' => 'immutable_date',
             'method' => PaymentMethod::class,
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 

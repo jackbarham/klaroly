@@ -35,8 +35,6 @@ class AccountUser extends Model
             'can_see_contacts' => 'boolean',
             'invited_at' => 'immutable_datetime',
             'accepted_at' => 'immutable_datetime',
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 

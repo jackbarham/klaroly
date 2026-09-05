@@ -26,8 +26,6 @@ class BookingContact extends Model
     {
         return [
             'role' => BookingContactRole::class,
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 

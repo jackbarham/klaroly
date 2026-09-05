@@ -16,9 +16,7 @@
 // It borrows the invalid control's own treatment, a heavy border and a
 // heavier weight, so that a form has one way of saying something is wrong
 // rather than one for a field and another for the form.
-withDefaults(defineProps<{
+defineProps<{
   message?: string | null
-}>(), {
-  message: null,
-})
+}>()
 </script>

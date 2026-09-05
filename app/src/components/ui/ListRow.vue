@@ -13,7 +13,7 @@
     -->
     <component
       :is="to ? RouterLink : 'div'"
-      class="flex items-center gap-4 rounded-control py-row focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-border-focus"
+      class="flex items-center gap-4 rounded-control py-row focus-visible:focus-ring focus-visible:-outline-offset-2"
       v-bind="linkProps"
     >
       <div
@@ -56,11 +56,9 @@
 import { computed } from 'vue'
 import { RouterLink, type RouteLocationRaw } from 'vue-router'
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   to?: RouteLocationRaw
-}>(), {
-  to: undefined,
-})
+}>()
 
 // A div takes no "to", so the prop is passed only when there is a link to make
 // of it.

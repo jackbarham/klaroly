@@ -66,7 +66,7 @@
 // The pill on its own. It is also shown in a list row and in a table row in
 // the next section, because a pill by itself says nothing about whether it
 // works where it will actually live.
-import StatusPill, { type PillTone } from '@/components/ui/StatusPill.vue'
+import type { PillTone } from '@/components/ui/StatusPill.vue'
 
 const tones: PillTone[] = ['neutral', 'info', 'success', 'warning', 'danger']
 

@@ -1,8 +1,8 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import { tableCellClasses, tableRowClasses } from '@/components/ui/table'
-import { mount, unmount, type Mounted } from '@/lib/testMount'
+import { mountWithCleanup } from '@/lib/testMount'
 
 // Two things break a table: a header that goes bold, and a hover that fills the
 // row instead of recolouring the line under it. Both are tested here, along
@@ -24,18 +24,11 @@ const Host = defineComponent({
   },
 })
 
-let mounted: Mounted | null = null
-
-afterEach(() => {
-  if (mounted) {
-    unmount(mounted)
-    mounted = null
-  }
-})
+const mount = mountWithCleanup()
 
 describe('a table', () => {
   it('scrolls inside its own box rather than widening the page', async () => {
-    mounted = await mount(Host, '/')
+    const mounted = await mount(Host, '/')
 
     const container = mounted.host.querySelector('div')
 
@@ -43,7 +36,7 @@ describe('a table', () => {
   })
 
   it('keeps its header cells regular weight and muted', async () => {
-    mounted = await mount(Host, '/')
+    const mounted = await mount(Host, '/')
 
     const header = mounted.host.querySelector('thead tr')
     const cells = [...mounted.host.querySelectorAll('th')]
@@ -59,7 +52,7 @@ describe('a table', () => {
   })
 
   it('right-aligns a column that asked for it', async () => {
-    mounted = await mount(Host, '/')
+    const mounted = await mount(Host, '/')
 
     const cells = [...mounted.host.querySelectorAll('th')]
 

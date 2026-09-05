@@ -12,7 +12,7 @@
         :key="row.key"
       >
         <button
-          class="flex w-full items-center gap-4 rounded-control px-4 py-4 text-left text-text-strong hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+          class="flex w-full items-center gap-4 rounded-control px-4 py-4 text-left text-text-strong hover:bg-surface-sunken focus-visible:focus-ring"
           type="button"
           @click="choose"
         >
@@ -33,8 +33,7 @@
 // screen the same panel is a menu under the sidebar's New button, and which
 // one it is comes from the width alone. See Sheet.vue.
 import { useI18n } from 'vue-i18n'
-import Icon, { type IconName } from '@/components/ui/Icon.vue'
-import Sheet from '@/components/ui/Sheet.vue'
+import type { IconName } from '@/components/ui/Icon.vue'
 
 const open = defineModel<boolean>('open', { required: true })
 

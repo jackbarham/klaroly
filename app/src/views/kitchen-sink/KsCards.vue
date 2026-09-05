@@ -127,7 +127,4 @@
 
 <script setup lang="ts">
 // The standard surface, and what a panel shows when it has nothing in it.
-import AppButton from '@/components/ui/AppButton.vue'
-import Card from '@/components/ui/Card.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
 </script>

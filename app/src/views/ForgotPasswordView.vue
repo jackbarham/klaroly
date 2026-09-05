@@ -13,7 +13,7 @@
       ref="form"
       class="space-y-6"
       novalidate
-      @submit.prevent="submit"
+      @submit.prevent="send"
     >
       <p class="text-sm text-text-muted">
         {{ t('auth.forgot_password_intro') }}
@@ -45,7 +45,7 @@
 
     <p class="text-sm">
       <RouterLink
-        class="font-medium text-accent-text hover:underline"
+        class="rounded-control font-medium text-accent-text hover:underline focus-visible:focus-ring"
         :to="{ name: 'login' }"
       >
         {{ t('auth.sign_in_link') }}
@@ -55,56 +55,26 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, useTemplateRef } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
-import FormError from '@/components/form/FormError.vue'
-import FormField from '@/components/form/FormField.vue'
-import TextInput from '@/components/form/TextInput.vue'
-import AppButton from '@/components/ui/AppButton.vue'
-import { ApiError } from '@/lib/api'
-import { focusFirstInvalid } from '@/lib/form'
+import { useSubmit } from '@/lib/form'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
 const auth = useAuthStore()
-
-const form = useTemplateRef<HTMLFormElement>('form')
+const { pending, errors, formError, submit } = useSubmit()
 
 const email = ref('')
-const pending = ref(false)
 const sent = ref(false)
-const errors = ref<Record<string, string>>({})
-const formError = ref<string | null>(null)
 
-async function submit(): Promise<void> {
-  if (pending.value) {
-    return
-  }
-
-  pending.value = true
-  errors.value = {}
-  formError.value = null
-
-  try {
-    // The API answers the same way for a known and an unknown address, and
-    // so does this screen.
+// The API answers the same way for a known and an unknown address, and so
+// does this screen.
+async function send(): Promise<void> {
+  await submit(async () => {
     await auth.forgotPassword(email.value)
     sent.value = true
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 422) {
-      errors.value = error.validationErrors()
-    } else if (error instanceof ApiError && error.status === 429) {
-      formError.value = t('auth.too_many_attempts')
-    } else {
-      formError.value = t('auth.request_failed')
-    }
-
-    await nextTick()
-    focusFirstInvalid(form.value)
-  } finally {
-    pending.value = false
-  }
+  })
 }
 </script>

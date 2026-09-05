@@ -20,17 +20,6 @@ class PartyMember extends Model
     /** @use HasFactory<PartyMemberFactory> */
     use BelongsToAccount, HasFactory;
 
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
-        ];
-    }
-
     public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class);

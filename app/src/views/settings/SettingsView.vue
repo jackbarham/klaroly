@@ -12,7 +12,7 @@
           :key="group.key"
         >
           <RouterLink
-            class="flex items-center justify-between gap-4 py-4 text-text-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus"
+            class="flex items-center justify-between gap-4 py-4 text-text-strong focus-visible:focus-ring"
             :to="{ name: group.routeName }"
           >
             {{ t(group.labelKey) }}
@@ -32,9 +32,6 @@
 // why it is a page of its own rather than a placeholder.
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
-import Card from '@/components/ui/Card.vue'
-import Icon from '@/components/ui/Icon.vue'
-import PageHeader from '@/components/ui/PageHeader.vue'
 import { settingsGroups } from '@/lib/navigation'
 
 const { t } = useI18n()

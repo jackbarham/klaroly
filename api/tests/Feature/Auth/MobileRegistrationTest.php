@@ -10,18 +10,12 @@ use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\PersonalAccessToken;
 
 /**
+ * @param  array<string, mixed>  $overrides
  * @return array<string, mixed>
  */
 function mobileRegistration(array $overrides = []): array
 {
-    return $overrides + [
-        'business_name' => 'Ellie Marsh Makeup',
-        'name' => 'Ellie Marsh',
-        'email' => 'ellie@example.com',
-        'password' => 'correct-horse-battery',
-        'password_confirmation' => 'correct-horse-battery',
-        'device_name' => 'Ellie\'s iPhone',
-    ];
+    return registration($overrides + ['device_name' => 'Ellie\'s iPhone']);
 }
 
 it('registers and answers with a token that authenticates the me endpoint', function () {

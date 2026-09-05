@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
 import SectionBand from '@/components/ui/SectionBand.vue'
-import { mount, unmount, type Mounted } from '@/lib/testMount'
+import { mountWithCleanup } from '@/lib/testMount'
 
 // A band that collapses is a button, so what is tested is that it behaves like
 // one: it says whether it is expanded, and what it controls goes away.
@@ -17,25 +17,18 @@ const Host = defineComponent({
   },
 })
 
-let mounted: Mounted | null = null
-
-afterEach(() => {
-  if (mounted) {
-    unmount(mounted)
-    mounted = null
-  }
-})
+const mount = mountWithCleanup()
 
 describe('a section band', () => {
   it('is a plain bar with its content showing when it does not collapse', async () => {
-    mounted = await mount(Host, '/')
+    const mounted = await mount(Host, '/')
 
     expect(mounted.host.querySelector('button')).toBeNull()
     expect(mounted.host.textContent).toContain('What the section is about.')
   })
 
   it('collapses and says so', async () => {
-    mounted = await mount(Host, '/', { collapsible: true })
+    const mounted = await mount(Host, '/', { collapsible: true })
 
     const button = mounted.host.querySelector('button')
 
@@ -54,7 +47,7 @@ describe('a section band', () => {
   })
 
   it('names what the button controls', async () => {
-    mounted = await mount(Host, '/', { collapsible: true })
+    const mounted = await mount(Host, '/', { collapsible: true })
 
     const button = mounted.host.querySelector('button')
     const controls = button?.getAttribute('aria-controls') ?? ''

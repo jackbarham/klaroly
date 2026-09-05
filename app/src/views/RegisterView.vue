@@ -4,7 +4,7 @@
       ref="form"
       class="space-y-6"
       novalidate
-      @submit.prevent="submit"
+      @submit.prevent="register"
     >
       <FormField
         v-slot="field"
@@ -105,7 +105,7 @@
 
       <p class="text-center text-sm">
         <RouterLink
-          class="font-medium text-accent-text hover:underline"
+          class="rounded-control font-medium text-accent-text hover:underline focus-visible:focus-ring"
           :to="{ name: 'login' }"
         >
           {{ t('auth.sign_in_link') }}
@@ -116,26 +116,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRouter } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
-import CheckboxInput from '@/components/form/CheckboxInput.vue'
-import FormError from '@/components/form/FormError.vue'
-import FormField from '@/components/form/FormField.vue'
-import TextInput from '@/components/form/TextInput.vue'
-import AppButton from '@/components/ui/AppButton.vue'
-import { ApiError } from '@/lib/api'
-import { focusFirstInvalid } from '@/lib/form'
+import { useSubmit } from '@/lib/form'
 import { deriveUsername } from '@/lib/username'
 import { useAuthStore } from '@/stores/auth'
-import type { UsernameReason } from '@/types/auth'
+import type { UsernameCheck, UsernameReason } from '@/types/auth'
 
 const { t } = useI18n()
 const router = useRouter()
 const auth = useAuthStore()
-
-const form = useTemplateRef<HTMLFormElement>('form')
+const { pending, errors, formError, submit, reject } = useSubmit()
 
 const businessName = ref('')
 const name = ref('')
@@ -143,9 +136,6 @@ const email = ref('')
 const username = ref('')
 const password = ref('')
 const marketingConsent = ref(false)
-const pending = ref(false)
-const errors = ref<Record<string, string>>({})
-const formError = ref<string | null>(null)
 
 // Until the person types in the username field themselves, it follows the
 // business name. The API derives the same thing when no username is sent.
@@ -163,7 +153,7 @@ watch(businessName, (value) => {
 // Availability is checked 300 ms after the last keystroke once there are
 // three characters. Each request is numbered so that an answer arriving
 // after a newer request was sent is ignored.
-const availability = ref<{ available: boolean, reason: UsernameReason } | null>(null)
+const availability = ref<UsernameCheck | null>(null)
 let checkTimer: ReturnType<typeof setTimeout> | null = null
 let latestCheck = 0
 
@@ -239,25 +229,15 @@ function availabilityMessage(reason: UsernameReason): string {
   }
 }
 
-async function submit(): Promise<void> {
-  if (pending.value) {
-    return
-  }
-
-  errors.value = {}
-  formError.value = null
-
+async function register(): Promise<void> {
+  // A username the live check has already turned down is not sent.
   if (availability.value !== null && !availability.value.available) {
-    errors.value = { username: availabilityMessage(availability.value.reason) }
-    await nextTick()
-    focusFirstInvalid(form.value)
+    await reject({ username: availabilityMessage(availability.value.reason) })
 
     return
   }
 
-  pending.value = true
-
-  try {
+  await submit(async () => {
     await auth.register({
       business_name: businessName.value,
       name: name.value,
@@ -267,19 +247,6 @@ async function submit(): Promise<void> {
       marketing_consent: marketingConsent.value,
     })
     await router.push('/')
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 422) {
-      errors.value = error.validationErrors()
-    } else if (error instanceof ApiError && error.status === 429) {
-      formError.value = t('auth.too_many_attempts')
-    } else {
-      formError.value = t('auth.request_failed')
-    }
-
-    await nextTick()
-    focusFirstInvalid(form.value)
-  } finally {
-    pending.value = false
-  }
+  })
 }
 </script>

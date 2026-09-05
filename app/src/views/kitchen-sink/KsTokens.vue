@@ -42,8 +42,9 @@
           Type
         </h3>
         <p class="text-xs text-text-muted">
-          Still Tailwind's own sizes. The theme file now carries a scale of its
-          own, from caption to title, and nothing has moved onto it yet.
+          The theme's own scale first, then the Tailwind sizes the components
+          still mostly use. Only body and meta have moved onto the scale so far;
+          moving the rest is the next change.
         </p>
       </div>
       <ul class="divide-y divide-border border-y border-border">
@@ -141,6 +142,7 @@
           <div
             class="h-16 rounded-control border-border-strong bg-surface-raised"
             :class="width.className"
+            :tabindex="width.className.includes('focus') ? 0 : undefined"
           />
           <p class="font-mono text-xs text-text-strong">
             {{ width.className }}

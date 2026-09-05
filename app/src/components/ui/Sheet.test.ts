@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import Sheet from '@/components/ui/Sheet.vue'
-import { mount, unmount, type Mounted } from '@/lib/testMount'
+import { element } from '@/lib/testHelpers'
+import { mountWithCleanup, type Mounted } from '@/lib/testMount'
 
 // Whether the sheet below is open. It sits out here so that a test can read
 // it: a sheet is controlled by whoever opens it, so closing means this going
@@ -33,17 +34,7 @@ const Host = defineComponent({
   },
 })
 
-let mounted: Mounted | null = null
-
-function element(host: HTMLElement, selector: string): HTMLElement {
-  const found = host.querySelector<HTMLElement>(selector)
-
-  if (found === null) {
-    throw new Error(`The test expected to find ${selector}`)
-  }
-
-  return found
-}
+const mount = mountWithCleanup()
 
 async function openSheet(): Promise<Mounted> {
   const result = await mount(Host, '/')
@@ -58,17 +49,12 @@ async function openSheet(): Promise<Mounted> {
 }
 
 afterEach(() => {
-  if (mounted) {
-    unmount(mounted)
-    mounted = null
-  }
-
   open.value = false
 })
 
 describe('the sheet', () => {
   it('opens, and puts focus on the first thing inside it', async () => {
-    mounted = await openSheet()
+    const mounted = await openSheet()
 
     expect(open.value).toBe(true)
     expect(mounted.host.querySelector('[role="dialog"]')).not.toBeNull()
@@ -76,7 +62,7 @@ describe('the sheet', () => {
   })
 
   it('closes on Escape and gives focus back to whatever opened it', async () => {
-    mounted = await openSheet()
+    const mounted = await openSheet()
 
     element(mounted.host, '[role="dialog"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     await nextTick()
@@ -87,7 +73,7 @@ describe('the sheet', () => {
   })
 
   it('closes when the scrim is clicked', async () => {
-    mounted = await openSheet()
+    const mounted = await openSheet()
 
     const scrim = element(mounted.host, '[role="dialog"]').previousElementSibling
 
@@ -101,7 +87,7 @@ describe('the sheet', () => {
   })
 
   it('keeps Tab inside the panel', async () => {
-    mounted = await openSheet()
+    const mounted = await openSheet()
 
     const dialog = element(mounted.host, '[role="dialog"]')
 

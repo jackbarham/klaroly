@@ -102,9 +102,6 @@ class Booking extends Model
             'last_touched_at' => 'immutable_datetime',
             'photo_consent_recorded_at' => 'immutable_datetime',
             'access_pin_changed_at' => 'immutable_datetime',
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
-            'deleted_at' => 'immutable_datetime',
         ];
     }
 

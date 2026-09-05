@@ -59,8 +59,6 @@
 // most of what they are.
 import { ref } from 'vue'
 import CreateMenu from '@/components/layout/CreateMenu.vue'
-import AppButton from '@/components/ui/AppButton.vue'
-import Sheet from '@/components/ui/Sheet.vue'
 
 const sheetOpen = ref(false)
 const menuOpen = ref(false)

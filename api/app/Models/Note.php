@@ -26,8 +26,6 @@ class Note extends Model
         return [
             'remind_at' => 'immutable_datetime',
             'reminded_at' => 'immutable_datetime',
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 

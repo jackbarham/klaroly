@@ -44,8 +44,6 @@ class Invoice extends Model
             'balance_due_on' => 'immutable_date',
             'reminders_snoozed_until' => 'immutable_date',
             'voided_at' => 'immutable_datetime',
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 

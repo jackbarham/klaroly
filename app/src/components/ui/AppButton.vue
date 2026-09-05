@@ -4,7 +4,6 @@
     :type="type"
     :disabled="disabled || pending"
     :aria-busy="pending ? 'true' : undefined"
-    @click="emit('click')"
   >
     <!--
       What the button says stays where it is and turns invisible, and the
@@ -48,6 +47,9 @@
 // filled accent is applied. A button never knows which screen it is on: a
 // form's submit, the sidebar's New button and a settings page's Save are all
 // the primary action, so they are all the same button.
+//
+// A click is the native event on the root element, which Vue passes through:
+// the component declares no events of its own.
 import { computed } from 'vue'
 import Icon, { type IconName } from '@/components/ui/Icon.vue'
 
@@ -64,15 +66,8 @@ const props = withDefaults(defineProps<{
 }>(), {
   variant: 'primary',
   size: 'medium',
-  icon: undefined,
   type: 'button',
-  disabled: false,
-  pending: false,
 })
-
-const emit = defineEmits<{
-  click: []
-}>()
 
 // Half opacity is how the app says unavailable, and a button doing what it
 // was asked to do is not unavailable. So the dimming belongs to disabled
@@ -83,7 +78,7 @@ const dimmed = computed(() => props.disabled && !props.pending)
 // Position is relative so the spinner can be laid over the label. The gap
 // between an icon and its label sits on the label wrapper in the template: it
 // is the one place a four pixel step is allowed, inside a single control.
-const baseClasses = 'relative inline-flex items-center justify-center rounded-control font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus disabled:cursor-not-allowed'
+const baseClasses = 'relative inline-flex items-center justify-center rounded-control font-medium transition-colors focus-visible:focus-ring disabled:cursor-not-allowed'
 
 const sizeClasses = {
   small: 'h-10 px-4 text-sm',

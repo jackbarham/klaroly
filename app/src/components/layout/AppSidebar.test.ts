@@ -1,20 +1,13 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { sidebarMain, sidebarSecondary } from '@/lib/navigation'
-import { mount, unmount, type Mounted } from '@/lib/testMount'
+import { mountWithCleanup } from '@/lib/testMount'
 
-let mounted: Mounted | null = null
-
-afterEach(() => {
-  if (mounted) {
-    unmount(mounted)
-    mounted = null
-  }
-})
+const mount = mountWithCleanup()
 
 describe('the sidebar', () => {
   it('renders one link for every entry in the navigation config and nothing else', async () => {
-    mounted = await mount(AppSidebar, '/')
+    const mounted = await mount(AppSidebar, '/')
 
     const links = mounted.host.querySelectorAll('nav a')
 
@@ -27,7 +20,7 @@ describe('the sidebar', () => {
   })
 
   it('marks the current section, on a list page and on a detail page', async () => {
-    mounted = await mount(AppSidebar, '/bookings/42')
+    const mounted = await mount(AppSidebar, '/bookings/42')
 
     const current = mounted.host.querySelectorAll('[aria-current="page"]')
 
@@ -36,7 +29,7 @@ describe('the sidebar', () => {
   })
 
   it('marks Settings while a settings group is open', async () => {
-    mounted = await mount(AppSidebar, '/settings/travel')
+    const mounted = await mount(AppSidebar, '/settings/travel')
 
     const current = mounted.host.querySelectorAll('[aria-current="page"]')
 
@@ -45,7 +38,7 @@ describe('the sidebar', () => {
   })
 
   it('is a navigation landmark with a name', async () => {
-    mounted = await mount(AppSidebar, '/')
+    const mounted = await mount(AppSidebar, '/')
 
     expect(mounted.host.querySelector('nav')?.getAttribute('aria-label')).toBe('Main')
   })

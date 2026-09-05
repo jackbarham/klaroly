@@ -44,8 +44,6 @@ class Quote extends Model
             'sent_at' => 'immutable_datetime',
             'responded_at' => 'immutable_datetime',
             'valid_until' => 'immutable_date',
-            'created_at' => 'immutable_datetime',
-            'updated_at' => 'immutable_datetime',
         ];
     }
 

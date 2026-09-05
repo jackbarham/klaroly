@@ -410,18 +410,6 @@
 // hint and with an error, so that FormField's wiring is visible rather than
 // described. Nothing here validates anything and nothing is submitted.
 import { reactive } from 'vue'
-import CheckboxInput from '@/components/form/CheckboxInput.vue'
-import DateInput from '@/components/form/DateInput.vue'
-import FormActions from '@/components/form/FormActions.vue'
-import FormError from '@/components/form/FormError.vue'
-import FormField from '@/components/form/FormField.vue'
-import FormSection from '@/components/form/FormSection.vue'
-import MoneyInput from '@/components/form/MoneyInput.vue'
-import RadioGroup from '@/components/form/RadioGroup.vue'
-import SelectInput from '@/components/form/SelectInput.vue'
-import TextArea from '@/components/form/TextArea.vue'
-import TextInput from '@/components/form/TextInput.vue'
-import ToggleSwitch from '@/components/form/ToggleSwitch.vue'
 
 // Every control needs somewhere to put what is typed. One object rather than
 // thirty separate refs, because none of it means anything: it is demo
