@@ -572,7 +572,10 @@ The service worker is registered by `src/lib/updates.ts`, the one file in
 bundle contains neither. The plugin runs in `prompt` mode: a newer build
 installs and waits, the module checks for one hourly and when the tab comes
 back into view, and the bar offers a reload rather than reloading under
-someone mid-form.
+someone mid-form. `/kitchen-sink` has a button that turns `updateAvailable`
+on so the bar can be looked at without waiting for a deploy; it reaches that
+ref through the same dynamic import inside `if (__WEB_TARGET__)`, so the
+mobile bundle is still free of it.
 
 ### Cloudflare
 

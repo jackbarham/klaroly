@@ -53,17 +53,42 @@
 
     <div class="space-y-4 text-sm text-text">
       <h3 class="text-sm font-medium text-text-strong">
-        Two components this page still does not show
+        UpdateBar
+      </h3>
+      <p>
+        It appears only when a newer build is waiting, which is not something
+        that can be arranged on demand, so this turns on the flag it watches
+        instead. The bar is already in the page: App.vue renders it on the web
+        target, fixed to the bottom of the window, so the real one appears
+        rather than a copy drawn here.
+      </p>
+      <p>
+        It stays on while you move around the app, which is the point of it,
+        and it goes away when you turn it off or reload the page. Its own
+        Reload button does what it says: it reloads.
+      </p>
+      <AppButton
+        v-if="webTarget"
+        variant="secondary"
+        size="small"
+        @click="toggleUpdateBar"
+      >
+        {{ showingUpdateBar ? 'Hide the update bar' : 'Show the update bar' }}
+      </AppButton>
+      <p v-else>
+        Not on this build. The bar belongs to the service worker, which the
+        mobile target does not have.
+      </p>
+    </div>
+
+    <div class="space-y-4 text-sm text-text">
+      <h3 class="text-sm font-medium text-text-strong">
+        The one component this page still does not show
       </h3>
       <p>
         VerificationBanner only appears for an account whose email address is
         unverified, and its button really does ask the API to send another
         email. This page makes no requests, so it is left out.
-      </p>
-      <p>
-        UpdateBar belongs to the service worker, which the mobile build does
-        not have, and it appears only when a newer build is waiting. Importing
-        it here would put it in a bundle it is deliberately kept out of.
       </p>
     </div>
   </div>
@@ -72,7 +97,30 @@
 <script setup lang="ts">
 // The frame rather than the page: the parts of the shell that are around
 // this page rather than in it.
+import { ref, type Ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AuthCard from '@/components/AuthCard.vue'
 import SettingsNav from '@/components/layout/SettingsNav.vue'
+
+// The update bar cannot be shown the way the other pieces are, because it is
+// fixed to the window and because App.vue is already rendering it. What it
+// waits for is one ref in src/lib/updates.ts, so the button sets that and the
+// real bar appears, in its real place, over whatever page you are on.
+//
+// The import is dynamic and inside the branch for the same reason it is in
+// App.vue: src/lib/updates.ts reaches for the service worker registration,
+// which only the web target has, so the mobile build must never contain it.
+const webTarget = __WEB_TARGET__
+const showingUpdateBar = ref(false)
+
+let updateAvailable: Ref<boolean> | null = null
+
+async function toggleUpdateBar(): Promise<void> {
+  if (__WEB_TARGET__) {
+    updateAvailable ??= (await import('@/lib/updates')).updateAvailable
+
+    showingUpdateBar.value = !showingUpdateBar.value
+    updateAvailable.value = showingUpdateBar.value
+  }
+}
 </script>
