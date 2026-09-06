@@ -248,10 +248,12 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-text: var(--accent-text);
   --color-accent-subtle: var(--accent-subtle);
+  --color-accent-subtle-hover: var(--accent-subtle-hover);
   --color-danger: var(--danger);
   --color-danger-hover: var(--danger-hover);
   --color-danger-solid: var(--danger-solid);
   --color-danger-subtle: var(--danger-subtle);
+  --color-danger-subtle-hover: var(--danger-subtle-hover);
   --color-danger-text: var(--danger-text);
   --color-success: var(--success);
   --color-success-subtle: var(--success-subtle);
@@ -325,11 +327,20 @@
   --accent-hover: var(--color-accent-600);
   --accent-text: var(--color-accent-600);
   --accent-subtle: var(--color-accent-50);
+  /* A tinted chip under the pointer. The hover rule in the style guide covers
+     something resting on nothing and something resting on the sunken grey, and
+     a chip rests on a tint that is neither, so it needs its own step. It is a
+     mix rather than a primitive because the accent ramp has no step between 50
+     and 300, and deriving it from the two tokens it sits between means it
+     follows the accent when the brand lands. Deeper than the resting fill, not
+     lighter, which is the same rule the filled buttons follow. */
+  --accent-subtle-hover: color-mix(in oklab, var(--accent) 8%, var(--accent-subtle));
   --danger: var(--color-danger-500);
   --danger-solid: var(--color-danger-700);
   --danger-solid-hover: var(--color-danger-800);
   --danger-hover: var(--color-danger-600);
   --danger-subtle: var(--color-danger-50);
+  --danger-subtle-hover: color-mix(in oklab, var(--danger) 8%, var(--danger-subtle));
   --danger-text: var(--color-danger-800);
   --success: var(--color-success-500);
   --success-subtle: var(--color-success-50);
@@ -439,11 +450,15 @@
   --accent-hover: var(--color-accent-400);
   --accent-text: var(--color-accent-300);
   --accent-subtle: var(--color-white-a10);
+  /* In dark every tint is a white alpha, so deepening one is the next alpha up
+     rather than a mix: a16 over a10 is the same step the surfaces take. */
+  --accent-subtle-hover: var(--color-white-a16);
   --danger: var(--color-danger-500);
   --danger-solid: var(--color-danger-700);
   --danger-solid-hover: var(--color-danger-800);
   --danger-hover: var(--color-danger-600);
   --danger-subtle: var(--color-white-a10);
+  --danger-subtle-hover: var(--color-white-a16);
   --danger-text: var(--color-danger-500);
   --success: var(--color-success-500);
   --success-subtle: var(--color-white-a10);
@@ -579,6 +594,72 @@ body {
   &:checked {
     background-image: radial-gradient(circle at center,
       var(--text-on-accent) 0 3.5px, transparent 3.5px);
+  }
+}
+
+/*
+  The chip: an action on something that already exists.
+
+  It sits beside `check` and `radio` rather than being a component for the same
+  reason those two are here: half its uses are links (Call, Text, Email, Maps,
+  all of them an ordinary href) and half are buttons (Save to phone, Edit,
+  Delete), and a component wrapping either would be a switch on the element
+  type where a class is nothing at all.
+
+  It completes a grammar the rest of the app should follow. A filled accent
+  button makes something new, a subtle accent chip acts on what is already
+  there, and the danger chip is the destructive one. Three levels of noise for
+  three levels of consequence.
+
+  The painted box is 30px, which is under the tap minimum, so a pseudo-element
+  takes the hit area to 44px without changing anything visible. That is the
+  trick the toggle already uses; the arithmetic is written out of
+  --tap-target-min and the chip's own height so there is no number here that
+  stops being true when either moves.
+
+  Focus is not in here. A chip has no edge of its own to recolour, so it takes
+  focus-visible:focus-ring in the markup like every other ringed control, and
+  keeping it out of the utility means a chip cannot quietly acquire a ring the
+  rest of the app does not draw the same way.
+*/
+@utility chip {
+  --chip-height: calc(var(--spacing) * 7.5);
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  block-size: var(--chip-height);
+  padding-inline: calc(var(--spacing) * 2.5);
+  border-radius: var(--radius-control);
+  background-color: var(--accent-subtle);
+  color: var(--accent-text);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption--line-height);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--duration-base) var(--ease-out);
+
+  &:hover {
+    background-color: var(--accent-subtle-hover);
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block: calc((var(--tap-target-min) - var(--chip-height)) / -2);
+  }
+}
+
+/* Delete, and nothing else. Written after `chip` so its fill wins. */
+@utility chip-danger {
+  background-color: var(--danger-subtle);
+  color: var(--danger-text);
+
+  &:hover {
+    background-color: var(--danger-subtle-hover);
   }
 }
 

@@ -111,15 +111,16 @@ npm test
 
 | Folder | What is in it |
 | --- | --- |
-| `lib/` | Everything that is not a component. The data layer is `api.ts` (the only caller of `fetch`) and the two modules that use its verbs, `auth.ts` and `bookings.ts`; a screen may not import any of them, and `boundary.test.ts` works out that list rather than holding one. Above it sit `verification.ts` and `form.ts`, which a screen may import because they go through a store. The rest is `platform.ts`, `navigation.ts` (the one list of destinations), `dialog.ts` (the focus trap every modal shares), `monthGrid.ts` and `dayMarks.ts` (the calendar's arithmetic), and `testMount.ts` and `testHelpers.ts` |
-| `stores/` | Pinia. `auth.ts` is the only way a screen reads or changes who is signed in; `bookings.ts` is the only way a screen reads the calendar's events |
+| `lib/` | Everything that is not a component. The data layer is `api.ts` (the only caller of `fetch`) and the two modules that use its verbs, `auth.ts` and `bookings.ts`; a screen may not import any of them, and `boundary.test.ts` works out that list rather than holding one. `contactFixtures.ts` sits in the same place for contacts and is temporary: it stands in for an endpoint that does not exist yet, only the store may call it, and it goes when the endpoint lands. Above that layer sit `verification.ts` and `form.ts`, which a screen may import because they go through a store. The rest is `platform.ts`, `navigation.ts` (the one list of destinations), `dialog.ts` (the focus trap every modal shares), `monthGrid.ts` and `dayMarks.ts` (the calendar's arithmetic), `contactList.ts` and `contactView.ts` (the contacts list's rules and its four saved view settings), and `testMount.ts` and `testHelpers.ts` |
+| `stores/` | Pinia. `auth.ts` is the only way a screen reads or changes who is signed in; `bookings.ts` is the only way a screen reads the calendar's events; `contacts.ts` is the only way a screen reads the contacts list, and it also holds the four view settings |
 | `router/` | One explicit routes array. Everything behind the sign-in is a child of the layout route |
 | `components/layout/` | The app shell: `AppLayout`, `AppSidebar`, `AppTabBar`, `CreateMenu`, `SettingsNav` |
 | `components/ui/` | PageHeader, Card, EmptyState, AppButton, IconButton, Sheet, Icon, StatusPill, ListRow, DataTable, SectionBand. Registered globally by `components/kit.ts`, so no screen imports them |
 | `components/bookings/` | The bookings screen: `MonthGrid` (presentational, and it has never heard of a booking), `BookingsCalendar`, `MonthJumpSheet`, `BookingList`, `BookingRow`. Not in the global kit, because they belong to one screen |
+| `components/contacts/` | The contacts screen: `ContactFilterBar`, `ContactViewMenu`, `ContactList`, `ContactRow`, `ContactDetail`, `ContactNotice` (a polite live region that clears itself) and `ContactDeleteDialog` (a real dialog, because a confirm must not vanish while you read it). Also not in the global kit |
 | `components/form/` | FormSection, FormField, FormActions, FormError, RadioCard and the controls, also global. FormField owns the label, hint, error and id wiring; the controls do not |
 | `views/` | One file per page. Pages that are not built yet share `PlaceholderView.vue` |
-| `types/` | The shapes the API returns: `auth.ts` for the signed-in person, `bookings.ts` for a calendar event |
+| `types/` | The shapes the API returns: `auth.ts` for the signed-in person, `bookings.ts` for a calendar event, `contacts.ts` for a contact and their bookings |
 | `locales/` | `en-GB.json`. Every user-facing string is a key here |
 | `assets/app.css` | The `@theme` block, which is where every colour, font, radius and spacing step is defined |
 
@@ -132,6 +133,15 @@ only), because the brand work has not landed yet.
 `GET /api/events` and `GET /api/events/months`, `src/stores/bookings.ts` holds
 the result, and components read the store. There are no fixtures left.
 `CLAUDE.md` covers how the two halves fit together.
+
+**The contacts screen does not, yet.** There is no contacts endpoint, so
+`src/lib/contactFixtures.ts` stands in for one behind the same seam:
+`loadContacts()` is what `src/stores/contacts.ts` calls, and components read
+the store exactly as they would afterwards. When the endpoint arrives,
+`src/lib/contacts.ts` is written the way `src/lib/bookings.ts` is, the store
+calls that instead, and the fixtures file is deleted; nothing else in the
+feature changes. `src/lib/contacts.guards.test.ts` fails if a component reaches
+past the store to those fixtures.
 
 **Signing in locally.** With the API seeded (`php artisan db:seed`), open
 http://app.klaroly.test/login and sign in as `ellie@example.com` with the

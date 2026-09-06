@@ -39,6 +39,7 @@ export type IconName =
   | 'chevron-down'
   | 'sign-out'
   | 'page'
+  | 'search'
   | 'sink'
 
 const paths: Record<IconName, string[]> = {
@@ -112,6 +113,13 @@ const paths: Record<IconName, string[]> = {
     'M5.5 6.5A1.5 1.5 0 0 1 7 5h10a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 17 19H7a1.5 1.5 0 0 1-1.5-1.5Z',
     'M9 10h6',
     'M9 14h4',
+  ],
+  // The filter field's mark. A ring and a handle, and the handle starts inside
+  // the ring's edge rather than touching it, so the two read as one shape at
+  // 20px instead of as a lollipop.
+  search: [
+    'M10.75 17a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Z',
+    'M15.4 15.4 20 20',
   ],
   // A basin with a tap over it. The tap sits left of centre and its spout
   // ends above the rim, because an arch centred on a closed box reads as a

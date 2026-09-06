@@ -223,7 +223,84 @@
   },
   "contacts": {
     "title": "Contacts",
-    "detail_title": "Contact"
+    "detail_title": "Contact",
+    "description": "Everyone who has booked you, and everyone who has asked.",
+    "loading": "Loading your contacts",
+    "failed": "Those contacts could not be loaded. Try again in a moment.",
+    "retry": "Try again",
+    "filter": {
+      "label": "Filter contacts",
+      "placeholder": "Name, number, town or venue",
+      "view_action": "Filter",
+      "view_action_label": "How this list is shown"
+    },
+    "view": {
+      "title": "How this list is shown",
+      "sort_label": "Sort",
+      "sort_recent": "Recent",
+      "sort_alpha": "A to Z",
+      "lead_label": "Rows lead with",
+      "lead_name": "The name",
+      "lead_booking": "The wedding",
+      "initials_label": "Show initials",
+      "amounts_label": "Show amounts owed"
+    },
+    "group": {
+      "upcoming": "Upcoming",
+      "this_year": "This year",
+      "last_year": "Last year",
+      "other": "Other",
+      "no_bookings": "Nothing booked yet"
+    },
+    "list": {
+      "label": "Contacts",
+      "empty": "No contacts yet. Anyone who enquires or books appears here.",
+      "no_matches": "Nobody matches that. Try a name, a town, a venue or part of a number.",
+      "no_bookings": "Enquired, never booked"
+    },
+    "pill": {
+      "overdue": "Overdue {amount}",
+      "owes": "Owes {amount}",
+      "upcoming": "Upcoming"
+    },
+    "detail": {
+      "choose": "Choose somebody to see their details.",
+      "not_found": "That contact could not be found.",
+      "back": "All contacts",
+      "phone_label": "Phone",
+      "email_label": "Email",
+      "address_label": "Address",
+      "no_phone": "No number yet",
+      "no_email": "No email address yet",
+      "no_address": "No address yet",
+      "action_call": "Call",
+      "action_call_label": "Call {name}",
+      "action_text": "Text",
+      "action_text_label": "Text {name}",
+      "action_email": "Email",
+      "action_email_label": "Email {name}",
+      "action_maps": "Maps",
+      "action_maps_label": "Open {name}’s address in Maps",
+      "bookings_title": "Bookings",
+      "no_bookings": "Nothing booked yet.",
+      "save_to_phone": "Save to phone",
+      "edit": "Edit",
+      "delete": "Delete",
+      "delete_label": "Delete {name}"
+    },
+    "delete": {
+      "blocked": "This contact cannot be deleted while they have bookings against them.",
+      "title": "Delete this contact?",
+      "confirm": "{name} will be removed. This cannot be undone.",
+      "confirm_action": "Delete",
+      "cancel": "Cancel",
+      "dismiss": "OK"
+    },
+    "format": {
+      "day_month": "d MMM",
+      "day_month_year": "d MMM yyyy",
+      "full_date": "d MMMM yyyy"
+    }
   },
   "more": {
     "title": "More"

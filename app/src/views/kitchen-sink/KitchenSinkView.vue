@@ -56,6 +56,7 @@ import KsBands from '@/views/kitchen-sink/KsBands.vue'
 import KsButtons from '@/views/kitchen-sink/KsButtons.vue'
 import KsCalendar from '@/views/kitchen-sink/KsCalendar.vue'
 import KsCards from '@/views/kitchen-sink/KsCards.vue'
+import KsChips from '@/views/kitchen-sink/KsChips.vue'
 import KsForm from '@/views/kitchen-sink/KsForm.vue'
 import KsHeaders from '@/views/kitchen-sink/KsHeaders.vue'
 import KsIcons from '@/views/kitchen-sink/KsIcons.vue'
@@ -121,6 +122,12 @@ const sections: Section[] = [
     title: 'StatusPill',
     note: 'A tone, not a state. Which booking mark or enquiry stage reads as success and which as neutral is a screen\'s decision, and no screen has made it yet.',
     component: KsPills,
+  },
+  {
+    id: 'chips',
+    title: 'The chip',
+    note: 'One class, two colours, used by every action on the contacts screen that is not a primary button. It is in src/assets/app.css beside check and radio rather than being a component, because half its uses are links and half are buttons.',
+    component: KsChips,
   },
   {
     id: 'rows',

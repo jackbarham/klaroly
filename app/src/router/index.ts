@@ -87,17 +87,30 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/PlaceholderView.vue'),
         meta: { titleKey: 'enquiries.detail_title', backTo: 'enquiries' },
       },
+      // Contacts is a list beside a detail, and both are one mount: the
+      // parent holds the filter, the list and the two columns, and the child
+      // is whatever the detail column is showing. A parent with children
+      // rather than two sibling records is what keeps the list's scroll
+      // position and the filter box intact when a row is tapped, because only
+      // the child is swapped. Both route names are the ones that already
+      // existed, so navigation.ts and routeNames.test.ts are unaffected.
       {
         path: 'contacts',
-        name: 'contacts',
-        component: () => import('@/views/PlaceholderView.vue'),
-        meta: { titleKey: 'contacts.title', backTo: 'more' },
-      },
-      {
-        path: 'contacts/:id',
-        name: 'contact',
-        component: () => import('@/views/PlaceholderView.vue'),
-        meta: { titleKey: 'contacts.detail_title', backTo: 'contacts' },
+        component: () => import('@/views/contacts/ContactsView.vue'),
+        children: [
+          {
+            path: '',
+            name: 'contacts',
+            component: () => import('@/views/contacts/ContactsIndexView.vue'),
+            meta: { titleKey: 'contacts.title', backTo: 'more' },
+          },
+          {
+            path: ':id',
+            name: 'contact',
+            component: () => import('@/views/contacts/ContactDetailView.vue'),
+            meta: { titleKey: 'contacts.detail_title', backTo: 'contacts' },
+          },
+        ],
       },
       {
         path: 'more',

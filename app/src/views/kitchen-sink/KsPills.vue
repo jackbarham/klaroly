@@ -2,7 +2,7 @@
   <div class="space-y-8">
     <div class="space-y-4">
       <h3 class="text-sm font-medium text-text">
-        The five tones
+        The six tones
       </h3>
       <div class="flex flex-wrap items-center gap-4">
         <StatusPill
@@ -15,7 +15,10 @@
       </div>
       <p class="text-xs text-text-muted">
         Neutral is Klaroly's, added because a stage such as New is not a
-        success, a warning or a failure. The other four are the guide's.
+        success, a warning or a failure. Accent is Klaroly's too, and it is the
+        one tone that is not a status: it says "this is the thing about this
+        row", which is what Contacts uses for Upcoming. The other four are the
+        guide's.
       </p>
     </div>
 
@@ -68,7 +71,7 @@
 // works where it will actually live.
 import type { PillTone } from '@/components/ui/StatusPill.vue'
 
-const tones: PillTone[] = ['neutral', 'info', 'success', 'warning', 'danger']
+const tones: PillTone[] = ['neutral', 'info', 'success', 'warning', 'danger', 'accent']
 
 interface Mark {
   label: string

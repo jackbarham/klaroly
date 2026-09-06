@@ -301,8 +301,10 @@ Hand-written routes live in `routes/api.php` under `/api`:
   on its own tells a screen reader nothing. `TextInput`'s live status mark is
   the same rule in miniature: the tick is `success-text` and the cross is the
   `danger-text` the error message uses, and the field says which in words
-  beside it. `StatusPill` reads all four families, and My account
-  is the first screen to use two of them: `warning` on an unverified email
+  beside it. `StatusPill` reads all four families plus a
+  neutral and an `accent` tone, the last of which is not a status at all and
+  says "this is the thing about this row", which is what Contacts uses for
+  Upcoming. My account is the first screen to use two of the status families: `warning` on an unverified email
   address and `info` on the device you are reading from. `danger` outside a
   form and the booking states are still to come.
 - Spacing comes off an eight pixel grid. Use Tailwind steps 2, 4, 6, 8, 10,
@@ -331,6 +333,15 @@ Hand-written routes live in `routes/api.php` under `/api`:
   `--border-width-focus` and `--border-focus`, so every ring in the app is one
   rule. A control with a visible edge recolours that edge instead, through
   `edgeClasses` in `src/components/form/field.ts`.
+- `chip` and `chip-danger` are the ninth and tenth, and they are the small
+  action on something that already exists: 30px painted, taken to the 44px
+  minimum by a pseudo-element whose arithmetic reads `--tap-target-min` and the
+  chip's own height, so no number in it stops being true when either moves.
+  They are a class rather than a component because half their uses are ordinary
+  links and half are buttons, and a component wrapping either would be a switch
+  on the element type where a class is nothing at all. Focus is deliberately
+  not in the utility: a chip carries `focus-visible:focus-ring` in the markup
+  like every other ringed control.
 - `check` and `radio` are the seventh and eighth, and they are the tick box
   and the radio drawn rather than left to the browser. A native control takes
   `accent-color` and nothing else, so its mark is the platform's: heavy, and
@@ -858,15 +869,19 @@ when it is a relative path.
 
 It also has its shell, and every route behind the sign-in exists as a page.
 Most of the shell is still furniture rather than features: apart from the
-authentication screens and the four My Account pages, **nothing in it calls
-the API**, and there is no invented data anywhere. A page that has not been
-built says so.
+authentication screens, the four My Account pages and `/bookings`, **nothing
+in it calls the API**. A page that has not been built says so. The one place
+invented data survives is `src/lib/contactFixtures.ts`, which stands in for the
+contacts endpoint and is deleted when that endpoint lands; every person, venue
+and address in it is made up, because this screen is what gets screenshotted.
 
 - The routes, all children of the layout route: `/`, `/bookings`,
-  `/bookings/:id`, `/enquiries`, `/enquiries/:id`, `/contacts`,
+  `/bookings/:id`, `/enquiries`, `/enquiries/:id`, `/contacts` and
   `/contacts/:id`, `/more`, `/help`, `/account` and its four pages,
   `/settings` and its ten groups, plus `/billing` on the web target. A detail
-  route echoes its `:id` and looks nothing up.
+  route that has not been built echoes its `:id` and looks nothing up;
+  `/contacts/:id` is a real page and is a child of `/contacts` rather than a
+  sibling, so the two share one mount.
 - Every page that has not been built is one shared `PlaceholderView.vue`: a
   header and a card saying so. A route names its title with `meta.titleKey`,
   which is also the document title, and where a phone's back link goes with
@@ -876,7 +891,8 @@ built says so.
   and an empty state), `MoreView` (the phone's overflow list and sign out),
   the settings index, `/settings/travel`, which is the one honest example of
   the form kit doing a section's work and saves nothing because there is no
-  settings API yet, all of My account, and `/bookings`.
+  settings API yet, all of My account, `/bookings`, and `/contacts` with
+  `/contacts/:id`.
 - **My account is the first section that reads and writes real data.** Its
   index is a list built from `accountGroups`, and its four pages are: your
   details, which is one form over two endpoints and sends only the half that
@@ -887,7 +903,12 @@ built says so.
   moment it is thrown and goes back if the request fails.
 - The document title comes from the route's locale key, there is a skip link
   to `<main>`, every route has one `<h1>` in it, and both navigations are
-  real `<nav>` landmarks.
+  real `<nav>` landmarks. **On Contacts that one `<h1>` is the section's, and
+  it stays "Contacts" at every width**, including a phone showing one person's
+  card. The alternative was a heading that became the person's name below the
+  split, and which of the two it is cannot be known without measuring, because
+  the split is a container query. So the card's name is an `<h2>` and the way
+  back to the list is a link at the top of it.
 
 Vitest covers what will actually break: the navigation config's derived
 lists and its idea of what is current, that both navigations render one item
@@ -901,13 +922,23 @@ sends only the half that changed and says which of its two requests failed,
 that a password mismatch is caught before any request, that the devices list
 gets its empty state, its unrevokable current row and a revoke that keeps a
 row it could not remove, and that the consent toggle sends on change and goes
-back on a failure. Then the three tests that read the source of the app rather
-than run it:
+back on a failure. On Contacts it covers the rules rather than the rendering,
+because all of them are plain functions: that recency puts an upcoming booking
+above a past one and orders upcoming ascending, that A to Z sorts on the
+surname where there is one and puts everybody without one in Other, that three
+digits match a number stored with spaces and two do not, that an unaccented
+query finds an accented name, that the second line drops what it is supposed to
+drop and keeps what it is supposed to keep, that the pill precedence holds and
+both money pills go when the setting is off, that the view settings survive a
+reload, and that they fall back to the defaults when the storage accessor
+itself throws rather than when it is merely empty. Then the four tests that
+read the source of the app rather than run it:
 `boundary.test.ts`, which stops business logic leaking into components,
 `styleRules.test.ts`, which stops a `dark:` variant, an arbitrary value or a
-hex colour reaching a component, `lib/bookings.guards.test.ts`, which stops a
-component importing the fixtures and stops a day key being built from
-`toISOString`, and `router/routeNames.test.ts`, which fails
+hex colour reaching a component, `lib/bookings.guards.test.ts` and
+`lib/contacts.guards.test.ts`, which stop a component importing either
+feature's fixtures and stop a day key being built from `toISOString`, and
+`router/routeNames.test.ts`, which fails
 if any route name written down anywhere is not a route that exists. Renaming
 a route is the change that breaks a `router.push` in a screen nobody opened,
 and a route name is a string, so nothing else can catch it. Component tests
@@ -1085,6 +1116,118 @@ moment can be written more than one way.
 
 Not built yet on that screen: the Upcoming, Past and All tabs and the status
 filter from 19.2, the clash warning from 5.2, and the booking detail screen.
+
+### The contacts screen
+
+`/contacts` is a list beside one person's card, and it is the second screen
+built against a seam rather than against the API. There is no contacts
+endpoint yet, so `src/lib/contactFixtures.ts` stands in for one: it exports
+`loadContacts()`, `src/stores/contacts.ts` is its only caller, and a component
+reaching past the store to it is a test failure rather than a convention.
+**That file is deleted when the endpoint lands**, `src/lib/contacts.ts` is
+written the way `src/lib/bookings.ts` is, and nothing else in the feature
+changes.
+
+- **A contact is the person who books and pays, and that is all.** Per schema
+  5.7 it holds a name, one email, ONE phone number and an address. Everyone
+  else on the day is a party member or a booking contact and neither appears
+  here. `src/types/contacts.ts` is the view model, in **snake_case** like
+  `types/bookings.ts` and `types/auth.ts` before it, and it imports `EventType`
+  and `BookingStage` rather than declaring them again: the wedding day is
+  `main` and there is no `wedding` value here either.
+- **`last_name` is nullable and the whole feature has to mean it.** Somebody
+  with one name sorts under that name, takes one initial rather than two, and
+  is never filed under a dash. A to Z puts everybody without a surname in one
+  final Other group rather than sprinkling them through the letters under their
+  first initial, because a list that files Anna under A next to Adebayo is a
+  list where half the As are surnames and cannot be scanned.
+- **`outstanding` is an array of `{currency, minor, overdue}`, not a figure and
+  a flag.** Schema section 8 is explicit that money is grouped by currency and
+  never summed across it, and a contact with one job abroad has a balance that
+  cannot be written as one number. The flat version had no way to say so: it
+  would have reported a figure in the wrong currency while looking correct.
+  `overdue` belongs to the amount rather than to the person, because a contact
+  can owe an overdue balance on last June's wedding and a deposit that is not
+  due until spring. `booking_count`, `next_booking` and `last_booking` are
+  computed by the API and arrive on the payload; nothing derives them in a
+  component, and `next_booking` and `last_booking` are whole objects so a list
+  payload could drop the `bookings` array entirely.
+- **One payload, and every sort, group and filter happens in the browser.** Two
+  hundred contacts after five years is about fifty kilobytes, so there is no
+  pagination, no infinite scroll, no virtualisation and no spinner. The filter
+  box is a FILTER and not a search: it narrows rows already in memory, with no
+  request, which is why it has no debounce and no minimum length.
+- **The filter's two rules that are not obvious.** A number is matched with the
+  non-digits stripped from both sides, but only once three digits have been
+  typed, because with fewer every contact whose number contains that run
+  matches and the list appears not to filter at all. Text is matched folded
+  through NFD, so an unaccented query finds an accented name.
+- **The row's second line is always the nearest booking, never the phone
+  number**, and it is shortened deliberately rather than left to truncate: the
+  event label goes when the event is the main one, the year goes when it is
+  this year, and only the part of the venue before the first comma is used. All
+  three drop the part that would survive a truncation while the identifying
+  part would not.
+- **One pill at most, in precedence order**: overdue, then owing, then a
+  confirmed future booking. Both money pills go when the amounts-owed setting
+  is off and the row then falls through to Upcoming, because switching money
+  off is a request to hide figures and not a request to hide the diary.
+- **The four view settings live on the device, in one localStorage key.** Not
+  on the account, not in a column, no request. Every read and write is wrapped,
+  and not only the parse: a private window and a browser blocking site data
+  make the accessor itself throw before there is any JSON to fail on, so a try
+  around `JSON.parse` alone would still take the screen down. Each field is
+  checked rather than cast, so a `sort` written by an older build cannot reach
+  the sort function.
+- **The list is a listbox and the filter field is its combobox.** Arrowing has
+  to leave focus in the field, so the arrow keys move a cursor the field points
+  at with `aria-activedescendant` and never move focus. Each band is a
+  `role="group"` named by its own heading, which is both the valid ARIA
+  structure and what gives each sticky heading its own containing block: in one
+  flat list every heading pins to the same line at once and only paint order
+  decides which is visible. `aria-selected` is the keyboard cursor and
+  `aria-current` is whose card is open, because on a wide screen both are on
+  screen at once and they mean different things.
+- **The split is the same container query the calendar uses**,
+  `--container-split`, on `<main>`. Below it the two columns are one at a time,
+  done by hiding one rather than by a second route. The list column is a fixed
+  **400px**, and the number was measured: at 360 three of the twenty-two demo
+  rows cut their second line, worst by 32 pixels, because a pill takes about
+  ninety; at 380 one row is still 12 short; at 400 nothing truncates. It costs
+  the detail forty pixels, which at an 834px tablet leaves it 362 and still
+  comfortable.
+- **One document scroll container, as everywhere else.** The detail is
+  `position: sticky` with `align-self: start`, so the list scrolls and the card
+  stays put with no height worked out from the viewport, and a card taller than
+  the list simply scrolls with the page, which is right.
+- **`ContactViewMenu.vue` is not `ui/Sheet.vue`, for the same reason
+  `MonthJumpSheet.vue` is not.** Sheet's desktop anchor is a closed set of two
+  fixed sidebar geometries; this hangs off a button whose position is measured,
+  right-aligned so three hundred pixels of panel stay over the list column.
+  Both call `useDialogBehaviour`. **There are now two panels of this shape and
+  that is not yet a component**: if a third arrives, or if these two turn out
+  to be the same panel, that is the moment to extract one and move both callers
+  together. Extract from two, never from one.
+- **The refusal and the confirm are two different controls.** Deleting a
+  contact with bookings is refused, because schema 5.7 restricts
+  `bookings.contact_id`, and that is said as one line at the moment Delete is
+  tapped rather than as a disabled button or standing small print. The refusal
+  is `ContactNotice.vue`, a polite live region that takes no focus and clears
+  itself after four and a half seconds. The confirm is
+  `ContactDeleteDialog.vue`, a real dialog with a focus trap and no timer,
+  because a confirm that vanishes while you are reading it decides for you, and
+  an irreversible action inside a live region is markup that tells a screen
+  reader it is a passive announcement.
+- **The chip is a class in `app.css`, beside `check` and `radio`**, not a
+  component: half its uses are ordinary links (`tel:`, `sms:`, `mailto:` and a
+  maps URL, the same at both sizes with nothing sniffing the platform) and half
+  are buttons. It completes a grammar the rest of the app should follow: a
+  filled accent button makes something new, a subtle accent chip acts on what
+  is already there, and the danger chip is destructive.
+
+Not built yet on that screen: adding, editing and saving a contact to the
+phone, which all need endpoints or flows that do not exist, and the two
+create buttons on the card, which carry the same TODO `CreateMenu` does.
 
 Not built yet: passkeys and two-factor enforcement (configured, unused),
 Sign in with Apple or Google, switching between accounts, collaborator

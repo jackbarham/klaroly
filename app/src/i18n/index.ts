@@ -22,9 +22,16 @@ const i18n = createI18n({
   // front of a number. The currency here is only the default: every amount in
   // the app sits beside its own ISO 4217 code and passes it, because an
   // account can be billing in euros.
+  //
+  // currency_whole is the same format with the pence dropped, and it is used
+  // only where the amount is already a whole number of pounds: a pill reading
+  // "Owes £450" rather than "Owes £450.00" at 12px. Anything with pence in it
+  // takes the full format, because rounding somebody's balance to make a pill
+  // tidier is lying about what they owe.
   numberFormats: {
     'en-GB': {
       currency: { style: 'currency', currency: 'GBP' },
+      currency_whole: { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 },
     },
   },
 })
