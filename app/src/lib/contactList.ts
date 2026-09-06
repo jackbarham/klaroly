@@ -1,4 +1,5 @@
-import { format, getYear, parseISO } from 'date-fns'
+import { getYear } from 'date-fns'
+import { datePlace, venueShort as shortVenue, type DatedPlace, type Translate } from '@/lib/eventLine'
 import type { Contact, ContactBooking, OutstandingAmount } from '@/types/contacts'
 import type { SortMode } from '@/lib/contactView'
 
@@ -12,11 +13,10 @@ import type { SortMode } from '@/lib/contactView'
 // today is always passed in, the way the bookings screen passes it, so that
 // every part of the screen agrees about what today is even across midnight.
 
-// The only translations this file needs are event-type words and date
-// patterns, both of which are already keys. A narrow function type rather than
-// vue-i18n's own, so a test can pass the real i18n's t and nothing here has to
-// know about a composer.
-export type Translate = (key: string) => string
+// Re-exported rather than declared twice: it is the same narrow function type
+// the shared line-writer takes, and two identical declarations are two things
+// to widen the day one of them needs a second argument.
+export type { Translate }
 
 /**
  * A string with its accents removed and its case dropped, for comparing.
@@ -58,54 +58,37 @@ export function nearestBooking(contact: Contact): ContactBooking | null {
 }
 
 /**
- * The part of a venue name before the first comma, or the town.
+ * A booking as the shared line-writer wants it.
  *
- * Venues are written down the way they answer the phone, which is often
- * "Ashgrove Manor, Little Hadham, Hertfordshire". All of that is one venue and
- * only the first part identifies it, so the rest is dropped rather than
- * truncated: at 375px, with a pill beside it, the tail is what would survive
- * and the name is what would not.
+ * The only difference is the name of one field: this payload calls it
+ * event_type and an enquiry's event calls it type, because each mirrors its own
+ * endpoint. One adapter line here is the price of both screens shortening a
+ * venue the same way.
  */
-export function venueShort(booking: ContactBooking): string | null {
-  if (booking.venue_name) {
-    return booking.venue_name.split(',')[0].trim()
+function asPlace(booking: ContactBooking): DatedPlace {
+  return {
+    type: booking.event_type,
+    date: booking.date,
+    venue_name: booking.venue_name,
+    city: booking.city,
   }
+}
 
-  return booking.city
+export function venueShort(booking: ContactBooking): string | null {
+  return shortVenue(asPlace(booking))
 }
 
 /**
  * The row's supporting line, which is always the nearest booking and never the
  * phone number.
  *
- * Three things are dropped, and each one is dropped because it is the thing
- * that would be cut off at 375px rather than because it is uninteresting: the
- * event label when the event is the main one, because a row is about a wedding
- * by default; the year when it is this year, because that is the year the
- * artist is working in; and everything after the first comma of the venue.
- *
- * So it reads "12 Sep · Ashgrove Manor", or "Trial, 15 Aug · Hertford".
- *
- * The middot is the same separator the bookings list uses for the same kind of
- * line. Two list screens in one app separating their meta with different
- * characters is the sort of drift that is invisible in a diff and obvious on a
- * phone.
+ * The shortening lives in src/lib/eventLine.ts, because the enquiries list
+ * draws the same line from a different payload and three rules measured once
+ * at 375px must not be written down twice. What stays here is which booking a
+ * contact's row is about; what moved is how a date and a place are written.
  */
 export function secondLine(booking: ContactBooking, today: Date, t: Translate): string {
-  const date = parseISO(booking.date)
-  const sameYear = getYear(date) === getYear(today)
-  const when = format(date, t(sameYear ? 'contacts.format.day_month' : 'contacts.format.day_month_year'))
-
-  // The event-type words live under bookings.event_type.*, and they are
-  // reused rather than copied: "Trial" spelled in two locale groups is two
-  // places to change it and one place to forget.
-  const head = booking.event_type === 'main'
-    ? when
-    : `${t(`bookings.event_type.${booking.event_type}`)}, ${when}`
-
-  const place = venueShort(booking)
-
-  return place ? `${head} · ${place}` : head
+  return datePlace(asPlace(booking), today, t)
 }
 
 // -- The filter -------------------------------------------------------------

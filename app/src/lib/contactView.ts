@@ -1,9 +1,17 @@
-// The four things the view menu changes, and where they are kept.
+import { boolean, oneOf, readSettings as read, writeSettings as write, type Checks } from '@/lib/viewSettings'
+
+// The four things the contacts view menu changes.
 //
-// They are a property of this device rather than of the account: they say how
-// one person likes to read their own list, not anything about the business, so
-// there is no column, no request and nothing to synchronise. One key holding
-// one object, so a fifth setting is a field rather than a fifth key.
+// The mechanism is src/lib/viewSettings.ts, which the enquiries menu uses too:
+// the wrapped accessor, the field-by-field checking and the write that
+// swallows its own failure are the same in both and would drift if they were
+// written twice. What is here is this screen's own values, and none of them is
+// shared: nothing in the enquiries menu sorts by recency or leads with a
+// booking.
+//
+// This file keeps its own readSettings and writeSettings rather than making
+// every caller pass the key and the checks, so the store reads exactly as it
+// did and this remains the one place a contacts setting is described.
 
 // How the list is ordered. Recency is the working order, with the next job at
 // the top; A to Z is for finding somebody whose name you know.
@@ -31,62 +39,19 @@ export const defaultSettings: ViewSettings = {
   showAmounts: true,
 }
 
-function isSortMode(value: unknown): value is SortMode {
-  return value === 'recent' || value === 'alpha'
+// One check per field, so a `sort` of "surname" written by an older build, or
+// by something else on this origin, cannot reach the sort function.
+const checks: Checks<ViewSettings> = {
+  sort: oneOf('recent', 'alpha'),
+  leadWith: oneOf('name', 'booking'),
+  showInitials: boolean,
+  showAmounts: boolean,
 }
 
-function isLeadWith(value: unknown): value is LeadWith {
-  return value === 'name' || value === 'booking'
-}
-
-function boolean(value: unknown, fallback: boolean): boolean {
-  return typeof value === 'boolean' ? value : fallback
-}
-
-/**
- * The settings as they were left, or the defaults.
- *
- * Every read is wrapped, and not only the parse. A private window, a browser
- * set to block site data and a thumbnail renderer all make the accessor itself
- * throw on the way in, before there is any JSON to fail on, so a try around
- * JSON.parse alone would still take the screen down. The value is also checked
- * field by field rather than cast, because what comes back is a string written
- * by an older version of this app or by something else on the same origin, and
- * a `sort` of "surname" would otherwise reach the sort function.
- */
 export function readSettings(): ViewSettings {
-  try {
-    const stored = window.localStorage.getItem(storageKey)
-
-    if (stored === null) {
-      return { ...defaultSettings }
-    }
-
-    const parsed: unknown = JSON.parse(stored)
-
-    if (typeof parsed !== 'object' || parsed === null) {
-      return { ...defaultSettings }
-    }
-
-    const values = parsed as Partial<Record<keyof ViewSettings, unknown>>
-
-    return {
-      sort: isSortMode(values.sort) ? values.sort : defaultSettings.sort,
-      leadWith: isLeadWith(values.leadWith) ? values.leadWith : defaultSettings.leadWith,
-      showInitials: boolean(values.showInitials, defaultSettings.showInitials),
-      showAmounts: boolean(values.showAmounts, defaultSettings.showAmounts),
-    }
-  } catch {
-    return { ...defaultSettings }
-  }
+  return read(storageKey, defaultSettings, checks)
 }
 
-// Failing to remember a preference is not worth telling anybody about: the
-// setting still took effect, it simply will not survive the reload.
 export function writeSettings(settings: ViewSettings): void {
-  try {
-    window.localStorage.setItem(storageKey, JSON.stringify(settings))
-  } catch {
-    // Nothing to do and nothing to say.
-  }
+  write(storageKey, settings)
 }

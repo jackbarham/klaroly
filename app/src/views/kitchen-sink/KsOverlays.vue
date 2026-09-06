@@ -156,6 +156,27 @@
 
     <div class="space-y-2">
       <p class="text-xs font-medium text-text-muted">
+        Notice. A reply to something just tapped: it reports, it needs no
+        answer, and it goes away on its own after four and a half seconds. It
+        takes no focus, which is why it is a polite live region rather than a
+        dialog. It moved here from components/contacts when the enquiries
+        screen wanted one, which is the condition its own docblock named while
+        it was still local.
+      </p>
+      <AppButton
+        variant="secondary"
+        @click="noticeOpen = true"
+      >
+        Show a notice
+      </AppButton>
+      <Notice
+        v-model:open="noticeOpen"
+        message="Imogen Hartwell is now a provisional booking. Nothing was copied and nothing was lost."
+      />
+    </div>
+
+    <div class="space-y-2">
+      <p class="text-xs font-medium text-text-muted">
         AccountMenu, which is that lower anchor with the way out in it. The
         sidebar's account row opens the real one; this is a second copy and
         its Sign out really does sign out, so it is here to be looked at
@@ -183,6 +204,7 @@ const sheetOpen = ref(false)
 const menuOpen = ref(false)
 const anchoredOpen = ref(false)
 const accountOpen = ref(false)
+const noticeOpen = ref(false)
 
 const leftOpen = ref(false)
 const rightOpen = ref(false)

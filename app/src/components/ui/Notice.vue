@@ -27,7 +27,7 @@
             type="button"
             @click="open = false"
           >
-            {{ t('contacts.delete.dismiss') }}
+            {{ t('common.dismiss') }}
           </button>
         </div>
       </Transition>
@@ -52,8 +52,10 @@
 // frame reads as something the system is telling you rather than as an answer
 // to a button you pressed a second ago.
 //
-// It is local to Contacts. If a second screen wants one, that is the moment it
-// moves to components/ui, with both callers changing together.
+// It moved here from components/contacts when the enquiries screen wanted one,
+// which is the condition its own docblock named while it was still local. That
+// is worth keeping as a habit rather than only as a fact: a component that
+// writes down when it should move turns a judgement call into a lookup.
 import { onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 

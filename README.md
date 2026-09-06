@@ -115,9 +115,10 @@ npm test
 | `stores/` | Pinia. `auth.ts` is the only way a screen reads or changes who is signed in; `bookings.ts` is the only way a screen reads the calendar's events; `contacts.ts` is the only way a screen reads the contacts list, and it also holds the four view settings |
 | `router/` | One explicit routes array. Everything behind the sign-in is a child of the layout route |
 | `components/layout/` | The app shell: `AppLayout`, `AppSidebar`, `AppTabBar`, `CreateMenu`, `SettingsNav` |
-| `components/ui/` | PageHeader, Card, EmptyState, AppButton, IconButton, Sheet, AnchoredSheet, Icon, StatusPill, ListRow, DataTable, SectionBand. Registered globally by `components/kit.ts`, so no screen imports them. `Sheet` and `AnchoredSheet` are the two panel shapes: Sheet opens at one of two fixed sidebar geometries, AnchoredSheet under a trigger whose rectangle it measures |
+| `components/ui/` | PageHeader, Card, EmptyState, AppButton, IconButton, Sheet, AnchoredSheet, Notice, Icon, StatusPill, ListRow, DataTable, SectionBand. Registered globally by `components/kit.ts`, so no screen imports them. `Sheet` and `AnchoredSheet` are the two panel shapes: Sheet opens at one of two fixed sidebar geometries, AnchoredSheet under a trigger whose rectangle it measures |
 | `components/bookings/` | The bookings screen: `MonthGrid` (presentational, and it has never heard of a booking), `BookingsCalendar`, `MonthJumpSheet`, `BookingList`, `BookingRow`. Not in the global kit, because they belong to one screen |
-| `components/contacts/` | The contacts screen: `ContactFilterBar`, `ContactViewMenu`, `ContactList`, `ContactRow`, `ContactDetail`, `ContactNotice` (a polite live region that clears itself) and `ContactDeleteDialog` (a real dialog, because a confirm must not vanish while you read it). Also not in the global kit |
+| `components/enquiries/` | The enquiries screen: `EnquiryFilterBar`, `EnquiryViewMenu`, `EnquiryList`, `EnquiryRow`, `EnquiryStageSheet` (the stage change, which is the interaction the feature turns on) and `EnquiryDetail`. Not in the global kit |
+| `components/contacts/` | The contacts screen: `ContactFilterBar`, `ContactViewMenu`, `ContactList`, `ContactRow`, `ContactDetail` and `ContactDeleteDialog` (a real dialog, because a confirm must not vanish while you read it). Also not in the global kit |
 | `components/form/` | FormSection, FormField, FormActions, FormError, RadioCard and the controls, also global. FormField owns the label, hint, error and id wiring; the controls do not |
 | `views/` | One file per page. Pages that are not built yet share `PlaceholderView.vue` |
 | `types/` | The shapes the API returns: `auth.ts` for the signed-in person, `bookings.ts` for a calendar event, `contacts.ts` for a contact and their bookings |
@@ -146,24 +147,21 @@ entry becomes `amount_minor` / `is_overdue` / `is_account_currency`, a booking's
 `src/lib/contacts.guards.test.ts` fails if a component reaches past the store to
 those fixtures.
 
-**The enquiries screen has its endpoints and no screen yet.** Three of them.
-`GET /api/enquiries` returns every booking at an enquiry stage, one row per
-enquiry rather than one per event, ordered by neglect: the ones nobody has
-looked at first, then the ones nobody has touched for longest, with the archive
-last. `GET /api/enquiries/{booking}` is that row opened, adding the message the
-enquiry arrived with, the party size and the note stream.
+**The enquiries screen reads all three of its endpoints.** `GET /api/enquiries`
+returns every booking at an enquiry stage, one row per enquiry rather than one
+per event, ordered by neglect; `GET /api/enquiries/{booking}` is that row opened,
+adding the message the enquiry arrived with, the party size and the note stream;
 `PATCH /api/enquiries/{booking}` takes a stage, and a reason when that stage is
-lost, and answers with the detail shape so the screen replaces what it is
-holding rather than refetching. It is the only way a record crosses the line
-between the two lists.
+lost, and it is the only way a record crosses the line between the two lists.
+`src/lib/enquiries.ts` calls all three, `src/stores/enquiries.ts` holds the list
+and the one record open, and components read the store.
 
-`/enquiries` is still `PlaceholderView.vue`. Prompt 18 writes
-`src/types/enquiries.ts` against the key constants in `api/tests/Pest.php`, then
-`src/lib/enquiries.ts` the way `src/lib/bookings.ts` is written. `CLAUDE.md`
-covers what is on the payload and why, including the `clash` counts, the
-`lost_reason` enum, the nullable `total_minor` and the one asymmetry worth
-knowing before you meet it: after converting, the client holds an object it may
-PATCH back but may not GET.
+The list is one payload and the detail is a second request, and the split is
+deliberate: a pasted WhatsApp thread across five hundred rows is not a list
+payload, so the list is the half that has to work with no signal. `CLAUDE.md`
+covers the rest, including why this list is not a listbox and the one asymmetry
+worth knowing before you meet it: after converting, the client holds an object
+it may PATCH back but may not GET.
 
 **Signing in locally.** With the API seeded (`php artisan db:seed`), open
 http://app.klaroly.test/login and sign in as `ellie@example.com` with the

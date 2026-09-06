@@ -83,11 +83,27 @@ const props = defineProps<{
   // the viewport as well as the rectangle. The moment to revisit that is a
   // caller that cannot answer the question, not simply a fourth caller.
   align: 'left' | 'right'
-  // The panel's width at lg. Below lg it is the full width of the viewport, so
-  // this only ever applies to the anchored presentation.
-  //
-  // Required rather than defaulted: the callers are split between widths, so a
-  // default would be one of them promoted to a rule by accident.
+  /**
+   * The panel's width at lg, as a Tailwind width utility and nothing else:
+   * `lg:w-75`, `lg:w-80`, `lg:w-88`. Below lg the panel is the full width of
+   * the viewport, so it only ever applies to the anchored presentation.
+   *
+   * Required rather than defaulted, because the callers are split between
+   * widths and a default would promote one of them to a rule by accident.
+   *
+   * **A string rather than a named set, and that is settled.** Four callers
+   * want three widths, and each is an independent constraint rather than a
+   * taste: the month jump needs 320 because three 96px month cells plus their
+   * gaps come to it, the two view menus need 300 to stay over a 400px list
+   * column, and the stage sheet needs 352 because its rows carry a second line
+   * of explanation. Collapsing them would mean failing one of those
+   * constraints to tidy a prop, and naming all three would be the size scale
+   * this component deliberately does not have.
+   *
+   * The signal to revisit is not a fifth caller. It is a fifth caller wanting
+   * a FOURTH width, which would mean the panel is being asked to be more than
+   * one thing.
+   */
   widthClass: string
 }>()
 
@@ -97,7 +113,13 @@ const panel = useTemplateRef<HTMLElement>('panel')
 
 // Escape closes, Tab cycles inside the panel, and closing gives focus back to
 // whatever opened it.
-const { onKeydown } = useDialogBehaviour(panel, open)
+const { onKeydown, refocus } = useDialogBehaviour(panel, open)
+
+// For a caller that swaps what is inside the panel while it is open. It owns
+// the composable, so it is the only thing that can hand this on, and a caller
+// finding its own first focusable element would be a second copy of the one
+// interesting line in useDialogBehaviour. See the note there.
+defineExpose({ refocus })
 
 // The gap between the trigger's bottom edge and the top of the panel, in
 // pixels, which is what docs/style-guide.md asks for between a menu and the

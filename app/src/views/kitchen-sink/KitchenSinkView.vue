@@ -142,7 +142,7 @@ const sections: Section[] = [
   },
   {
     id: 'overlays',
-    title: 'Sheet, AnchoredSheet and the menus',
+    title: 'Sheet, AnchoredSheet, Notice and the menus',
     note: 'Two panel shapes, and the difference only shows at lg. Sheet opens at one of two fixed geometries in the sidebar\'s column; AnchoredSheet hangs under the button that opened it, at a rectangle measured when it opened, which is why the two are separate components rather than one with a flag.',
     component: KsOverlays,
   },

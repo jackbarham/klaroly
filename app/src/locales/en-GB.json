@@ -9,7 +9,8 @@
     "not_built_yet": "This section is not built yet.",
     "reference": "Reference {id}",
     "too_many_attempts": "Too many attempts. Wait a minute and try again.",
-    "request_failed": "Something went wrong. Check your connection and try again."
+    "request_failed": "Something went wrong. Check your connection and try again.",
+    "dismiss": "OK"
   },
   "nav": {
     "primary_label": "Main",
@@ -219,7 +220,156 @@
   },
   "enquiries": {
     "title": "Enquiries",
-    "detail_title": "Enquiry"
+    "detail_title": "Enquiry",
+    "description": "Everyone who has asked, and how long they have been waiting.",
+    "loading": "Loading your enquiries",
+    "failed": "Those enquiries could not be loaded. Try again in a moment.",
+    "retry": "Try again",
+    "filter": {
+      "label": "Filter enquiries",
+      "placeholder": "Name, venue, stage or source",
+      "view_action": "Filter",
+      "view_action_label": "How this list is shown"
+    },
+    "list": {
+      "label": "Enquiries",
+      "empty": "No enquiries yet. When somebody asks, they will appear here.",
+      "no_matches": "Nobody matches that."
+    },
+    "row": {
+      "no_date": "No date yet",
+      "and_a_trial": "and a trial",
+      "no_price": "No price yet",
+      "stage_action": "Change the stage, currently {stage}",
+      "touched": "Last touched {ago}"
+    },
+    "ago": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "days": "{count} days",
+      "weeks": "{count} weeks | {count} weeks",
+      "months": "{count} months | {count} months"
+    },
+    "group": {
+      "unseen": "Not looked at yet",
+      "cold": "Gone quiet",
+      "over_a_week": "Over a week",
+      "this_week": "This week",
+      "recent": "Today and yesterday",
+      "this_month": "This month",
+      "next_three": "Next three months",
+      "later": "Later",
+      "no_date": "No date yet",
+      "lost": "Not going ahead"
+    },
+    "clash": {
+      "booked_and_others": "Booked, and one other wants it | Booked, and {count} others want it",
+      "booked": "You are already booked",
+      "pencilled_and_others": "Pencilled in, and one other wants it | Pencilled in, and {count} others want it",
+      "pencilled": "Pencilled in for someone else",
+      "others": "One other wants this date | {count} others want this date",
+      "long": "This date already carries other work. Ring the ones that were live recently first."
+    },
+    "source": {
+      "manual": "Added by you",
+      "web_form": "From the website",
+      "forwarded_email": "Forwarded email",
+      "voice_note": "Voice note",
+      "captured_at_event": "Met at a booking",
+      "other": "Another way",
+      "met_at": "Met at {name}"
+    },
+    "view": {
+      "title": "How this list is shown",
+      "sort_label": "Sort",
+      "sort_staleness": "Neglect",
+      "sort_stage": "Stage",
+      "sort_date": "Wedding date",
+      "source_label": "Show where it came from",
+      "totals_label": "Show quoted totals",
+      "clashes_label": "Show date clashes",
+      "lost_label": "Show ones not going ahead"
+    },
+    "stage_sheet": {
+      "title": "Move {name}",
+      "reasons_title": "Why is it not going ahead?",
+      "back": "Back",
+      "convert": "Convert to booking",
+      "convert_hint": "Provisional, and reversible until something is signed",
+      "end": "This one is not going ahead",
+      "end_hint": "Kept, with a reason, so it still counts",
+      "side_client": "They ended it",
+      "side_artist": "You turned it down"
+    },
+    "stage_hint": {
+      "new": "Arrived, not yet looked at",
+      "in_conversation": "Talking, nothing firm",
+      "possible": "Holds the date softly",
+      "quoted": "Price sent, waiting on an answer"
+    },
+    "lost_reason": {
+      "went_elsewhere": "Went with someone else",
+      "too_expensive": "Too expensive",
+      "wedding_off": "Wedding not going ahead",
+      "no_reply": "Never heard back",
+      "client_other": "Another reason",
+      "already_booked": "Already booked that day",
+      "too_far": "Too far to travel",
+      "not_right_fit": "Not the right fit",
+      "artist_other": "Another reason"
+    },
+    "lost_pill": {
+      "client": "Lost",
+      "artist": "Turned down"
+    },
+    "moved": {
+      "possible": "{name} moved to Possible, and the date is now held softly.",
+      "converted": "{name} is now a provisional booking. Nothing was copied and nothing was lost.",
+      "ended": "{name} is filed as not going ahead.",
+      "stage": "{name} moved to {stage}.",
+      "failed": "That change could not be saved. Try again in a moment."
+    },
+    "detail": {
+      "back": "All enquiries",
+      "choose": "Choose an enquiry to see it here.",
+      "not_found": "That enquiry could not be found.",
+      "failed": "That enquiry could not be loaded. Try again in a moment.",
+      "said_title": "What they said",
+      "source_label": "Came from",
+      "party": "{count} people",
+      "party_one": "One person",
+      "no_party": "Nobody added yet",
+      "nothing_here": "Nothing here yet",
+      "to_come": "Price appears once this moves to Possible. Payments, the intake form, agreement, messages and photos appear once this becomes a booking.",
+      "action_possible": "Move to Possible",
+      "action_quote": "Build a price",
+      "action_convert": "Convert to booking",
+      "action_reopen": "Reopen this enquiry"
+    },
+    "section": {
+      "dates": "Dates and venue",
+      "party": "Party",
+      "price": "Price",
+      "payments": "Payments",
+      "details": "Details",
+      "agreement": "Agreement",
+      "messages": "Messages",
+      "photos": "Photos",
+      "notes": "Notes",
+      "activity": "Activity"
+    },
+    "empty": {
+      "dates": "No date agreed yet",
+      "party": "Nobody added yet",
+      "price": "Nothing priced yet",
+      "payments": "No invoice yet",
+      "details": "No form sent yet",
+      "agreement": "No agreement yet",
+      "messages": "Nothing sent yet",
+      "photos": "No photographs yet",
+      "notes": "No notes yet",
+      "activity": "Nothing recorded yet"
+    }
   },
   "contacts": {
     "title": "Contacts",

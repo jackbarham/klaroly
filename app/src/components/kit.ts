@@ -20,6 +20,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import Icon from '@/components/ui/Icon.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import ListRow from '@/components/ui/ListRow.vue'
+import Notice from '@/components/ui/Notice.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionBand from '@/components/ui/SectionBand.vue'
 import Sheet from '@/components/ui/Sheet.vue'
@@ -49,6 +50,7 @@ export const kit = {
   IconButton,
   ListRow,
   MoneyInput,
+  Notice,
   PageHeader,
   RadioCard,
   RadioGroup,

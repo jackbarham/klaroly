@@ -94,6 +94,7 @@ describe('components and views', () => {
     expect(dataModules).toContain('api')
     expect(dataModules).toContain('auth')
     expect(dataModules).toContain('bookings')
+    expect(dataModules).toContain('enquiries')
     expect(dataModules).not.toContain('verification')
   })
 

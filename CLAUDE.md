@@ -483,7 +483,8 @@ screen.
 ### The UI kit and the form kit
 
 `src/components/ui` is PageHeader, Card, EmptyState, AppButton, IconButton,
-Sheet, AnchoredSheet, Icon, StatusPill, ListRow, DataTable and SectionBand. `AppButton` is
+Sheet, AnchoredSheet, Notice, Icon, StatusPill, ListRow, DataTable and
+SectionBand. `AppButton` is
 the only button component in the app: anything that looks like a button is
 that with a different variant or size. A click on it, or on `IconButton`, is
 the native event on the root element; neither declares an event of its own.
@@ -506,7 +507,16 @@ exactly what it exists to own: two callers writing their own
 Its props are `label` (an already-resolved translation key), `anchorTo`, `align`
 and `widthClass`, the last two required with no default because the callers are
 split between values and a default would promote one of them to a rule by
-accident. **`align` is not a placement variant and must not grow into one**: a
+accident. **`widthClass` stays a Tailwind width utility rather than a named
+set**, and that is settled rather than deferred: four callers want three widths,
+and each is an independent constraint rather than a taste. The month jump needs
+320 because three 96px month cells plus their gaps come to it; the two view
+menus need 300 to stay over a 400px list column; the stage sheet needs 352
+because its rows carry a second line of explanation. Collapsing them to two
+would mean failing one of those to tidy a prop, and naming all three would be
+the size scale this component deliberately does not have. **The signal to
+revisit is a fifth caller wanting a FOURTH width**, which would mean the panel
+is being asked to be more than one thing. **`align` is not a placement variant and must not grow into one**: a
 variant is a caller's choice about appearance and it multiplies, whereas this is
 a fact about where the trigger sits, in the same category as `anchorTo` itself.
 `anchorTo` says which rectangle and `align` says which of its two vertical
@@ -974,8 +984,9 @@ and address in it is made up, because this screen is what gets screenshotted.
   and an empty state), `MoreView` (the phone's overflow list and sign out),
   the settings index, `/settings/travel`, which is the one honest example of
   the form kit doing a section's work and saves nothing because there is no
-  settings API yet, all of My account, `/bookings`, and `/contacts` with
-  `/contacts/:id`.
+  settings API yet, all of My account, `/bookings`, `/contacts` with
+  `/contacts/:id`, and `/enquiries` with `/enquiries/:id`, which is the first
+  screen in the app that writes to a booking.
 - **My account is the first section that reads and writes real data.** Its
   index is a list built from `accountGroups`, and its four pages are: your
   details, which is one form over two endpoints and sends only the half that
@@ -1028,6 +1039,123 @@ and a route name is a string, so nothing else can catch it. Component tests
 mount through `src/lib/testMount.ts`, a few lines of `createApp` with the
 real router, i18n, pinia and the global kit, because there is no component
 testing library and there is not going to be one.
+
+### The enquiries screen
+
+`/enquiries` is a list beside one enquiry's card, the third screen on the
+contacts shape and the first that reads two endpoints.
+
+- **The list is not a listbox, and that is the one thing here not to copy from
+  contacts.** Business logic 5.1 puts a control inside the row, the stage pill,
+  and an ARIA option may not contain interactive content: a button inside one
+  is either flattened out of the accessibility tree or stops its parent being
+  an option, and which a browser does is not ours to choose (decision 240).
+  Worse, the pattern could never reach the pill anyway, because
+  `aria-activedescendant` moves a virtual cursor and a control needs real
+  focus. So it is a plain `role="list"` of `role="listitem"`, each row's main
+  target a real link, the pill a real button whose click never reaches it, and
+  a roving tabindex moving real focus. The filter field is an ordinary search
+  input with no combobox role. `src/lib/enquiries.guards.test.ts` fails if a
+  listbox, an option or an `aria-activedescendant` ever appears in the feature,
+  because the next person building a list here will open `ContactList.vue`
+  first.
+- **Two requests, and they are two for different reasons.** `GET /api/enquiries`
+  is one payload held whole in memory, with every sort, group and filter in the
+  browser: no pagination, no virtualisation, no debounce and no spinner, which
+  is what makes it work with no signal. `GET /api/enquiries/{id}` is a second
+  request because it carries the original message, and five hundred pasted
+  WhatsApp threads is not a list payload. **Opening a row draws the header from
+  the list row it already has** and fills the rest in when the detail arrives;
+  every field in 19.3's header is on the row, so there is no empty state and no
+  spinner in between.
+- **Three orders, and the default is neglect.** Staleness runs oldest-touched
+  first in bands, with a pinned group of `new` above all of them, newest first
+  (decision 236): a brand new enquiry has the freshest timestamp in the list and
+  would sort to the bottom, which is exactly backwards, because it is the one
+  nobody has looked at. Stage runs the pipeline, oldest-touched inside each.
+  Wedding date runs soonest first. `lost` comes out before any of the three and
+  goes back on the end under "Not going ahead", because left in it would sort
+  into Gone quiet and read as work to do; the heading cannot be "Closed",
+  which is taken by done and paid.
+- **Gone quiet is not computed here.** A row is in that band when its
+  `waiting_on` is `artist_enquiry_cold`, which the server resolved. The other
+  two boundaries are fixed at two and eight days. The threshold never reaches
+  the client, which is the point: it is one number read once, on the server, and
+  this screen cannot disagree with the Home attention block about it. A test
+  puts a forty-day-old row with a null `waiting_on` in a warmer band, which is
+  the assertion a client-side threshold would fail.
+- **Colour on the row means attention, not stage.** Warning and danger are
+  reserved for the staleness figure and the clash line, and the stages take the
+  quieter families: accent for New, because "nobody has looked at this" is the
+  one stage that is a call to act, then neutral, info and success in pipeline
+  order (decision 2026-09-06.1803). An earlier version had Possible on warning
+  and it read as an alarm about a good thing, because `--warning-text` is
+  `--color-warning-800` and reads red.
+- **The stage pill IS the control** (decision 2026-09-06.1802). Tapping it opens
+  a sheet with the four live stages, a rule, then Convert to booking and This
+  one is not going ahead. Making the thing the eye already goes to tappable
+  costs nothing on the row; a named advance chip beside it truncated five more
+  second lines out of fourteen at 375px.
+- **The ending is a second view inside the same sheet**, listing the nine
+  reasons under two headings. The heading carries the side, so no reason has to
+  name who did it, and the two rows both reading "Another reason" are not a
+  duplication: which heading a reason sits under is the fact being recorded.
+  Endings are two taps deliberately: 5.1 asks for one tap to Possible and
+  nothing asks for one tap to an ending.
+- **A sheet that swaps its own contents calls `refocus()`** (decision
+  2026-09-06.1513). Going back from the reasons view hides the Back button, and
+  if that button had focus, focus falls to the body and Escape silently stops
+  closing the sheet. `useDialogBehaviour` exposes `refocus()` and
+  `AnchoredSheet` hands it on, so the mechanism stays where finding the first
+  focusable element already lives and the decision stays with the only thing
+  that knows its content changed. A test asserts it, and fails without it.
+- **The second line is always the date and the place, and "No date yet" is a
+  first-class value.** A row that says nothing where a date goes reads as a bug
+  in the app rather than as a fact about the wedding. The shortening is
+  `src/lib/eventLine.ts`, shared with the contacts row, because those three
+  rules were measured once at 375px. "and a trial" is appended from the
+  payload's `has_trial`, which the row cannot work out from `event`: that
+  carries the main day, so a booking with a trial in March and the wedding in
+  May would otherwise look exactly like one with no trial.
+- **`total_minor` null and zero are different facts and this screen is the
+  first to render the difference.** No figure at all on a row nobody has
+  priced, "No price yet" on its detail, and "£0" for a job somebody is doing
+  for nothing.
+- **The clash line describes the DATE, not the record.** It appears on a row
+  whose own stage holds no calendar mark: an enquiry at `in_conversation`
+  carries nothing per `strengthByStage`, and it still reports the confirmed
+  booking and the two others on its Saturday. A deliberate departure from the
+  calendar's rule. Five wordings, cut down because "Already booked, and two
+  others want this date" truncates on every frame including the 400px column.
+  It is not a warning and it prevents nothing.
+- **The detail is the booking screen, not a second layout.** Business logic 4.3
+  is one bookings table with a stage column, so there is no enquiry detail to
+  keep in step with a booking one; what this renders is 19.3's header and
+  summary against a record where most of it is empty. **A section appears when
+  the stage makes it the next useful thing and carries the action when it is
+  empty** (decision 2026-09-06.1806), and one sentence at the foot says what is
+  still to come rather than nine empty headings pushing the five-in-the-morning
+  summary below the fold.
+- **The feature map is checked before the stage, and that is not an
+  optimisation.** Business logic 21 and 6: with invoicing off nothing is ever
+  waiting on a deposit, so a section for a switched-off feature is never drawn
+  at any stage. Gating the other way round would draw one the moment a record
+  converted. `src/lib/enquirySections.ts` owns both rules and is tested without
+  mounting anything.
+- **Five view settings on the device**, in one localStorage key: the sort, and
+  switches for the source line, the quoted totals, the clash line and the
+  archive. The mechanism is `src/lib/viewSettings.ts`, shared with contacts;
+  none of the values is. Five is close to the limit for one menu and a sixth
+  needs an argument.
+- **Both panels are `AnchoredSheet`, both `align="right"`**, because the view
+  button sits at the right of the list column and so does the stage pill on a
+  row.
+
+Not built yet on that screen: the price flow behind "Build a price", adding an
+enquiry, and the follow-up reminder from 5.6.4. Deliberately not built:
+bulk actions with a checkbox column, saved filters, replying from the list and
+source analytics, all of which are what a list like this grows by default and
+which thirty rows do not need.
 
 ### The bookings endpoints
 
@@ -1600,6 +1728,14 @@ changes.
   confirmed future booking. Both money pills go when the amounts-owed setting
   is off and the row then falls through to Upcoming, because switching money
   off is a request to hide figures and not a request to hide the diary.
+- **The line-shortening and the settings mechanism are both shared now.**
+  `venueShort` and the date-and-place line moved to `src/lib/eventLine.ts` when
+  the enquiries row needed the same three rules, and the localStorage reader
+  moved to `src/lib/viewSettings.ts` when the enquiries menu needed the same
+  wrapped accessor and per-field checking. Both kept `contactList.ts` and
+  `contactView.ts`'s public surfaces exactly, so every contacts test passes
+  unchanged, which is the bar an extraction has to clear: one that edits its
+  own tests has stopped being one.
 - **The four view settings live on the device, in one localStorage key.** Not
   on the account, not in a column, no request. Every read and write is wrapped,
   and not only the parse: a private window and a browser blocking site data

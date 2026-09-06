@@ -24,6 +24,9 @@ const selector = 'a[href], button:not([disabled]), input:not([disabled]), select
 export interface DialogBehaviour {
   // Bind this to the panel's container as @keydown.
   onKeydown: (event: KeyboardEvent) => void
+  // Put focus back on the first thing in the panel, for a panel that swaps its
+  // own contents while it is open. See the note on the function below.
+  refocus: () => Promise<void>
 }
 
 export function useDialogBehaviour(
@@ -39,6 +42,35 @@ export function useDialogBehaviour(
     }
 
     return Array.from(panel.value.querySelectorAll<HTMLElement>(selector))
+  }
+
+  /**
+   * Focus the first focusable thing in the panel, or the panel itself.
+   *
+   * Called on open, and callable again by a panel that replaces what is inside
+   * it. The enquiries stage sheet is two views in one panel, and going back
+   * from the second hides the button that was focused: focus then falls to the
+   * body, the keydown handler on the panel stops seeing anything, and Escape
+   * silently stops closing the sheet.
+   *
+   * **It is exposed rather than triggered from in here.** Watching the panel's
+   * contents would mean this file guessing when a caller meant to move focus,
+   * and a caller doing its own element-finding would be a second copy of the
+   * only interesting line in it. So the mechanism stays here and the decision
+   * stays with the only thing that knows its content changed.
+   */
+  async function refocus(): Promise<void> {
+    await nextTick()
+
+    const items = focusable()
+
+    if (items.length > 0) {
+      items[0].focus()
+
+      return
+    }
+
+    panel.value?.focus()
   }
 
   function onKeydown(event: KeyboardEvent): void {
@@ -76,15 +108,8 @@ export function useDialogBehaviour(
   watch(open, async (isOpen) => {
     if (isOpen) {
       trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
-      await nextTick()
 
-      const items = focusable()
-
-      if (items.length > 0) {
-        items[0].focus()
-      } else {
-        panel.value?.focus()
-      }
+      await refocus()
 
       return
     }
@@ -93,5 +118,5 @@ export function useDialogBehaviour(
     trigger = null
   }, { immediate: true })
 
-  return { onKeydown }
+  return { onKeydown, refocus }
 }

@@ -20,7 +20,7 @@
       @delete="onDelete"
     />
 
-    <ContactNotice
+    <Notice
       v-model:open="noticeOpen"
       :message="t('contacts.delete.blocked')"
     />
@@ -49,7 +49,6 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import ContactDeleteDialog from '@/components/contacts/ContactDeleteDialog.vue'
 import ContactDetail from '@/components/contacts/ContactDetail.vue'
-import ContactNotice from '@/components/contacts/ContactNotice.vue'
 import { fullName } from '@/lib/contactList'
 import { useContactsStore } from '@/stores/contacts'
 
