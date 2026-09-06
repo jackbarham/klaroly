@@ -4,14 +4,20 @@ import { nextTick, watch, type Ref } from 'vue'
 // the panel, Tab cycles within it rather than leaving, Escape closes, and
 // closing gives focus back to whatever opened it.
 //
-// This lives here rather than inside Sheet.vue because there is a second panel
-// that needs it and cannot use Sheet: the month jump sheet is a bottom sheet
-// on a phone and a panel anchored under a button whose position is measured at
-// runtime on a wide screen, and Sheet's anchors are two fixed sidebar
-// geometries switched on the lg viewport variant, where the calendar switches
-// on a container query. Copying twenty lines of focus handling into the second
-// panel is how two dialogs start behaving differently, so the behaviour moved
-// instead. Sheet.vue is unchanged in what it does.
+// This lives here rather than inside Sheet.vue because there are two panel
+// components rather than one, and neither can be the other. Sheet's desktop
+// anchor is a closed set of two fixed sidebar geometries, written as classes
+// with the sums in a comment. ui/AnchoredSheet.vue hangs off a rectangle
+// measured at runtime, which is what the month jump sheet and the contacts
+// view menu both need and what Sheet cannot express.
+//
+// That was true when this file was written for one panel that could not use
+// Sheet, and it is still true now that the panel has become a component with
+// callers of its own: the reason the two cannot merge is the measurement, and
+// extracting AnchoredSheet did not remove it. What all three do share is this,
+// because copying twenty lines of focus handling into a second component is
+// how two dialogs start behaving differently. Sheet.vue is unchanged in what
+// it does.
 
 const selector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 

@@ -483,7 +483,7 @@ screen.
 ### The UI kit and the form kit
 
 `src/components/ui` is PageHeader, Card, EmptyState, AppButton, IconButton,
-Sheet, Icon, StatusPill, ListRow, DataTable and SectionBand. `AppButton` is
+Sheet, AnchoredSheet, Icon, StatusPill, ListRow, DataTable and SectionBand. `AppButton` is
 the only button component in the app: anything that looks like a button is
 that with a different variant or size. A click on it, or on `IconButton`, is
 the native event on the root element; neither declares an event of its own.
@@ -491,6 +491,33 @@ the native event on the root element; neither declares an event of its own.
 grid, stroked with `currentColor`, and it exports `iconNames` so the kitchen
 sink draws the set from the same list. There is no icon package and there
 will not be one.
+
+**`Sheet` and `AnchoredSheet` are two panel components and neither may become
+the other.** Both are a bottom sheet below `lg` and a small panel at `lg`, both
+teleport, both call `useDialogBehaviour`. The difference is the anchor and it is
+the whole reason there are two: `Sheet`'s is a closed set of two fixed sidebar
+geometries written as classes, and `AnchoredSheet`'s is a rectangle measured at
+runtime with `getBoundingClientRect`, because its trigger's position depends on
+how long a month's name is or where a button sits in a column. `AnchoredSheet`
+is the only component in the kit that measures anything, and that measurement is
+exactly what it exists to own: two callers writing their own
+`getBoundingClientRect` is what it was extracted to stop.
+
+Its props are `label` (an already-resolved translation key), `anchorTo`, `align`
+and `widthClass`, the last two required with no default because the callers are
+split between values and a default would promote one of them to a rule by
+accident. **`align` is not a placement variant and must not grow into one**: a
+variant is a caller's choice about appearance and it multiplies, whereas this is
+a fact about where the trigger sits, in the same category as `anchorTo` itself.
+`anchorTo` says which rectangle and `align` says which of its two vertical
+edges, and there is no third value it could take. It is deliberately not
+inferred from the trigger's position either: choosing the edge that keeps the
+panel on screen would silently move an existing caller at some widths, and it
+cannot be tested deterministically without stubbing the viewport as well as the
+rectangle. **The trigger for revisiting that is a caller that cannot answer the
+question, not simply another caller.** Neither panel re-measures on resize or
+scroll, so both go stale if the window changes while one is open; that is
+carried over from the two components it replaced and is its own change.
 
 `src/components/form` is FormSection, FormField, FormActions, FormError,
 RadioCard and the controls: TextInput, TextArea, SelectInput, CheckboxInput,
@@ -1508,14 +1535,12 @@ moment can be written more than one way.
   list item wrapping its own rows, because a sticky element is bounded by its
   containing block, and in one flat list every heading pins to the top of the
   page at once and only paint order decides which is visible.
-- **`MonthJumpSheet.vue` is not `ui/Sheet.vue`** and must not be merged into
-  it: Sheet's anchor is a closed set of two fixed sidebar geometries and this
-  panel hangs off a button whose position is measured. What they share, the
-  focus trap, Escape, the scrim and returning focus to the trigger, is
-  `useDialogBehaviour` in `src/lib/dialog.ts`, which both call. It is
-  teleported to the body, because `container-type: inline-size` makes an
-  element the containing block for its fixed descendants and the scrim would
-  otherwise stop at the page's edges.
+- **`MonthJumpSheet.vue` is the year strip and the month grid, and nothing
+  else.** The panel around it is `ui/AnchoredSheet.vue`, aligned left because
+  the month title sits near the left of the calendar, so the panel grows
+  rightwards away from it. What stays in the file is content: which years the
+  strip offers, which month is shown, and centring the strip on the current
+  year when it opens.
 
 Not built yet on that screen: the Upcoming, Past and All tabs and the status
 filter from 19.2, the clash warning from 5.2, and the booking detail screen.
@@ -1603,14 +1628,12 @@ changes.
   `position: sticky` with `align-self: start`, so the list scrolls and the card
   stays put with no height worked out from the viewport, and a card taller than
   the list simply scrolls with the page, which is right.
-- **`ContactViewMenu.vue` is not `ui/Sheet.vue`, for the same reason
-  `MonthJumpSheet.vue` is not.** Sheet's desktop anchor is a closed set of two
-  fixed sidebar geometries; this hangs off a button whose position is measured,
-  right-aligned so three hundred pixels of panel stay over the list column.
-  Both call `useDialogBehaviour`. **There are now two panels of this shape and
-  that is not yet a component**: if a third arrives, or if these two turn out
-  to be the same panel, that is the moment to extract one and move both callers
-  together. Extract from two, never from one.
+- **`ContactViewMenu.vue` is the four settings and nothing else.** The panel
+  around it is `ui/AnchoredSheet.vue`, aligned right so that three hundred
+  pixels of panel stay over the list column rather than spilling across the
+  detail. **This is where "extract from two, never from one" was paid off**:
+  the rule used to say a third panel of this shape was the moment to extract
+  one, and the enquiries screen bringing two more is what made it that moment.
 - **The refusal and the confirm are two different controls.** Deleting a
   contact with bookings is refused, because schema 5.7 restricts
   `bookings.contact_id`, and that is said as one line at the moment Delete is

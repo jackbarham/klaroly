@@ -71,8 +71,10 @@ export const sheetRowIconClasses = 'h-6 w-6 text-text-placeholder transition-col
 //
 // While it is open, focus starts inside the panel and stays there, Escape
 // and the scrim close it, and closing puts focus back on whatever opened it.
-// That behaviour is useDialogBehaviour in src/lib/dialog.ts, because the month
-// jump sheet needs the same thing and cannot use this component.
+// That behaviour is useDialogBehaviour in src/lib/dialog.ts, because
+// ui/AnchoredSheet.vue needs the same thing and cannot be this component: its
+// anchor is a rectangle measured at runtime, where the two below are fixed
+// geometries known in advance.
 import { useTemplateRef } from 'vue'
 import { useDialogBehaviour } from '@/lib/dialog'
 

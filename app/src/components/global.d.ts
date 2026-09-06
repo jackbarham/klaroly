@@ -4,6 +4,7 @@ import type { kit } from '@/components/kit'
 
 declare module 'vue' {
   export interface GlobalComponents {
+    AnchoredSheet: typeof kit.AnchoredSheet
     AppButton: typeof kit.AppButton
     Card: typeof kit.Card
     CheckboxInput: typeof kit.CheckboxInput

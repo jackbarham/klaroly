@@ -12,6 +12,7 @@ import SelectInput from '@/components/form/SelectInput.vue'
 import TextArea from '@/components/form/TextArea.vue'
 import TextInput from '@/components/form/TextInput.vue'
 import ToggleSwitch from '@/components/form/ToggleSwitch.vue'
+import AnchoredSheet from '@/components/ui/AnchoredSheet.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import Card from '@/components/ui/Card.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -33,6 +34,7 @@ import StatusPill from '@/components/ui/StatusPill.vue'
 // prop on a global component is still a type error. Add a component to both
 // lists in the same change, and to the kitchen sink.
 export const kit = {
+  AnchoredSheet,
   AppButton,
   Card,
   CheckboxInput,
