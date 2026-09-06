@@ -97,6 +97,27 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+
+            /*
+             * **Pinned, and not a preference.** Eloquent writes a datetime as
+             * 'Y-m-d H:i:s' with no offset, and Postgres reads a naked
+             * timestamp into a timestamptz column using the session's own
+             * timezone. Inherit that from the server and every UTC instant the
+             * app stores is silently shifted: on a machine defaulting to
+             * Europe/London, now() went in an hour early for the eight months
+             * the clocks are forward, and came back an hour early, which
+             * breaks "audit, signature and financial timestamps are UTC
+             * without exception".
+             *
+             * Nothing caught it because everything wrote and read through the
+             * same shift, so every relative comparison still held. It shows
+             * only when a stored value is compared against an in-memory now(),
+             * which is what the last_touched_at clock assertion in
+             * tests/Feature/Enquiries/EnquiryUpdateTest.php does.
+             *
+             * tests/Feature/DatabaseTimezoneTest.php asserts the round trip.
+             */
+            'timezone' => 'UTC',
         ],
 
         'sqlsrv' => [

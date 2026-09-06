@@ -133,6 +133,9 @@ Hand-written routes live in `routes/api.php` under `/api`:
 | GET | `/api/events` | auth:sanctum, account | `from` (defaults to today) and `to` (unbounded when omitted). The events in the range, each carrying its booking's stage, client, total and waiting-on state |
 | GET | `/api/events/months` | auth:sanctum, account | No parameters. Every month the account holds an event in, for all time, as `["2026-09", ...]` |
 | GET | `/api/contacts` | auth:sanctum, account | No parameters. Every contact, each with its bookings and its computed fields, ordered by what is coming up. `meta` carries `total`, `returned` and `truncated` |
+| GET | `/api/enquiries` | auth:sanctum, account | No parameters. Every booking at an enquiry stage, one row per enquiry, ordered by neglect. `meta` carries `total`, `returned` and `truncated` |
+| GET | `/api/enquiries/{booking}` | auth:sanctum, account | One enquiry: the list row plus `enquiry_message`, `party_size` and `notes`. 404 for anything the list does not show |
+| PATCH | `/api/enquiries/{booking}` | auth:sanctum, account | `stage`, and `lost_reason` when that stage is lost. Answers with the detail shape. 422 for a booking at confirmed or beyond |
 
 ### The rules
 
@@ -143,6 +146,21 @@ Hand-written routes live in `routes/api.php` under `/api`:
   membership by id), binds it as `CurrentAccount` and saves `last_account_id`
   when it changed. A user with no membership gets a 403. Nothing else binds
   the tenant for a request.
+- **Route-model binding on a scoped model needs the tenant bound before it
+  runs, and `bootstrap/app.php` is what makes that true.**
+  `SubstituteBindings` comes from the `api` group and `account` from the route,
+  so the natural order is auth, bindings, account: the binding query runs with
+  no account bound, `BelongsToAccount`'s scope becomes `where 1 = 0`, and every
+  `{booking}` and `{contact}` route answers 404 for rows the caller owns. One
+  line fixes it for every route that will ever bind a scoped model:
+  `$middleware->prependToPriorityList(SubstituteBindings::class, BindCurrentAccount::class)`.
+  **The 404 is the bug; the reason this is written down is the test.** A
+  tenancy assertion that another account's row is not found passes just as
+  happily when nothing is ever found, so it cannot tell the fix from the bug.
+  Every tenancy test on a bound route therefore asserts, in the same test, that
+  the caller's own row **is** found. That is decision 2026-09-06.1435, a
+  regression test is not a test until it has failed, arriving from a new
+  direction.
 - **Email is normalised on the way in.** `NormaliseEmail` lowercases and trims
   the `email` input on every Fortify route and on the token endpoint, and
   `CreateNewUser`, `UpdateUserProfileInformation` and `PasswordAuthenticator`
@@ -761,6 +779,13 @@ What sits on top of the tables:
   the enum and the two cannot drift. `FeatureKey` holds the nine feature
   toggles from decision 78; a key absent from an account's map is off, so
   registration writes the full default map from `config/features.php`.
+  Three enums have no constraint behind them, for two different reasons.
+  `WaitingOn` and `EndingSide` are computed and never stored (schema section
+  8), so there is no column to guard. `LostReason` does back a column,
+  `bookings.lost_reason`, and its constraint is deferred to the schema rewrite
+  rather than added as an ALTER migration of its own; the enum holds the line
+  at the application boundary until then, and the migration is generated from
+  `checkConstraintSql()` like every other one.
 - `App\Support\Money` and `App\Casts\MoneyCast`: every `_minor` column
   is read and written as a value object. No float ever touches a price.
 - `App\Support\CurrentAccount` and `App\Models\Concerns\BelongsToAccount`:
@@ -784,11 +809,16 @@ What sits on top of the tables:
   ownership. `User::currentMembership()` therefore requires the account
   before it asks the scope anything, so a missing tenant is a loud failure
   naming itself and null means one thing only.
-- `App\Services\BookingPricing` (the only place totals are computed),
+- `App\Services\BookingPricing` (the only place totals are computed, and the
+  only place that decides whether a booking has been priced at all),
   `App\Services\OutstandingBalances` (the only place a contact's debt is
   grouped by currency; it calls `Invoice` rather than re-deriving a balance),
   `App\Services\ContactActivity` (the only place that decides which event a
-  booking is shown by),
+  booking is shown by; the enquiries endpoint reads its `mainEvent()` too, so
+  the name is now half a lie and becomes `BookingActivity` the next time
+  somebody is in that file for another reason),
+  `App\Services\EnquiryClashes` (the only place that says what else is already
+  on a date),
   `App\Services\InvoiceNumbering` (the only place an invoice gets a number),
   `App\Services\Features` (the only reader of feature toggles),
   `App\Services\PasswordAuthenticator` (the only credential check),
@@ -831,7 +861,14 @@ What sits on top of the tables:
   that date has already passed. `tests/Feature/DemoAccountSeederTest.php`
   asserts both as stage sets rather than exact stages, because a seeder is
   exactly the kind of file edited for one reason that quietly loses a property
-  it was carrying for another.
+  it was carrying for another. **It also seeds the enquiries the enquiries
+  screen exists for**, and for the same reason: the account had no enquiry at
+  `in_conversation`, none without a date, and no ending on the artist's side,
+  so `GET /api/enquiries` could have been built, seeded and screenshotted
+  without either of the two cases decision 234 names as the reason it is one
+  row per enquiry rather than one per event. Those are asserted as properties
+  rather than counts, because a fourteenth enquiry arriving is not a regression
+  and a missing stage is.
 - Pest tests in `api/tests` run against a real Postgres database named
   `klaroly_test`, because the check constraints and partial indexes are part
   of what is tested. Create it once with `createdb klaroly_test`. The
@@ -859,6 +896,20 @@ What sits on top of the tables:
   `Date::use()` in `AppServiceProvider`, so `created_at`, `updated_at` and
   `deleted_at` are not listed in any model's casts. A model casts only the
   columns the framework would not cast on its own.
+- **The Postgres session timezone is pinned to UTC in `config/database.php`,
+  and it is not a preference.** Eloquent writes a datetime as `Y-m-d H:i:s`
+  with no offset, and Postgres reads a naked timestamp into a `timestamptz`
+  column using the session's own timezone, which it inherits from the server
+  unless told otherwise. On a machine defaulting to `Europe/London` every
+  instant the app stored went in an hour early for the eight months the clocks
+  are forward, which breaks "audit, signature and financial timestamps are UTC
+  without exception" everywhere at once. **Nothing caught it because everything
+  wrote and read through the same shift**, so every ordering, every "is this
+  overdue" and every relative comparison in the suite still held; it shows only
+  when a stored value is compared against an in-memory `now()`.
+  `tests/Feature/DatabaseTimezoneTest.php` is that comparison, kept so a
+  machine or a managed database with a different server default fails there
+  rather than in an audit trail.
 
 The app has its authentication screens: sign in, register (two steps in one
 form and one route: the email and password, then the business name, full name,
@@ -996,11 +1047,31 @@ reads. `App\Http\Controllers\EventController` serves both.
   logic section 6), takes a booking and returns an enum, because the Home
   attention block in 18.1 is the same calculation. Precedence is a list in one
   place, first match wins: not held, balance, deposit, **enquiry cold**,
-  price, review, signature, form. Cold sits above price because both describe
-  an enquiry at Possible with no quote, so with price first the cold value
-  could never be reported at all. Suppression by feature is inside each
-  branch, not a filter over the top, so with invoicing off the money checks
-  never run rather than running and having their answers discarded.
+  price, review, signature, form. Cold sits above price because the two
+  collide at Possible, where an enquiry with no quote is both unpriced and,
+  once it has sat long enough, cold: with price first the cold value could
+  never be reported there, and Possible is where most enquiries sit.
+  Suppression by feature is inside each branch, not a filter over the top, so
+  with invoicing off the money checks never run rather than running and having
+  their answers discarded.
+- **Cold fires at every live enquiry stage, not only Possible.** It was
+  narrowed to Possible when the home screen was the only consumer, and the
+  enquiries endpoint widened it to `Booking::ENQUIRY_STAGES` through
+  `isEnquiry()`: a quote sent three weeks ago with no reply and a conversation
+  that has gone silent are both things the artist has not done, which is what
+  the axis is for. It stops at the enquiry boundary, so a provisional booking
+  left alone for a month is not cold, and a test asserts that as well as the
+  widening. Resolving it on the server is what lets the enquiries screen's
+  "Gone quiet" group be simply every row whose `waiting_on` is
+  `artist_enquiry_cold`, with `bookings.cold_enquiry_days` read once and never
+  reaching the client.
+- **An archived booking waits on nobody.** `lost` and `cancelled` return null
+  from a guard at the top of `for()`, before the precedence list runs, because
+  nobody is going to act on either. It is a guard rather than a filter over the
+  answer: this is where the question is answered, and a caller discarding an
+  answer it did not want would be a second opinion held somewhere else. Without
+  it a lost enquiry carrying an agreement that was sent and never signed
+  reported `client_signature` on a row the artist had already closed.
 - **Two of the eight values are unreachable on purpose.** `client_form` and
   `artist_review` both need `intake_forms`, which is schema section 7.4:
   designed, not migrated. The branches exist and return nothing, and a test
@@ -1072,6 +1143,242 @@ reads. `App\Http\Controllers\EventController` serves both.
   promise the ordering is cheap. It only means anything against realistic row
   counts: an earlier version passed while proving nothing, because with one
   booking in the table Postgres had sequentially scanned that too.
+
+### The enquiries endpoint
+
+`GET /api/enquiries` is what the enquiries screen reads.
+`App\Http\Controllers\EnquiryController` serves it.
+
+- **There is no enquiries table and there never will be.** Business logic 4.3
+  is one bookings table with a stage column and every other field nullable, and
+  the interface shows enquiries and bookings as two lists filtered on stage.
+  This route returns bookings, and calling it `/enquiries` is the same
+  two-views-of-one-table framing rather than a second model.
+- **The boundary is provisional, not confirmed** (decision 235). Enquiries are
+  `new`, `in_conversation`, `possible` and `quoted`, plus `lost`, which is
+  archived and comes back so the screen can show it behind a switch. Everything
+  from `provisional` onwards is the bookings list. Converting is the artist's
+  own tap: it moves the record to provisional there and then, and it is
+  reversible until something is signed. Nothing in the system ever promotes an
+  enquiry on its own, and a deposit arriving cannot, because a deposit cannot
+  arrive against a record with no invoice. Signing and depositing turn
+  provisional into confirmed, and what that changes is the calendar mark, not
+  which list the record is in. The stage set is `Booking::ENQUIRY_STAGES` plus
+  `Lost`, so a fifth live stage is one edit rather than two.
+- **One row per enquiry, not one per event** (decision 234), and this is the one
+  place the endpoint must not copy `GET /api/events`. That one returns a row per
+  event because the calendar's unit is a day; here the unit is the
+  conversation, for two reasons that are both ordinary rather than edge cases.
+  An enquiry often has no date at all, and "next summer, we have not booked the
+  venue yet" is one of the most winnable kinds there is, which an events-shaped
+  payload cannot represent because there is no row. And an enquiry with a trial
+  and a wedding is still one conversation, where two rows would mean two
+  staleness figures reading the same number and two chances to reply twice to
+  the same person.
+- **No parameters, no pagination, no filter and deliberately no `stage`.** Same
+  design as contacts: the screen holds the whole list and sorts, groups and
+  filters it in the browser. A stage parameter in particular would be a second
+  way of saying what the stage set already says, and the screen's groups are
+  the waiting-on axis and the staleness bands rather than the stage.
+- **Staleness is the order, and New is pinned above it** (decision 236).
+  `last_touched_at` ascending, so the top of the list is the thing nobody has
+  touched for longest, which is what the screen is for. But an enquiry at `new`
+  has the freshest timestamp in the list and would sort to the bottom, which is
+  exactly backwards, because it is the one nobody has looked at. So `new` sorts
+  above everything, newest first, `lost` sorts last however it is ordered among
+  itself, and the tie-break is `id`. The screen re-sorts anyway; this exists for
+  the truncation rule and for a total, stable order, exactly as the contacts
+  ordering does.
+- **The ceiling is a flag, not a 422**, at `bookings.max_enquiries`, with
+  `total`, `returned` and `truncated` in the meta block, for the reason contacts
+  gives: a caller that sends no parameters cannot ask for less. The ordering is
+  what makes it survivable, because `lost` sorts last and the archive is the
+  unbounded half. The cap is in `config/bookings.php` rather than a
+  `config/enquiries.php` of its own, which is the opposite call from contacts
+  and for the reason that justified that one: it is about nouns. A contact is a
+  different thing from a booking; an enquiry is the same noun at an earlier
+  stage, and `cold_enquiry_days`, the number the screen turns on most, already
+  lives in that file.
+- **The row carries one `event`, not the enquiry's events**: the main day, or
+  the earliest when there is no main one, chosen by
+  `App\Services\ContactActivity::mainEvent()` so the enquiries row and the
+  contacts card cannot show one booking under two different dates. It carries
+  `location_type` for the reason `GET /api/events` already found, that the venue
+  columns cannot tell "nobody has said" from "at her own place", and it does not
+  carry `start_time`, because an enquiry rarely has a call time and the row does
+  not show one. **The limitation that comes with one date: an enquiry with a
+  trial in March and a wedding in May is checked for a clash on May only.** A
+  trial-date clash is the calendar's job, and a test says so.
+- **`waiting_on` comes from `App\Services\WaitingOnResolver` and nothing
+  computes it twice.** This endpoint is why `enquiryCold()` was widened from
+  Possible to every live enquiry stage; see the bookings-endpoints section
+  above.
+- **`clash` is `{confirmed, provisional, others}` or null**, per business logic
+  5.2 and decision 2026-09-06.1804, where `others` counts other enquiries at
+  `possible` or `quoted` on the same date. Null when the date carries nothing
+  else, when the enquiry has no date, and when the enquiry is `lost`, because
+  lost has released the date. Two things about it are decisions rather than
+  details. **The counts describe what is ALREADY on the date**, so a row whose
+  own stage holds nothing still gets them: an `in_conversation` enquiry carries
+  no calendar mark and still reports the confirmed booking and the two possible
+  enquiries sitting on its Saturday, which is a deliberate departure from the
+  calendar's rule. And **the stage buckets are the calendar's own**, taken from
+  `strengthByStage` in `app/src/lib/dayMarks.ts`: `confirmed`, `completed` and
+  `closed` are filled, `provisional` is a ring, `possible` and `quoted` are the
+  badge, and `new`, `in_conversation`, `lost` and `cancelled` are nothing.
+  Reasoning it out again as "completed and closed are in the past" would be
+  nearly always true and enforced by nothing, and the first booking marked
+  completed with its date still ahead would have this list and the calendar
+  describing the same Saturday differently, which is the exact failure the
+  counts exist to prevent.
+- **The clash is one query for every date in the payload, then matched in
+  memory.** Counting per row is the obvious N+1 and it is the worse kind,
+  because it grows with the number of distinct dates rather than with the number
+  of rows, so it survives every test written against a handful of enquiries
+  sharing one Saturday. `EnquiryIndexTest` holds the query count flat against
+  both.
+- **`source_booking` is an object, not an id beside a copy of itself.** It
+  carries the id, the client's name and that booking's date, which is enough to
+  say "met at Elspeth Rowntree's wedding", and its date is chosen by the same
+  `mainEvent()` the row uses.
+- **How an enquiry ended is a reason with a side, not a stage** (decision
+  2026-09-06.1512). `App\Enums\LostReason` gives `bookings.lost_reason` its
+  nine values and `side()` returns `App\Enums\EndingSide`. A tenth stage would
+  have bought the same label and charged for it in `strengthByStage`, in
+  `WaitingOnResolver`, in both list filters, in the stage check constraint and
+  in every future test of whether a record is still live; the two endings behave
+  identically, and the only thing that differs is who decided. The payload sends
+  `lost_reason` as the key and `lost_side` beside it, because the side is a fact
+  about the record and the label is wording, and facts come from the server.
+  **The column has no check constraint yet**: the enum holds the line at the
+  application boundary and the constraint goes in with the schema rewrite rather
+  than as an ALTER migration of its own, generated from
+  `LostReason::checkConstraintSql()`.
+- **Nothing writes `where('account_id', ...)` by hand and nothing reaches for
+  `DB::table()`.** The clash query in particular reads like a query-builder job,
+  and written that way it counts every account's bookings while looking
+  perfectly correct in a development database with one account in it. It is
+  built from `Event::query()` so the global scope comes with it, and the
+  soft-delete check on the joined `bookings` is written out because a join does
+  not carry the joined model's scopes. There is a test that another account's
+  booking on the same date is not counted.
+
+- **`total_minor` is null when nobody has priced the enquiry**, and nought only
+  when somebody has priced it at nothing. A total of nought and no price are
+  different facts and the screen says so: "No price yet" against an enquiry
+  nobody has quoted, which is most of them, and "£0" against a job somebody is
+  doing for nothing. Neither the total nor the stage can separate them, since an
+  enquiry at Possible can carry a price and one at Quoted can have had its lines
+  deleted, so the predicate is `App\Services\BookingPricing::isPriced()` and it
+  lives beside the sum it qualifies. A resource asking "are the lines empty"
+  would be a second definition of priced. **`GET /api/events` and
+  `GET /api/contacts` still send nought for both**, and adopting `isPriced()`
+  there is a one-line change in each plus an edit to two front-end types, which
+  is a change to their own contracts and belongs in their own prompts.
+- **The currency is sent whether or not there is a price**, because it is a fact
+  about the booking rather than about the price: a job in euros nobody has
+  quoted is still a job in euros.
+
+### The enquiry detail and the stage write
+
+`GET /api/enquiries/{booking}` and `PATCH /api/enquiries/{booking}`, both on
+`App\Http\Controllers\EnquiryController` beside the list.
+
+- **The detail is a resource composing the list's resource, not a second
+  answer.** `EnquiryDetailResource` resolves `EnquiryResource` and spreads it,
+  then adds `enquiry_message`, `party_size` and `notes`. So the detail cannot
+  decide which event a booking means, what it is waiting on or what it clashes
+  with for itself. The two alternatives were both ways for it to: one resource
+  with the extra fields would make every row in a five-hundred-row list pay for
+  a notes load, or make one resource read a flag two ways, which is what
+  `ContactBookingResource`'s own docblock rejects; two independent shapes would
+  give the detail its own copy of three computed answers. A test asserts the
+  detail's list half is identical to the list's row for the same record.
+- **`enquiry_message` is why the detail route exists.** Business logic 5.5.1
+  keeps the source on the record so that when an extraction is wrong the artist
+  can see what it was working from, and it is the difference between a name from
+  four months ago and a conversation that can be picked up. It is also a pasted
+  WhatsApp thread, which is exactly why it is not on the list: 19.3's no-signal
+  rule is about the booking screen on a wedding morning, not a detail opened by
+  tapping a row.
+- **`party_size` is null at zero, never nought.** A party of nobody is not
+  something anybody books, so a nought could only mean "the party sheet is
+  empty", which is "not known yet" wearing a number. Same rule as `total_minor`,
+  one field along.
+- **`notes` is the booking's stream only.** Schema 5.17 makes both `booking_id`
+  and `contact_id` nullable with a check that one is set, so a note can belong
+  to the person rather than to the job; that one is not a note about this
+  enquiry and belongs on the contact's card. Each entry carries `id`, `body` and
+  `created_at` as a UTC instant. No author, because collaborators do not exist
+  in v1 and every note is the owner's.
+- **The write is one route taking a stage, not `/convert` and `/lost`.** Named
+  routes are how a state machine is expressed, and this matrix is deliberately
+  not one: any of the six stages moves to any other and the artist decides. The
+  day somebody adds a precondition to a `/convert` route because the route's
+  existence invites one, decision 235 has quietly acquired an inference. The
+  side effects also argue for it, being symmetric: `converted_at` is set on the
+  way into provisional and cleared on the way out, so one write does both and
+  splitting it would put the clearing half where nobody looking at `/convert`
+  would find it.
+- **It is not a general booking update.** It names `stage` and `lost_reason`,
+  reads only `validated()`, and a test asserts the contact, the currency, the
+  message, the dates, the lines and the hold are all unchanged after a write
+  that tried to send them.
+- **`Booking::LISTED_STAGES` and `Booking::SETTABLE_STAGES`, and the asymmetry
+  between them is deliberate.** The list and the detail read show five stages,
+  the four live plus `lost`. The write accepts six, those plus `provisional`,
+  because converting is reversible until something is signed (business logic
+  5.3). **So after converting, the client holds an object it may PATCH back but
+  may not GET.** That is right rather than an oversight: an undo works because it
+  PATCHes, and a refresh 404s because the row belongs to the bookings list now.
+  It is also exactly what a front-end developer meets at eleven at night, which
+  is why it is here.
+- **A booking at confirmed or beyond is refused with a 422, not a 403**, and the
+  refusal lives in `UpdateEnquiryStageRequest::after()`. The caller is allowed to
+  be here; the record is the wrong kind, and changing the stage of a signed job
+  through a route built for a list of maybes is a downgrade. A policy would
+  answer the wrong question. The error hangs off `stage` because that is the
+  only field the request has, so the field is where the message renders rather
+  than a claim the value sent was invalid; `EventController::refuseIfTooMany()`
+  puts a range-size error on `from` for the same reason.
+- **`lost_reason` is `prohibited_unless` rather than `missing_unless`.** A
+  reason sent with any other stage is refused; an explicit `null` is not,
+  because a client that always sends both fields and puts null in the second
+  when there is no reason is saying something true.
+- **Both validation rules are built from the enums**, `Rule::enum(...)->only(...)`
+  against `Booking::SETTABLE_STAGES`, never a list of values typed a second
+  time, which is the rule the check constraints already follow.
+- **`hold_expires_at` is not set on converting, and `artist_not_held` is
+  therefore unreachable in real use.** Schema 5.8 calls that column the
+  provisional hold and `WaitingOnResolver::notHeld()` reads it, but there is no
+  hold-length setting anywhere: `account_settings` has `deposit_due_days` and
+  `balance_due_days_before` and nothing about a hold. So the highest-precedence
+  value on the waiting-on axis, the one that sits above money because the date
+  itself can be lost, now fires only for rows a seeder sets by hand. That is a
+  gap in the settings table rather than in this route, and it is the fourth
+  setting found with nowhere to live after the cold-enquiry threshold, the base
+  location's name and the intake-available flag.
+
+### `last_touched_at`, and the rule that keeps it true
+
+`Booking::touchActivity()` sets the column and saves, the way Laravel's own
+`touch()` does, so a caller writes `$booking->fill([...])->touchActivity()` and
+one write reaches the database.
+
+**Every write path that touches a booking, or anything belonging to one, calls
+it.** That is the rule, and it is a rule rather than a line in one controller
+because the stage write is the first of several writers: notes, messages, price
+changes and the intake form are all still to come, and each of them is somebody
+forgetting.
+
+**A writer that does not call it is a bug in the enquiries list, not in
+itself.** `last_touched_at` is what that list is ordered by and what the cold
+branch of `WaitingOnResolver` reads, so the damage arrives on a screen the
+writer never touches: the top of the list is silently wrong, the Home attention
+block agrees with it, and nothing fails. No existing test would catch it either,
+because every ordering test sets its timestamps by hand. The one that would is
+the pair in `EnquiryUpdateTest`: the column asserted against a named instant,
+and the row's position in the list asserted to move with it.
 
 ### What the contacts work found in the bookings endpoint
 

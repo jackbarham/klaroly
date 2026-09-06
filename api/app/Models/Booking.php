@@ -8,6 +8,7 @@ use App\Enums\BookingSource;
 use App\Enums\BookingStage;
 use App\Enums\DiscountType;
 use App\Enums\EventType;
+use App\Enums\LostReason;
 use App\Enums\PhotoConsent;
 use App\Enums\PricingMode;
 use App\Models\Concerns\BelongsToAccount;
@@ -52,6 +53,37 @@ class Booking extends Model
     ];
 
     /**
+     * The stages GET /api/enquiries returns and GET /api/enquiries/{booking}
+     * will find: the four live ones plus the archive, which the screen shows
+     * behind a switch.
+     *
+     * @var array<int, BookingStage>
+     */
+    public const LISTED_STAGES = [...self::ENQUIRY_STAGES, BookingStage::Lost];
+
+    /**
+     * The stages PATCH /api/enquiries/{booking} may move a record to, and the
+     * stages it accepts a record at.
+     *
+     * The same six on both sides, and the whole matrix: any of them to any
+     * other. **It is deliberately not a state machine** (decision 235). The
+     * artist decides, the app suggests, and an artist putting a quoted enquiry
+     * back to In conversation has a reason this route does not need to know.
+     * Provisional is here and not in LISTED_STAGES above, which is the one
+     * asymmetry: converting is reversible until something is signed (business
+     * logic 5.3), so the write has to accept a provisional record even though
+     * the list no longer shows one.
+     *
+     * Confirmed and beyond are absent, because changing the stage of a signed
+     * job through a route built for a list of maybes is a downgrade. That is a
+     * 422 rather than a 403: the caller is allowed to be here and the target is
+     * wrong.
+     *
+     * @var array<int, BookingStage>
+     */
+    public const SETTABLE_STAGES = [...self::LISTED_STAGES, BookingStage::Provisional];
+
+    /**
      * @var array<int, BookingStage>
      */
     public const BOOKING_STAGES = [
@@ -86,6 +118,7 @@ class Booking extends Model
         return [
             'stage' => BookingStage::class,
             'source' => BookingSource::class,
+            'lost_reason' => LostReason::class,
             'pricing_mode' => PricingMode::class,
             'discount_type' => DiscountType::class,
             'photo_consent' => PhotoConsent::class,
@@ -204,6 +237,31 @@ class Booking extends Model
             ->where('status', AgreementStatus::Signed->value)
             ->orderByDesc('version')
             ->first();
+    }
+
+    /**
+     * Record that something happened on this booking, and save.
+     *
+     * **Every write path that touches a booking, or anything belonging to one,
+     * calls this.** `last_touched_at` is what the enquiries list is ordered by
+     * and what the cold-enquiry branch of App\Services\WaitingOnResolver
+     * reads, so a writer that does not call it is not a bug in itself: it is a
+     * bug in the enquiries list and in the Home attention block, arriving
+     * somewhere neither of them can see. Notes, messages, price changes and
+     * the intake form are all still to come, and each of them is somebody
+     * forgetting.
+     *
+     * It saves rather than only setting the column, which is what Laravel's
+     * own touch() does. So a caller fills what it is changing and calls this,
+     * and one write goes to the database:
+     *
+     *     $booking->fill([...])->touchActivity();
+     *
+     * forceFill, because last_touched_at is not something a request may set.
+     */
+    public function touchActivity(): bool
+    {
+        return $this->forceFill(['last_touched_at' => now()])->save();
     }
 
     /**

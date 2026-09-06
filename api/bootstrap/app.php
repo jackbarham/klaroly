@@ -5,6 +5,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -25,6 +26,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'account' => BindCurrentAccount::class,
         ]);
+
+        // **Route-model binding on a scoped model needs the tenant first.**
+        // SubstituteBindings comes from the api group and BindCurrentAccount
+        // from the route, so without this line the stack is auth, bindings,
+        // account: the binding query runs with no account bound, the global
+        // scope in BelongsToAccount turns into `where 1 = 0`, and every
+        // {booking} and {contact} route answers 404 for rows the caller owns.
+        //
+        // The failure is worse than the 404, which is why this is a line of
+        // configuration rather than a lookup written out in each controller.
+        // A tenancy test asserting that another account's row is not found
+        // passes just as happily when nothing is ever found, so it cannot tell
+        // the fix from the bug. Anything relying on it has to assert the
+        // caller's own row IS found in the same test.
+        $middleware->prependToPriorityList(SubstituteBindings::class, BindCurrentAccount::class);
 
         // A browser that reaches a protected route while logged out is sent
         // to the web app's login page, not to a route this API does not have.

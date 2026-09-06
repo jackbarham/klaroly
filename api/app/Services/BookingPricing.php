@@ -59,6 +59,35 @@ class BookingPricing
     }
 
     /**
+     * Whether anybody has put a price on this booking at all.
+     *
+     * **A total of zero and no price are different facts and the screen has to
+     * say so**: "No price yet" against an enquiry nobody has quoted, and "£0"
+     * against a job somebody is doing for nothing. total() cannot tell them
+     * apart, because both come back as zero beside a currency, and neither can
+     * the stage: an enquiry at Possible can carry a price and one at Quoted
+     * can have had its lines deleted.
+     *
+     * So the predicate lives here, beside the sum it qualifies, rather than in
+     * a resource. A resource asking "are the lines empty" would be a second
+     * definition of priced, and the day fixed mode or a third pricing mode
+     * changes what that means, the two would answer differently on the same
+     * booking.
+     *
+     * Priced means somebody has said a number, whatever the number is. A fixed
+     * price of zero is priced; an itemised booking with a line at zero is
+     * priced; an itemised booking with no lines is not.
+     */
+    public function isPriced(Booking $booking): bool
+    {
+        if ($booking->pricing_mode === PricingMode::Fixed) {
+            return $booking->fixed_price_minor !== null;
+        }
+
+        return $booking->lines->isNotEmpty();
+    }
+
+    /**
      * The deposit: the booking's own override if it has one, otherwise the
      * account rule. Never more than the total.
      */

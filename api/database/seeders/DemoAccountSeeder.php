@@ -14,6 +14,7 @@ use App\Enums\FeatureKey;
 use App\Enums\InvoiceStatus;
 use App\Enums\LineKind;
 use App\Enums\LocationType;
+use App\Enums\LostReason;
 use App\Enums\PaymentMethod;
 use App\Enums\PricingMode;
 use App\Enums\QuoteSentVia;
@@ -243,6 +244,12 @@ class DemoAccountSeeder extends Seeder
             ['charlotte', 'Charlotte', 'Dean', 'charlotte.dean@example.com', '07700 900112', '24 Millbourne Row', 'Frome', 'BA11 1XD'],
             ['aoife', 'Aoife', 'Sheridan', 'aoife.sheridan@example.com', '07700 900113', '39 Havenscroft Road', 'Bristol', 'BS7 8XM'],
             ['martha', 'Martha', 'Oyelaran', 'martha.oyelaran@example.com', '07700 900114', '6 Berrymead Close', 'Gloucester', 'GL2 4XF'],
+            // The three the enquiries screen exists for: a conversation that
+            // has gone quiet, an enquiry with no date at all, and one the
+            // artist turned down rather than lost.
+            ['freya', 'Freya', 'Loxley', 'freya.loxley@example.com', '07700 900115', '21 Cranmoor Rise', 'Wells', 'BA5 1XN'],
+            ['ines', 'Ines', 'Marchetti', 'ines.marchetti@example.com', '07700 900116', '8 Thornaby Green', 'Bath', 'BA2 3XV'],
+            ['ottilie', 'Ottilie', 'Vance', 'ottilie.vance@example.com', '07700 900117', '44 Weatherby Row', 'Stroud', 'GL5 2XK'],
         ];
 
         foreach ($rows as [$key, $first, $last, $email, $phone, $address, $city, $postcode]) {
@@ -519,11 +526,12 @@ class DemoAccountSeeder extends Seeder
             'All paid, thank you sent, photographs received. Closed.',
         ]);
 
-        // 14. Lost to budget.
+        // 14. Lost: the client went elsewhere over the price. One of the five
+        // endings on the client's side of App\Enums\LostReason.
         $this->bookings[14] = $this->booking('megan', [
             'stage' => BookingStage::Lost,
             'source' => BookingSource::WebForm,
-            'lost_reason' => 'budget',
+            'lost_reason' => LostReason::TooExpensive,
             'lost_at' => now()->subWeeks(3),
             'last_touched_at' => now()->subWeeks(3),
         ], [
@@ -536,6 +544,47 @@ class DemoAccountSeeder extends Seeder
             ['Bride', 1], ['Bridesmaid', 2], ['Bridal trial', 1],
         ], [
             'Went with a friend of the family who is doing it for free. No hard feelings.',
+        ]);
+
+        // 15. In conversation, gone quiet. The stage between an enquiry
+        // arriving and the soft hold at Possible (business logic 5.1), which
+        // the account had no example of at all, and which is where the widened
+        // artist_enquiry_cold branch now reaches.
+        $this->bookings[15] = $this->booking('freya', [
+            'stage' => BookingStage::InConversation,
+            'source' => BookingSource::CapturedAtEvent,
+            'last_touched_at' => now()->subDays(config('bookings.cold_enquiry_days') + 5),
+        ], [
+            'date' => $today->addMonths(10)->addDays(4),
+            'venue' => ['Bramfield Tithe House', 'Kerrowmoor Lane', 'Wells', 'BA5 2XG'],
+            'start' => '07:30:00', 'ready' => '12:30:00',
+        ], null, [
+            ['Freya', 'Bride'], ['Bridesmaid', 'Bridesmaid'],
+        ], [], [
+            'Met at a wedding in the spring. Two of them, no firm date for a trial yet.',
+            'Said she would come back with times. Nothing since.',
+        ]);
+
+        // 16. An enquiry with no date at all, which the booking() helper cannot
+        // make because it always writes a main event. "Somewhere next summer,
+        // the venue is not settled" is normal and often winnable, and it is the
+        // case an events-shaped payload cannot represent, because there is no
+        // row for it.
+        $this->bookings[16] = Booking::create([
+            'contact_id' => $this->contacts['ines']->id,
+            'currency' => 'GBP',
+            'created_by_user_id' => $this->owner->id,
+            'stage' => BookingStage::InConversation,
+            'source' => BookingSource::VoiceNote,
+            'enquiry_message' => 'Rang about next year. No date yet, they are between two venues and will not know until the autumn. Wants a rough idea of the cost before committing to either.',
+            'last_touched_at' => now()->subDays(8),
+        ]);
+
+        Note::create([
+            'booking_id' => $this->bookings[16]->id,
+            'user_id' => $this->owner->id,
+            'body' => 'No date to hold and nothing to quote yet. Worth a nudge once the venue is settled.',
+            'created_at' => $this->bookings[16]->last_touched_at,
         ]);
 
         // The quoted enquiry was captured on the day of the completed booking.
@@ -574,7 +623,7 @@ class DemoAccountSeeder extends Seeder
     {
         $date = $this->saturdayAtLeast(60);
 
-        $this->bookings[15] = $this->booking('priya', [
+        $this->bookings[17] = $this->booking('priya', [
             'stage' => BookingStage::Confirmed,
             'source' => BookingSource::WebForm,
             'converted_at' => now()->subMonths(4),
@@ -598,7 +647,7 @@ class DemoAccountSeeder extends Seeder
 
         // Three enquiries on the same date, each from a different family, so
         // the count badge reads three rather than one booking listed oddly.
-        $this->bookings[16] = $this->booking('rosie', [
+        $this->bookings[18] = $this->booking('rosie', [
             'stage' => BookingStage::Possible,
             'source' => BookingSource::WebForm,
             'enquiry_message' => 'Hello, we are at Larkspur Court that day and there are five of us. Is there any chance you are still free?',
@@ -613,7 +662,7 @@ class DemoAccountSeeder extends Seeder
             'Same Saturday as Priya Raman. Worth a call before it goes any further.',
         ]);
 
-        $this->bookings[17] = $this->booking('nadia', [
+        $this->bookings[19] = $this->booking('nadia', [
             'stage' => BookingStage::Quoted,
             'source' => BookingSource::ForwardedEmail,
             'enquiry_message' => 'Forwarded from the venue. Bride plus four, ready by one.',
@@ -630,7 +679,7 @@ class DemoAccountSeeder extends Seeder
             'Quoted on the same Saturday as two others. First to sign takes it.',
         ]);
 
-        $this->bookings[18] = $this->booking('charlotte', [
+        $this->bookings[20] = $this->booking('charlotte', [
             'stage' => BookingStage::Possible,
             'source' => BookingSource::Manual,
             'enquiry_message' => 'Rang about the same weekend. Venue not settled yet, somewhere near Bath.',
@@ -643,6 +692,29 @@ class DemoAccountSeeder extends Seeder
             ['Charlotte', 'Bride'], ['Bridesmaid', 'Bridesmaid'],
         ], [], [
             'Gone quiet since the first call. Third enquiry on that Saturday.',
+        ]);
+
+        // The fourth name on the same Saturday, and the one the artist ended
+        // rather than lost. It is on this date on purpose: turning an enquiry
+        // down is the moment the other names on the date matter most, and
+        // already_booked is the artist's side of App\Enums\LostReason
+        // (decision 2026-09-06.1512). It carries no calendar mark and no clash
+        // of its own, because a lost enquiry has released the date.
+        $this->bookings[21] = $this->booking('ottilie', [
+            'stage' => BookingStage::Lost,
+            'source' => BookingSource::WebForm,
+            'enquiry_message' => 'We are at Ashen Hollow on that Saturday, six of us and a very early start. Could you manage four in the morning?',
+            'lost_reason' => LostReason::AlreadyBooked,
+            'lost_at' => now()->subWeeks(4),
+            'last_touched_at' => now()->subWeeks(4),
+        ], [
+            'date' => $date,
+            'venue' => ['Ashen Hollow', 'Wraycombe Lane', 'Chepstow', 'NP16 5XB'],
+            'start' => '04:00:00', 'ready' => '11:00:00',
+        ], null, [
+            ['Ottilie', 'Bride'], ['Bridesmaid', 'Bridesmaid'],
+        ], [], [
+            'Had to say no. Priya Raman is the same day and was confirmed months ago.',
         ]);
     }
 
@@ -662,7 +734,7 @@ class DemoAccountSeeder extends Seeder
         $date = $this->lastSaturdayOfThisMonth();
         $stage = $date->lessThan(today()) ? BookingStage::Completed : BookingStage::Confirmed;
 
-        $this->bookings[19] = $this->booking('aoife', [
+        $this->bookings[22] = $this->booking('aoife', [
             'stage' => $stage,
             'source' => BookingSource::WebForm,
             'converted_at' => now()->subMonths(8),
@@ -682,7 +754,7 @@ class DemoAccountSeeder extends Seeder
             'Five thirty start so the afternoon is free for the second wedding.',
         ]);
 
-        $this->bookings[20] = $this->booking('martha', [
+        $this->bookings[23] = $this->booking('martha', [
             'stage' => $stage,
             'source' => BookingSource::Manual,
             'converted_at' => now()->subMonths(6),

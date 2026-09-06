@@ -1,6 +1,9 @@
 <?php
 
 use App\Enums\BookingStage;
+use App\Enums\EndingSide;
+use App\Enums\LostReason;
+use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
 use App\Support\CurrentAccount;
@@ -136,6 +139,72 @@ it('puts a day with two bookings inside the month the calendar opens on', functi
 // invented street exists somewhere, only that the real ones that were here
 // have not come back. That is the failure worth guarding, because these were
 // removed deliberately and the way they return is somebody restoring a line.
+/**
+ * What the enquiries screen needs the demo to hold.
+ *
+ * Same reasoning as the two days above and the same failure: the account had
+ * no enquiry at in_conversation and none without a date, so GET /api/enquiries
+ * could be built, seeded and screenshotted without either of the two cases
+ * decision 234 names as the reason it is one row per enquiry rather than one
+ * per event. Asserted as properties rather than as counts, because a
+ * fourteenth enquiry arriving is not a regression and a missing stage is.
+ */
+describe('the enquiries the demo has to be able to show', function () {
+    beforeEach(function () {
+        $user = User::where('email', 'ellie@example.com')->firstOrFail();
+
+        app(CurrentAccount::class)->set($user->accounts()->first());
+    });
+
+    it('holds at least one enquiry at every live stage', function () {
+        $stages = Booking::query()->pluck('stage')->all();
+
+        foreach (Booking::ENQUIRY_STAGES as $stage) {
+            expect($stages)->toContain($stage);
+        }
+    });
+
+    // "Next summer, we have not booked the venue yet" is normal, often
+    // winnable, and the case an events-shaped payload cannot represent at all,
+    // because there is no row for it.
+    it('holds an enquiry with no date at all', function () {
+        $dateless = Booking::query()
+            ->whereIn('stage', Booking::ENQUIRY_STAGES)
+            ->doesntHave('events')
+            ->count();
+
+        expect($dateless)->toBeGreaterThan(0);
+    });
+
+    // An enquiry ends two ways and the demo has to show both, or the pill that
+    // tells them apart has nothing to draw. Paired deliberately: a seeder that
+    // lost the artist's side would otherwise pass on the client's alone.
+    it('holds one enquiry each side ended', function () {
+        $sides = Booking::query()
+            ->where('stage', BookingStage::Lost)
+            ->pluck('lost_reason')
+            ->filter()
+            ->map(fn (LostReason $reason) => $reason->side())
+            ->unique()
+            ->values()
+            ->all();
+
+        expect($sides)->toContain(EndingSide::Client)
+            ->and($sides)->toContain(EndingSide::Artist);
+    });
+
+    // The widened artist_enquiry_cold branch has to have something to report,
+    // or the screen's "Gone quiet" group is empty in every screenshot.
+    it('holds an enquiry nobody has touched for longer than the cold threshold', function () {
+        $cold = Booking::query()
+            ->whereIn('stage', Booking::ENQUIRY_STAGES)
+            ->where('last_touched_at', '<', now()->subDays(config('bookings.cold_enquiry_days')))
+            ->count();
+
+        expect($cold)->toBeGreaterThan(0);
+    });
+});
+
 it('names no real venue and no real address, in a column or in a sentence', function () {
     $seeder = file_get_contents(database_path('seeders/DemoAccountSeeder.php'));
 

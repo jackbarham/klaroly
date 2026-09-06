@@ -18,6 +18,78 @@ use Tests\TestCase;
 // test. Unit tests do not boot the application.
 pest()->extend(TestCase::class)->use(RefreshDatabase::class)->in('Feature');
 
+/*
+ * The enquiry key constants live in this file rather than beside the tests
+ * that assert them, because three test files need them now. A constant
+ * declared in a sibling test file only exists when Pest has collected that
+ * sibling, so running one of the three on its own would die on an undefined
+ * constant.
+ */
+
+/**
+ * The keys GET /api/enquiries promises, mirroring app/src/types/enquiries.ts.
+ *
+ * Prompt 18 writes that file against this list. It is the contract and this is
+ * its twin: if one moves without the other, the app reads undefined from a
+ * field the API renamed and nothing fails until somebody opens the screen, so
+ * the two are pinned together here on purpose.
+ */
+const ENQUIRY_KEYS = [
+    'id',
+    'stage',
+    'client_name',
+    'contact_id',
+    'source',
+    'source_booking',
+    'last_touched_at',
+    'waiting_on',
+    'total_minor',
+    'currency',
+    'event',
+    'lost_reason',
+    'lost_side',
+    'clash',
+];
+
+const ENQUIRY_EVENT_KEYS = [
+    'type',
+    'date',
+    'location_type',
+    'venue_name',
+    'city',
+];
+
+const SOURCE_BOOKING_KEYS = [
+    'id',
+    'client_name',
+    'date',
+];
+
+const CLASH_KEYS = [
+    'confirmed',
+    'provisional',
+    'others',
+];
+
+/**
+ * The three GET /api/enquiries/{booking} adds, and the shape of one note.
+ *
+ * They are asserted as ENQUIRY_KEYS followed by these, never as a list of
+ * seventeen typed out, because the detail resource composes the list resource
+ * and the assertion has to be able to fail when only one of the two moves.
+ */
+const ENQUIRY_DETAIL_KEYS = [
+    'enquiry_message',
+    'party_size',
+    'notes',
+];
+
+const ENQUIRY_NOTE_KEYS = [
+    'id',
+    'body',
+    'created_at',
+];
+
 /**
  * Create an account with a settings row and make it the current tenant.
  *
@@ -217,6 +289,52 @@ function contactWithBooking(
     ]);
 
     return $contact;
+}
+
+/**
+ * One enquiry, with a contact of its own and at most one event.
+ *
+ * A date of null is a real and common case rather than an omission: "next
+ * summer, we have not booked the venue yet" is one of the most winnable kinds
+ * of enquiry there is, and it is the case an events-shaped payload cannot
+ * represent at all.
+ *
+ * The current account must already be bound: it is the tenant every row is
+ * created under, and binding it here would hide what the tenancy tests are
+ * about.
+ *
+ * @param  array<string, mixed>  $attributes
+ * @param  array<string, mixed>  $eventAttributes
+ */
+function enquiry(
+    BookingStage $stage,
+    ?string $date = null,
+    array $attributes = [],
+    array $eventAttributes = [],
+): Booking {
+    $booking = Booking::factory()->create($attributes + [
+        'stage' => $stage,
+        'contact_id' => Contact::factory(),
+    ]);
+
+    if ($date !== null) {
+        Event::factory()->create($eventAttributes + [
+            'booking_id' => $booking->id,
+            'event_date' => $date,
+        ]);
+    }
+
+    return $booking;
+}
+
+/**
+ * An enquiry nobody has touched for longer than the cold threshold.
+ */
+function coldEnquiry(BookingStage $stage, ?string $date = null): Booking
+{
+    return enquiry($stage, $date, [
+        'last_touched_at' => now()->subDays(config('bookings.cold_enquiry_days') + 1),
+    ]);
 }
 
 /**

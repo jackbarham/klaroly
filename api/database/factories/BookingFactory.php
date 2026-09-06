@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\BookingSource;
 use App\Enums\BookingStage;
 use App\Enums\DiscountType;
+use App\Enums\LostReason;
 use App\Enums\PricingMode;
 use App\Models\Booking;
 use App\Models\Contact;
@@ -87,13 +88,26 @@ class BookingFactory extends Factory
         ]);
     }
 
-    public function lost(string $reason = 'went_elsewhere'): static
+    /**
+     * An enquiry the client ended, which is the usual half of the two.
+     */
+    public function lost(LostReason $reason = LostReason::WentElsewhere): static
     {
         return $this->state(fn (array $attributes) => [
             'stage' => BookingStage::Lost,
             'lost_reason' => $reason,
             'lost_at' => now()->subWeeks(2),
         ]);
+    }
+
+    /**
+     * The other half: an enquiry the artist turned down. Its own state rather
+     * than an argument to the one above, because a test about the two endings
+     * should not have to know which of the nine values sits on which side.
+     */
+    public function lostByArtist(LostReason $reason = LostReason::AlreadyBooked): static
+    {
+        return $this->lost($reason);
     }
 
     public function cancelled(string $reason = 'Occasion postponed.'): static

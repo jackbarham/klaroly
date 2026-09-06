@@ -201,6 +201,127 @@ describe('the precedence of a cold enquiry over an unpriced one', function () {
     });
 });
 
+/**
+ * The widening, and the boundary it stopped at.
+ *
+ * enquiryCold() fired only at Possible, which was right while the home
+ * screen's attention block was the only consumer and wrong for
+ * GET /api/enquiries: a quote sent three weeks ago with no reply is the most
+ * actionable row on that screen, and an in-conversation enquiry that has gone
+ * silent is the second. Both are things the artist has not done, which is what
+ * this axis is for.
+ */
+describe('the stages a cold enquiry can be at', function () {
+    it('calls a quoted enquiry cold', function () {
+        accountWithFeatures();
+
+        $booking = Booking::factory()->quoted()->create([
+            'last_touched_at' => now()->subDays(config('bookings.cold_enquiry_days') + 1),
+        ]);
+
+        expect(waitingOnFor($booking))->toBe(WaitingOn::ArtistEnquiryCold);
+    });
+
+    it('calls an in-conversation enquiry cold', function () {
+        accountWithFeatures();
+
+        $booking = Booking::factory()->inConversation()->create([
+            'last_touched_at' => now()->subDays(config('bookings.cold_enquiry_days') + 1),
+        ]);
+
+        expect(waitingOnFor($booking))->toBe(WaitingOn::ArtistEnquiryCold);
+    });
+
+    /**
+     * The other side of the widening, and the assertion that bounds it.
+     *
+     * Cold is about a live enquiry, so it stops at the boundary between the two
+     * lists (decision 235). Without this, "widen it" and "remove the stage
+     * check altogether" pass the same tests, and a provisional booking whose
+     * hold is still good would be reported as gone quiet for the whole month
+     * before the wedding.
+     */
+    it('says nothing about a provisional booking left alone for just as long', function () {
+        accountWithFeatures();
+
+        $booking = Booking::factory()->provisional()->create([
+            'hold_expires_at' => today()->addMonth(),
+            'last_touched_at' => now()->subDays(config('bookings.cold_enquiry_days') + 1),
+        ]);
+
+        expect(waitingOnFor($booking))->toBeNull();
+    });
+
+    // And the archive. A lost enquiry cannot go quiet: it has ended.
+    it('says nothing about a lost enquiry', function () {
+        accountWithFeatures();
+
+        $booking = Booking::factory()->lost()->create([
+            'last_touched_at' => now()->subDays(config('bookings.cold_enquiry_days') + 1),
+        ]);
+
+        expect(waitingOnFor($booking))->toBeNull();
+    });
+});
+
+/**
+ * An archived record waits on nobody, because nobody is going to act on it.
+ *
+ * The guard is at the top of WaitingOnResolver::for() rather than a filter
+ * over its answer, because this is the question and a caller discarding an
+ * answer it did not want would be a second opinion held somewhere else. It
+ * arrived with PATCH /api/enquiries/{booking}, which is the first thing in the
+ * app that creates lost rows and so the first thing that would have shipped
+ * the noise.
+ */
+describe('an archived booking', function () {
+    it('says nothing about a lost enquiry whose agreement was sent and never signed', function () {
+        accountWithFeatures();
+
+        $booking = Booking::factory()->lost()->create();
+
+        Agreement::factory()->create([
+            'booking_id' => $booking->id,
+            'status' => AgreementStatus::Sent,
+        ]);
+
+        expect(waitingOnFor($booking))->toBeNull();
+    });
+
+    it('says nothing about a cancelled booking with an overdue balance', function () {
+        accountWithFeatures();
+
+        $booking = Booking::factory()->cancelled()->create();
+
+        Invoice::factory()->issued()->create([
+            'booking_id' => $booking->id,
+            'balance_due_on' => today()->subDays(3),
+            'deposit_minor' => 0,
+        ]);
+
+        expect(waitingOnFor($booking))->toBeNull();
+    });
+
+    /**
+     * The assertion that bounds the guard, and without it "return null at the
+     * top" and "return null always" pass the same two tests above. An
+     * identical booking that is not archived still reports.
+     */
+    it('still reports on the same booking when it is not archived', function () {
+        accountWithFeatures();
+
+        $booking = Booking::factory()->confirmed()->create();
+
+        Invoice::factory()->issued()->create([
+            'booking_id' => $booking->id,
+            'balance_due_on' => today()->subDays(3),
+            'deposit_minor' => 0,
+        ]);
+
+        expect(waitingOnFor($booking))->toBe(WaitingOn::ClientBalance);
+    });
+});
+
 it('puts a lapsed hold above an overdue balance when both are true', function () {
     accountWithFeatures();
 

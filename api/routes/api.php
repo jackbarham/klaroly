@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\TokenController;
 use App\Http\Controllers\Auth\UpdatePasswordController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\EnquiryController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\MarketingConsentController;
 use App\Http\Controllers\MeController;
@@ -95,4 +96,28 @@ Route::middleware(['auth:sanctum', 'account'])->group(function () {
     // bounded, and it is a flag in the meta block rather than a refusal,
     // because a caller that sends no parameters cannot ask for less.
     Route::get('/contacts', [ContactController::class, 'index']);
+
+    // What the enquiries screen reads. There is no enquiries table: business
+    // logic 4.3 is one bookings table with a stage column, and this route
+    // returns the bookings at the early stages, one row per enquiry rather
+    // than one per event (decision 234). Same shape of payload as contacts,
+    // and no stage parameter: the stage set is the endpoint, and the screen's
+    // groups are the waiting-on axis and the staleness bands rather than the
+    // stage.
+    Route::get('/enquiries', [EnquiryController::class, 'index']);
+
+    // One enquiry opened, and the one way a record crosses the line between
+    // the two lists (decision 235). The write takes a stage rather than
+    // splitting into /convert and /lost, because the matrix is deliberately
+    // not a state machine: named routes are how a state machine is expressed,
+    // and the first precondition somebody adds to a /convert route is an
+    // inference that decision says nothing makes. Both answer with the same
+    // detail shape, so the screen replaces what it is holding rather than
+    // refetching.
+    //
+    // {booking} is bound by the router, which works because bootstrap/app.php
+    // puts BindCurrentAccount ahead of SubstituteBindings; without that the
+    // binding query runs with no tenant and every row is a 404.
+    Route::get('/enquiries/{booking}', [EnquiryController::class, 'show']);
+    Route::patch('/enquiries/{booking}', [EnquiryController::class, 'update']);
 });

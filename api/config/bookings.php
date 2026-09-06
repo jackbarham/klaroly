@@ -1,10 +1,19 @@
 <?php
 
 /*
- * The numbers the bookings endpoints need that are not columns.
+ * The numbers the bookings and enquiries endpoints need that are not columns.
  *
  * Nothing outside config/ reads env(), so these live here rather than in the
  * services and controllers that use them.
+ *
+ * The enquiries cap is here rather than in a config/enquiries.php of its own,
+ * which is the opposite call from config/contacts.php. That file's reason is
+ * about nouns: a contact is a different thing from a booking, so a contacts
+ * cap filed under bookings is one nobody finds. An enquiry is the SAME noun at
+ * an earlier stage, per business logic 4.3 and decision 235, and the number
+ * the enquiries screen turns on most, cold_enquiry_days, is already here and
+ * is read by the home screen too. A file named for the screen that did not
+ * hold that number would be the confusing split.
  */
 return [
 
@@ -41,6 +50,28 @@ return [
      */
     'max_span_days' => 1830,
     'max_events' => 2000,
+
+    /*
+     * The most enquiries GET /api/enquiries will return in one response.
+     *
+     * Twenty to forty live enquiries is the working set, and the live set is
+     * not what makes this necessary: `lost` comes back too, and `lost`
+     * accumulates for ever. Five hundred covers a busy artist's forty live
+     * plus a decade of archive, and the measured figure for the demo account
+     * is in the report for this prompt rather than guessed at.
+     *
+     * A ceiling rather than a refusal, which is the call GET /api/contacts
+     * makes and the opposite of max_events above. The events cap is reachable
+     * only by a deliberately wide range, so a 422 asking for a narrower one is
+     * an answer the caller can act on; a caller here sends no parameters and
+     * so cannot ask for less, and refusing would leave that account with a
+     * dead screen.
+     *
+     * The ordering is what makes truncation survivable: lost sorts last, so
+     * the first thing a truncated response drops is the archive, which is the
+     * half the screen shows behind a switch.
+     */
+    'max_enquiries' => 500,
 
     /*
      * Whether the intake form exists at all.

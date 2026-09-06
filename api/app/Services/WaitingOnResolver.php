@@ -34,6 +34,10 @@ class WaitingOnResolver
      * More than one can be true at once and the axis holds a single value, so
      * the order below is the answer and the first match wins:
      *
+     * Nothing at all when the booking is archived, which is checked before the
+     * list runs: lost and cancelled are both endings, and an ending waits on
+     * nobody.
+     *
      *   1. artist_not_held        the date itself could be lost
      *   2. client_balance         money overdue on work that is happening
      *   3. client_deposit         the date is not secured
@@ -46,17 +50,39 @@ class WaitingOnResolver
      * Losing a date beats being owed money, and anything the artist can act on
      * alone beats waiting on a client.
      *
-     * Cold sits above price deliberately, and it has to. Both describe an
-     * enquiry at Possible with no quote against it, so with price above it a
-     * cold enquiry could never be reported: a cold one is at Possible by
-     * definition, and one with a quote would be at Quoted. The pair is the
-     * more urgent of two enquiries that both need pricing, which is also the
-     * right answer on its own terms. Balance and deposit stay above both
-     * because an enquiry at Possible cannot have an invoice, so they never
-     * compete for the same booking.
+     * Cold sits above price deliberately, and it still has to after cold was
+     * widened from Possible to all four live enquiry stages. The two overlap
+     * at exactly one stage, Possible: an enquiry there with no quote against
+     * it is both unpriced and, once it has sat long enough, cold. With price
+     * above it, cold could never be reported at Possible at all, and Possible
+     * is where most enquiries sit. Cold is also the more urgent reading of the
+     * same row, because it says the artist has stopped replying rather than
+     * merely not finished a sum.
+     *
+     * What the widening changed is what the pair means rather than the order.
+     * They used to be two readings of one state, so the order was the only
+     * thing making one of them reachable. Now cold answers a question about
+     * three further stages where price never fires at all, so they are two
+     * genuinely different questions that happen to collide at one stage, and
+     * the order is what settles that collision.
+     *
+     * Balance and deposit stay above both. An enquiry can hold no invoice in
+     * practice, because one is raised on conversion, so they rarely compete
+     * for the same booking at all; where they did, money already overdue would
+     * be the more urgent of the two, which is the order they are in.
      */
     public function for(Booking $booking): ?WaitingOn
     {
+        // An archived record waits on nobody, because nobody is going to act
+        // on it. A guard at the top rather than a filter at the bottom: the
+        // question is answered here, and a caller discarding an answer it did
+        // not want would be a second opinion held somewhere else. Without it a
+        // lost enquiry carrying an agreement that was sent and never signed
+        // reports client_signature, on a row the artist has already closed.
+        if (in_array($booking->stage, [BookingStage::Lost, BookingStage::Cancelled], true)) {
+            return null;
+        }
+
         foreach ($this->checks() as $check) {
             $value = $check($booking);
 
@@ -145,13 +171,28 @@ class WaitingOnResolver
     }
 
     /**
-     * An enquiry at Possible that nobody has touched for a while. Business
-     * logic 5.2: how long ago it was last touched is the fact that decides
-     * whether a clash is worth a phone call.
+     * A live enquiry that nobody has touched for a while. Business logic 5.2:
+     * how long ago it was last touched is the fact that decides whether a
+     * clash is worth a phone call.
+     *
+     * **Every live enquiry stage, not only Possible.** Firing only at Possible
+     * was right while the home screen's attention block was the only consumer,
+     * and it is wrong for GET /api/enquiries: a quote sent three weeks ago
+     * with no reply, and a conversation that has gone silent, are both things
+     * the artist has not done, which is what this axis is for, and both are
+     * more actionable than most enquiries at Possible. Narrower than that, the
+     * enquiries screen would have had to work cold out for itself and the
+     * threshold would have had to reach the client, so the app would hold two
+     * answers to "has this gone quiet".
+     *
+     * The stage set is Booking::ENQUIRY_STAGES, through isEnquiry(), rather
+     * than four values listed here: they are the same four, and a fifth live
+     * stage added to that constant has to reach this branch or an enquiry
+     * could sit at it for ever without anybody being told.
      */
     private function enquiryCold(Booking $booking): ?WaitingOn
     {
-        if ($booking->stage !== BookingStage::Possible) {
+        if (! $booking->isEnquiry()) {
             return null;
         }
 

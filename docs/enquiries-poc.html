@@ -1,0 +1,2100 @@
+<!-- CURRENT as of 6 September 2026. Built alongside product/enquiries-research.md; no prompt is written against it yet. Kept as history, not a source of truth: where it disagrees with the codebase, docs/style-guide.md or decision-log.md, it is wrong. -->
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klaroly enquiries, proof of concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================================
+   LAYER 1  PRIMITIVES
+   Lifted verbatim from tokens.css, same as calendar-poc.html, so the colours
+   here are the app's colours rather than an approximation.
+   ========================================================================== */
+:root {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --color-white: oklch(100% 0 0);
+  --color-neutral-50: oklch(97.6% 0.0013 286.4);
+  --color-neutral-100: oklch(93.2% 0.0067 286.3);
+  --color-neutral-200: oklch(86.4% 0.0137 286.1);
+  --color-neutral-300: oklch(74.1% 0.0271 285.7);
+  --color-neutral-400: oklch(64.2% 0.0371 285.3);
+  --color-neutral-500: oklch(54.2% 0.0450 284.8);
+  --color-neutral-600: oklch(46.0% 0.0400 285.0);
+  --color-neutral-700: oklch(37.5% 0.0289 284.9);
+  --color-neutral-800: oklch(28.2% 0.0201 285.0);
+  --color-neutral-850: oklch(26.8% 0.0148 285.4);
+  --color-neutral-900: oklch(18.5% 0.0101 285.4);
+
+  --color-ink-base: oklch(24.8% 0.0132 292.0);
+  --color-ink-raised: oklch(28.1% 0.0128 292.1);
+  --color-ink-overlay: oklch(30.1% 0.0126 292.2);
+  --color-ink-muted: oklch(33.0% 0.0158 290.6);
+  --color-ink-text: oklch(96.1% 0.0013 286.4);
+
+  --color-white-a05: oklch(100% 0 0 / 0.05);
+  --color-white-a08: oklch(100% 0 0 / 0.08);
+  --color-white-a10: oklch(100% 0 0 / 0.10);
+  --color-white-a12: oklch(100% 0 0 / 0.12);
+  --color-white-a16: oklch(100% 0 0 / 0.16);
+  --color-white-a24: oklch(100% 0 0 / 0.24);
+  --color-white-a50: oklch(100% 0 0 / 0.50);
+  --color-white-a65: oklch(100% 0 0 / 0.65);
+  --color-white-a80: oklch(100% 0 0 / 0.80);
+
+  --color-accent-50: oklch(95.9% 0.0191 299.1);
+  --color-accent-300: oklch(68.0% 0.1700 287.5);
+  --color-accent-400: oklch(58.3% 0.2119 289.7);
+  --color-accent-500: oklch(54.3% 0.2313 287.5);
+  --color-accent-600: oklch(47.7% 0.2606 281.5);
+
+  --color-danger-50: oklch(96.7% 0.0159 358.0);
+  --color-danger-500: oklch(64.8% 0.2188 11.7);
+  --color-danger-600: oklch(61.7% 0.2396 17.0);
+  --color-danger-700: oklch(55.6% 0.2190 18.3);
+
+  --color-success-50: oklch(97.6% 0.0165 162.8);
+  --color-success-500: oklch(74.1% 0.1781 152.9);
+  --color-success-700: oklch(55.1% 0.1297 153.2);
+  --color-success-800: oklch(45.1% 0.1232 153.2);
+
+  --color-warning-50: oklch(97.0% 0.0151 37.9);
+  --color-warning-500: oklch(73.2% 0.1690 38.7);
+  --color-warning-700: oklch(61.6% 0.2190 34.5);
+  --color-warning-800: oklch(51.6% 0.2081 34.5);
+
+  --color-info-50: oklch(97.9% 0.0125 228.9);
+  --color-info-500: oklch(71.2% 0.1663 241.1);
+  --color-info-700: oklch(53.6% 0.1229 240.0);
+  --color-info-800: oklch(45.5% 0.1130 240.0);
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 9999px;
+
+  --text-caption: 12px;
+  --text-meta: 13px;
+  --text-body: 14px;
+  --text-control: 15px;
+  --text-lead: 16px;
+  --text-section: 20px;
+  --text-title: 24px;
+
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --duration-fast: 100ms;
+  --duration-base: 200ms;
+
+  --shadow-popover: 0 0 0 1px rgb(18 18 23 / 0.10), 0 24px 48px rgb(18 18 23 / 0.03),
+    0 10px 18px rgb(18 18 23 / 0.03), 0 5px 8px rgb(18 18 23 / 0.04),
+    0 2px 4px rgb(18 18 23 / 0.04);
+  --shadow-popover-dark: 0 0 0 1px rgb(255 255 255 / 0.12),
+    0 24px 48px rgb(0 0 0 / 0.40), 0 5px 8px rgb(0 0 0 / 0.30);
+
+  --tap-target-min: 44px;
+  --layout-content-max: 1096px;
+  --layout-sidebar: 264px;
+  --container-split: 760px;
+  --border-width-strong: 2px;
+}
+
+/* ============================================================================
+   LAYER 2  SEMANTICS
+   ========================================================================== */
+:root, .theme-light {
+  --surface: var(--color-white);
+  --surface-sunken: var(--color-neutral-50);
+  --surface-hover: var(--color-neutral-100);
+  --surface-raised: var(--color-white);
+  --surface-overlay: var(--color-white);
+
+  --text: var(--color-neutral-850);
+  --text-strong: var(--color-neutral-900);
+  --text-muted: var(--color-neutral-600);
+  --text-subtle: var(--color-neutral-500);
+  --text-placeholder: var(--color-neutral-400);
+  --text-on-accent: var(--color-white);
+
+  --border: var(--color-neutral-100);
+  --border-strong: var(--color-neutral-200);
+
+  --accent: var(--color-accent-500);
+  --accent-hover: var(--color-accent-600);
+  --accent-text: var(--color-accent-600);
+  --accent-subtle: var(--color-accent-50);
+  --danger: var(--color-danger-500);
+  --danger-text: var(--color-danger-700);
+  --danger-subtle: var(--color-danger-50);
+  --success: var(--color-success-500);
+  --success-solid: var(--color-success-700);
+  --success-subtle: var(--color-success-50);
+  --success-text: var(--color-success-800);
+  --warning: var(--color-warning-500);
+  --warning-solid: var(--color-warning-700);
+  --warning-subtle: var(--color-warning-50);
+  --warning-text: var(--color-warning-800);
+  --info: var(--color-info-500);
+  --info-subtle: var(--color-info-50);
+  --info-text: var(--color-info-800);
+
+  --shadow-menu-value: var(--shadow-popover);
+  --tabbar-glass: oklch(100% 0 0 / 0.72);
+  --scrim: oklch(0% 0 0 / 0.10);
+  --row-hover: color-mix(in oklab, var(--surface-sunken) 50%, transparent);
+}
+
+.theme-dark {
+  --surface: var(--color-ink-base);
+  --surface-sunken: var(--color-white-a05);
+  --surface-hover: var(--color-white-a08);
+  --surface-raised: var(--color-ink-raised);
+  --surface-overlay: var(--color-ink-overlay);
+
+  --text: var(--color-white-a80);
+  --text-strong: var(--color-ink-text);
+  --text-muted: var(--color-white-a65);
+  --text-subtle: var(--color-white-a50);
+  --text-placeholder: var(--color-white-a50);
+  --text-on-accent: var(--color-white);
+
+  --border: var(--color-white-a12);
+  --border-strong: var(--color-white-a24);
+
+  --accent: var(--color-accent-500);
+  --accent-hover: var(--color-accent-400);
+  --accent-text: var(--color-accent-300);
+  --accent-subtle: var(--color-white-a10);
+  --danger: var(--color-danger-500);
+  --danger-text: var(--color-danger-500);
+  --danger-subtle: var(--color-white-a10);
+  --success: var(--color-success-500);
+  --success-solid: var(--color-success-500);
+  --success-subtle: var(--color-white-a10);
+  --success-text: var(--color-success-500);
+  --warning: var(--color-warning-500);
+  --warning-solid: var(--color-warning-500);
+  --warning-subtle: var(--color-white-a10);
+  --warning-text: var(--color-warning-500);
+  --info: var(--color-info-500);
+  --info-subtle: var(--color-white-a10);
+  --info-text: var(--color-info-500);
+
+  --shadow-menu-value: var(--shadow-popover-dark);
+  --tabbar-glass: oklch(28.1% 0.0128 292.1 / 0.72);
+  --scrim: oklch(0% 0 0 / 0.50);
+  --row-hover: color-mix(in oklab, var(--surface-sunken) 50%, transparent);
+}
+
+/* ============================================================================
+   THE HARNESS
+   Chrome around the demo. Nothing here is a proposal.
+   ========================================================================== */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 24px;
+  color: var(--text);
+  background: var(--surface-sunken);
+  -webkit-font-smoothing: antialiased;
+}
+body.theme-dark { background: var(--color-neutral-900); }
+
+.wrap { max-width: 1240px; margin: 0 auto; padding: 32px 20px 96px; }
+
+.masthead { margin-bottom: 28px; }
+.masthead h1 {
+  font-size: var(--text-title); line-height: 32px; letter-spacing: -0.01em;
+  font-weight: 500; color: var(--text-strong); margin: 0 0 8px;
+}
+.masthead p { margin: 0 0 6px; color: var(--text-muted); max-width: 68ch; }
+.masthead .stamp { font-size: var(--text-caption); color: var(--text-subtle); }
+
+.controls {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; flex-wrap: wrap; gap: 20px 28px; align-items: flex-end;
+  padding: 14px 16px; margin: 0 0 28px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-menu-value);
+}
+.ctl { display: flex; flex-direction: column; gap: 6px; }
+.ctl > span {
+  font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.04em;
+}
+.seg { display: flex; background: var(--surface-sunken); border-radius: var(--radius-sm); padding: 2px; gap: 2px; }
+.seg button {
+  font: inherit; font-size: var(--text-meta); line-height: 20px;
+  border: 0; background: transparent; color: var(--text-muted);
+  padding: 6px 12px; border-radius: 6px; cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+  white-space: nowrap;
+}
+.seg button:hover { color: var(--text-strong); }
+.seg button[aria-pressed="true"] {
+  background: var(--surface); color: var(--text-strong); font-weight: 500;
+  box-shadow: 0 1px 1px rgb(10 10 46 / 0.06);
+}
+.theme-dark .seg button[aria-pressed="true"] { background: var(--color-white-a12); box-shadow: none; }
+
+.band { margin: 0 0 40px; }
+.band > h2 {
+  font-size: var(--text-section); line-height: 28px; font-weight: 500;
+  color: var(--text-strong); margin: 0 0 4px;
+}
+.band > .hint { margin: 0 0 16px; color: var(--text-muted); font-size: var(--text-meta); max-width: 76ch; }
+.phones { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
+figure.frame { margin: 0; }
+figure.frame figcaption {
+  font-size: var(--text-caption); line-height: 16px; color: var(--text-subtle);
+  margin-top: 10px; text-align: center;
+}
+.device {
+  border-radius: 34px; padding: 10px; background: var(--color-neutral-800);
+  box-shadow: 0 18px 40px rgb(18 18 23 / 0.18);
+}
+.theme-dark .device { background: #000; box-shadow: 0 18px 40px rgb(0 0 0 / 0.5); }
+.device .screen { border-radius: 26px; overflow: hidden; }
+.deskframe {
+  border: 1px solid var(--border-strong); border-radius: var(--radius-md);
+  overflow: hidden; background: var(--surface);
+}
+
+.notes {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 24px;
+}
+.notes h2 { font-size: var(--text-section); line-height: 28px; font-weight: 500; color: var(--text-strong); margin: 0 0 12px; }
+.notes h3 { font-size: var(--text-body); font-weight: 500; color: var(--text-strong); margin: 20px 0 6px; }
+.notes p, .notes li { color: var(--text-muted); }
+.notes p { margin: 0 0 10px; max-width: 76ch; }
+.notes ul { margin: 0 0 10px; padding-left: 20px; }
+.notes li { margin-bottom: 6px; max-width: 74ch; }
+.notes code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+  background: var(--surface-sunken); padding: 1px 5px; border-radius: var(--radius-xs);
+  color: var(--text-strong);
+}
+.warnbox {
+  border-left: 3px solid var(--warning); background: var(--warning-subtle);
+  padding: 12px 16px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin: 12px 0;
+}
+.warnbox p { margin: 0; color: var(--text); }
+
+
+/* ============================================================================
+   THE COMPONENT
+   Sizes itself from its container, never from the viewport, so the same markup
+   is a phone screen inside a 375px frame and a split inside the desktop frame.
+   Carried over from contacts-poc.html, which carried it from the calendar.
+   ========================================================================== */
+.screen {
+  container-type: inline-size;
+  container-name: screen;
+  background: var(--surface);
+  color: var(--text);
+  position: relative;
+  overflow: hidden;
+  font-size: var(--text-body);
+}
+.shell { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+
+.statusbar {
+  flex: none; display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 0 22px 4px; font-size: 12px; font-weight: 500; color: var(--text-strong);
+}
+.statusbar .dots { display: flex; gap: 4px; align-items: center; opacity: 0.75; }
+.statusbar .dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; display: block; }
+
+.pagehead {
+  flex: none; display: flex; align-items: center; gap: 4px;
+  padding: 8px 16px; min-height: 56px;
+}
+.pagehead h1 {
+  margin: 0; flex: 1; font-size: var(--text-section); line-height: 28px;
+  font-weight: 500; letter-spacing: -0.01em; color: var(--text-strong);
+}
+.pagehead .count {
+  font-size: var(--text-meta); color: var(--text-subtle); font-weight: 400;
+  margin-left: 8px;
+}
+.iconbtn {
+  flex: none; width: 40px; height: 40px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; border: 0; background: transparent;
+  color: var(--text-muted); cursor: pointer;
+}
+.iconbtn:hover { background: var(--surface-hover); color: var(--text-strong); }
+.iconbtn svg { width: 20px; height: 20px; }
+
+/* The two columns. ONE scroll container, per decision 201 --------------- */
+.main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.cols { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* Filter bar ------------------------------------------------------------- */
+.filterbar {
+  position: sticky; top: 0; z-index: 4;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.filterbar .field {
+  flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;
+  height: 40px; padding: 0 10px;
+  background: var(--surface-sunken); border: 1px solid transparent;
+  border-radius: var(--radius-sm); color: var(--text-subtle);
+}
+.filterbar .field:focus-within {
+  border-color: var(--accent); background: var(--surface);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+.filterbar .field svg { width: 18px; height: 18px; flex: none; }
+.filterbar input {
+  flex: 1; min-width: 0; border: 0; background: transparent; outline: none;
+  font: inherit; font-size: var(--text-control); color: var(--text-strong);
+}
+.filterbar input::placeholder { color: var(--text-placeholder); }
+.filterbar .clearx {
+  flex: none; border: 0; background: transparent; cursor: pointer; padding: 0;
+  width: 22px; height: 22px; border-radius: var(--radius-pill);
+  display: none; place-items: center; color: var(--text-subtle);
+}
+.filterbar .clearx svg { width: 14px; height: 14px; }
+.filterbar.has-text .clearx { display: grid; }
+.viewbtn {
+  flex: none; height: 40px; padding: 0 8px 0 10px; border-radius: var(--radius-sm);
+  border: 0; background: transparent; cursor: pointer;
+  font: inherit; font-size: var(--text-meta); font-weight: 500; color: var(--accent-text);
+  display: flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.viewbtn:hover, .viewbtn[aria-expanded="true"] { background: var(--accent-subtle); }
+.viewbtn svg { width: 16px; height: 16px; }
+.viewbtn .chevdown { width: 14px; height: 14px; opacity: 0.7; }
+
+/* Two panels, one behaviour. The view menu and the stage menu are the same
+   sheet: a bottom sheet on the phone, a popover anchored to whatever opened
+   it on desktop. Same shape as the calendar's month jump, same reasoning as
+   decision 231: built on the measured-anchor precedent, not on ui/Sheet.vue,
+   whose lg anchors are a closed set of two sidebar geometries.
+   -------------------------------------------------------------------- */
+.sheet { position: absolute; inset: 0; z-index: 30; display: none; }
+.sheet.is-open { display: block; }
+.sheet__scrim {
+  position: absolute; inset: 0; border: 0; padding: 0; cursor: default;
+  background: var(--scrim);
+}
+.sheet__panel:focus-visible { outline: none; }
+.sheet__panel {
+  position: absolute; left: 12px; right: 12px; bottom: 12px;
+  background: var(--surface-overlay); color: var(--text);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-menu-value);
+  padding: 8px 16px 20px;
+  /* Ten reasons is a tall sheet on a 667px phone. The cap is measured against
+     the container, not the viewport, so it is right inside every frame on this
+     page and inside the app. A sheet scrolling internally is fine: it is an
+     overlay, not the page's one scroll container, so decision 201 does not
+     apply to it. */
+  max-height: calc(100cqh - 88px); overflow-y: auto;
+  transform: translateY(10px);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+.sheet.is-open .sheet__panel { transform: translateY(0); }
+.sheet__grab {
+  width: 36px; height: 4px; border-radius: var(--radius-pill);
+  background: var(--border-strong); margin: 0 auto 10px;
+}
+.sheet__head { display: flex; align-items: center; gap: 6px; margin: 4px 0 10px; min-height: 20px; }
+.sheet__back {
+  flex: none; width: 22px; height: 22px; padding: 0; border: 0; background: transparent;
+  cursor: pointer; color: var(--accent-text); display: grid; place-items: center;
+  border-radius: var(--radius-xs);
+}
+.sheet__back svg { width: 20px; height: 20px; }
+.sheet__back[hidden] { display: none; }
+.sheet__title {
+  font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.04em;
+}
+/* The heading carries the side, so the reason never has to say who did it. */
+.stagegroup {
+  display: block; margin: 14px 0 2px;
+  font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  color: var(--text-strong); text-transform: none; letter-spacing: 0;
+}
+.stagegroup:first-child { margin-top: 2px; }
+.vgroup { margin-top: 14px; }
+.vgroup > span {
+  display: block; margin-bottom: 6px;
+  font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  color: var(--text-strong);
+}
+.vseg { display: flex; background: var(--surface-sunken); border-radius: var(--radius-sm); padding: 3px; gap: 3px; }
+.vseg button {
+  flex: 1; height: 34px; border: 0; border-radius: 6px; background: transparent;
+  font: inherit; font-size: var(--text-body); color: var(--text-muted); cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.vseg button:hover { color: var(--text-strong); }
+.vseg button[aria-pressed="true"] {
+  background: var(--accent); color: var(--text-on-accent); font-weight: 500;
+}
+.vseg button[aria-pressed="true"]:hover { color: var(--text-on-accent); }
+.vrow {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 48px;
+}
+.vgroup + .vrow { margin-top: 10px; }
+.vrow + .vrow { border-top: 1px solid var(--border); }
+.vrow > span { font-size: var(--text-body); color: var(--text-strong); }
+.vswitch {
+  flex: none; width: 44px; height: 26px; border-radius: var(--radius-pill);
+  border: 0; background: var(--border-strong); cursor: pointer; position: relative;
+  transition: background var(--duration-base) var(--ease-out);
+}
+.vswitch::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+  border-radius: var(--radius-pill); background: var(--color-white);
+  box-shadow: 0 1px 2px rgb(18 18 23 / 0.25);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+.vswitch[aria-checked="true"] { background: var(--accent); }
+.vswitch[aria-checked="true"]::after { transform: translateX(18px); }
+
+/* The stage menu's own rows ---------------------------------------------- */
+.stagepick {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  min-height: 48px; padding: 0 4px; border: 0; background: transparent;
+  font: inherit; font-size: var(--text-control); color: var(--text-strong);
+  cursor: pointer; border-radius: var(--radius-sm);
+}
+.stagepick:hover { background: var(--surface-hover); }
+.stagepick .tick { flex: none; width: 18px; height: 18px; color: var(--accent-text); opacity: 0; }
+.stagepick[aria-current="true"] { color: var(--accent-text); font-weight: 500; }
+.stagepick[aria-current="true"] .tick { opacity: 1; }
+.stagepick .lede { flex: 1; min-width: 0; }
+.stagepick .hint { font-size: var(--text-caption); line-height: 16px; color: var(--text-subtle); display: block; font-weight: 400; }
+/* No hint line, so the row can come down to the tap-target minimum. */
+.stagepick--reason { min-height: var(--tap-target-min); }
+.sheet__rule { margin: 8px -16px; border: 0; border-top: 1px solid var(--border); }
+.stagepick--go { color: var(--accent-text); font-weight: 500; }
+.stagepick--lost { color: var(--danger-text); }
+
+/* Group headings, using the Prompt 12 pattern --------------------------- */
+.group { display: block; }
+.grouphead {
+  position: sticky; top: var(--filter-h, 59px); z-index: 2;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 8px 16px; background: var(--surface-sunken);
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;
+}
+.grouphead .n { font-weight: 400; color: var(--text-subtle); letter-spacing: 0; }
+.grouphead--cold { color: var(--warning-text); background: var(--warning-subtle); }
+
+/* Enquiry rows ----------------------------------------------------------- */
+.erow {
+  display: flex; align-items: flex-start; gap: 12px; width: 100%; text-align: left;
+  padding: 11px 16px; border: 0; border-bottom: 1px solid var(--border);
+  background: transparent; font: inherit; color: inherit; cursor: pointer;
+  min-height: 64px;
+  transition: background var(--duration-fast) var(--ease-out),
+              border-color var(--duration-base) var(--ease-out);
+}
+.erow:hover { background: var(--row-hover); border-bottom-color: var(--accent); }
+.erow:hover .erow__name { color: var(--accent-text); }
+.erow:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.erow[aria-current="true"] { background: var(--accent-subtle); }
+.erow[aria-current="true"] .erow__name { color: var(--accent-text); }
+
+.erow__body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.erow__name {
+  display: block;
+  font-size: var(--text-control); line-height: 24px; font-weight: 500;
+  color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+.erow__meta {
+  display: flex; min-width: 0;
+  font-size: var(--text-meta); line-height: 24px; color: var(--text-muted);
+}
+/* The place gives way and the staleness figure does not. A truncated venue is
+   still a venue; a truncated "6 we..." is nothing at all. */
+.erow__meta .txt { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.erow__meta .inlineage { flex: none; }
+.erow__meta .nodate { color: var(--text-subtle); font-style: normal; }
+/* In chip mode the age loses its slot in the right column, so it goes here.
+   That swap is the cost of the chip and it is meant to be visible. */
+.erow__meta .inlineage { color: var(--text-subtle); }
+.erow__meta .inlineage.is-cold { color: var(--warning-text); font-weight: 500; }
+.erow__src {
+  display: block; font-size: var(--text-caption); line-height: 18px; color: var(--text-subtle);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+[data-source="off"] .erow__src { display: none; }
+.erow__clash {
+  display: flex; align-items: center; gap: 5px;
+  font-size: var(--text-caption); line-height: 18px; color: var(--warning-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.erow__clash svg { width: 13px; height: 13px; flex: none; }
+[data-clash="off"] .erow__clash { display: none; }
+
+.erow__end {
+  flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+  padding-top: 2px;
+}
+/* The total and the staleness figure share a line. Stacked, a quoted row is
+   three lines deep on the right and two on the left, and the row grows for
+   the four enquiries that happen to have a price on them. */
+.erow__foot { display: flex; align-items: baseline; gap: 8px; }
+.erow__age {
+  font-size: var(--text-caption); line-height: 16px; color: var(--text-subtle);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.erow__age.is-cold { color: var(--warning-text); font-weight: 500; }
+[data-stagemode="chip"] .erow__foot .erow__age { display: none; }
+[data-stagemode="chip"] .erow__meta .inlineage { display: inline; }
+.erow__meta .inlineage { display: none; }
+
+.pill {
+  font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  padding: 3px 8px; border-radius: var(--radius-pill); white-space: nowrap;
+  display: inline-block;
+}
+/* A stage pill that is also the control gets a border-free button treatment
+   and a chevron, so it reads as tappable without becoming a second button. */
+button.pill { border: 0; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; }
+button.pill svg { width: 12px; height: 12px; opacity: 0.7; }
+button.pill:hover { filter: brightness(0.96); }
+.theme-dark button.pill:hover { filter: brightness(1.25); }
+
+.pill--new { background: var(--accent-subtle); color: var(--accent-text); }
+.pill--in_conversation { background: var(--surface-hover); color: var(--text-muted); }
+/* Colour on this row is meant to mean attention, not stage, so warning and
+   danger are reserved for the staleness figure and the clash line and the
+   stages take the quieter families. New keeps the accent in both settings
+   because "nobody has looked at this" is the one stage that is a call to act. */
+.pill--possible { background: var(--info-subtle); color: var(--info-text); }
+.pill--quoted { background: var(--success-subtle); color: var(--success-text); }
+[data-stagehue="quiet"] .pill--possible,
+[data-stagehue="quiet"] .pill--quoted { background: var(--surface-hover); color: var(--text-muted); }
+/* Lost and Turned down wear the same quiet pill. Which of the two words it
+   says is derived from the reason's side, never stored twice. */
+.pill--lost { background: var(--surface-hover); color: var(--text-subtle); }
+.pill--provisional { background: var(--surface-hover); color: var(--text-muted); }
+.pill--src { background: var(--surface-hover); color: var(--text-muted); }
+.pill--confirmed { background: var(--accent-subtle); color: var(--accent-text); }
+.pill--total { background: transparent; color: var(--text-strong); padding-left: 0; padding-right: 0; font-variant-numeric: tabular-nums; }
+[data-totals="off"] .pill--total { display: none; }
+/* With nothing left in it the row would still take its gap. */
+.erow__foot:empty { display: none; }
+
+/* The advance chip. One tap, and it says where it is going by name. */
+.advance {
+  position: relative;
+  height: 26px; padding: 0 9px; border: 0; border-radius: var(--radius-pill);
+  background: var(--accent-subtle); color: var(--accent-text);
+  font: inherit; font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.advance::after { content: ''; position: absolute; inset: -9px -2px; }
+.advance:hover { background: color-mix(in oklab, var(--accent) 16%, transparent); }
+.advance svg { width: 12px; height: 12px; }
+
+.empty { padding: 40px 24px; text-align: center; }
+.empty .big { color: var(--text-strong); font-size: var(--text-section); line-height: 28px; font-weight: 500; margin: 0 0 8px; }
+.empty p { margin: 0 auto; color: var(--text-muted); font-size: var(--text-body); max-width: 40ch; }
+
+/* The detail, which is the BOOKING screen with almost nothing on it ------
+   Not a second layout. 4.3 says an enquiry is a booking at an early stage,
+   so this is 19.3's header and summary rendered against a record where most
+   of it is still empty. That is the point of drawing it here. */
+.detailcol { display: none; }
+.shell[data-view="detail"] .detailcol { display: block; }
+.shell[data-view="detail"] .listcol { display: none; }
+.shell[data-view="detail"] .pagehead { display: none; }
+
+.detailhead {
+  position: sticky; top: 0; z-index: 4;
+  display: flex; align-items: center; gap: 4px;
+  padding: 8px 8px 8px 4px; min-height: 56px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.detailhead .backbtn {
+  display: flex; align-items: center; gap: 2px; height: 40px; padding: 0 8px 0 4px;
+  border: 0; background: transparent; cursor: pointer; color: var(--accent-text);
+  font: inherit; font-size: var(--text-control); font-weight: 500; border-radius: var(--radius-sm);
+}
+.detailhead .backbtn:hover { background: var(--accent-subtle); }
+.detailhead .backbtn svg { width: 20px; height: 20px; }
+.detailhead .title {
+  flex: 1; min-width: 0; text-align: center; padding-right: 44px;
+  font-size: var(--text-control); font-weight: 500; color: var(--text-strong);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.detail { padding: 20px 16px 32px; }
+
+/* 19.3's always-visible header: name, date and day, venue, total, stage,
+   waiting on, and the next actions. It has to work at 5am with no signal,
+   which is the same as saying it has to work with nothing filled in. */
+.bhead h2 {
+  margin: 0; font-size: var(--text-title); line-height: 32px; font-weight: 500;
+  letter-spacing: -0.01em; color: var(--text-strong);
+}
+.bhead .when {
+  display: block; margin-top: 4px;
+  font-size: var(--text-control); line-height: 24px; color: var(--text);
+}
+.bhead .when .nodate { color: var(--text-subtle); }
+.bhead .where { display: block; font-size: var(--text-body); line-height: 22px; color: var(--text-muted); }
+.bhead .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; align-items: center; }
+.bhead .money {
+  display: block; margin-top: 12px;
+  font-size: var(--text-section); line-height: 28px; font-weight: 500; color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+}
+.bhead .money.none { font-size: var(--text-body); line-height: 22px; font-weight: 400; color: var(--text-subtle); }
+.pill--waiting { background: var(--warning-subtle); color: var(--warning-text); }
+
+.bactions { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.kbtn {
+  position: relative;
+  height: 36px; padding: 0 12px; border: 0; border-radius: var(--radius-sm);
+  font: inherit; font-size: var(--text-body); line-height: 24px; font-weight: 500;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer; transition: background var(--duration-fast) var(--ease-out);
+}
+.kbtn::after { content: ''; position: absolute; inset: -4px -2px; }
+.kbtn--primary { background: var(--accent); color: var(--text-on-accent); }
+.kbtn--primary:hover { background: var(--accent-hover); }
+.actbtn {
+  position: relative;
+  height: 30px; padding: 0 10px; border: 0; border-radius: var(--radius-sm);
+  background: var(--accent-subtle); color: var(--accent-text);
+  font: inherit; font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  display: inline-flex; align-items: center; cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.actbtn::after { content: ''; position: absolute; inset: -7px -2px; }
+.actbtn:hover { background: color-mix(in oklab, var(--accent) 16%, transparent); }
+.actbtn--danger { background: var(--danger-subtle); color: var(--danger-text); }
+.actbtn--danger:hover { background: color-mix(in oklab, var(--danger) 16%, transparent); }
+
+/* What they said. The source text from 5.5.1 rule 2, kept on the record so
+   that a wrong extraction can be checked against what it was working from.
+   On a manual enquiry there is nothing to show and the block is not drawn. */
+.said {
+  margin-top: 22px; padding: 14px 16px;
+  background: var(--surface-sunken); border-radius: var(--radius-md);
+}
+.said .from {
+  display: block; margin-bottom: 6px;
+  font-size: var(--text-caption); line-height: 16px; color: var(--text-subtle);
+}
+.said p { margin: 0; font-size: var(--text-body); line-height: 22px; color: var(--text); }
+
+.dsection { margin-top: 26px; }
+.dsection > h3 {
+  margin: 0 0 8px; font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.04em;
+}
+.drow {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  padding: 9px 0; border-bottom: 1px solid var(--border);
+  font-size: var(--text-body); line-height: 22px;
+}
+.drow:first-of-type { border-top: 1px solid var(--border); }
+.drow .k { color: var(--text-muted); flex: none; }
+.drow .v { color: var(--text-strong); text-align: right; min-width: 0; }
+.drow .v.blank { color: var(--text-placeholder); font-weight: 400; }
+.dempty {
+  padding: 9px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  font-size: var(--text-body); line-height: 22px; color: var(--text-placeholder);
+}
+[data-empties="omit"] .dsection.is-empty { display: none; }
+[data-empties="useful"] .dsection.is-empty.not-due { display: none; }
+/* The one line that does the teaching an empty section was being asked to do,
+   at the cost of a sentence rather than nine headings. */
+.later {
+  margin-top: 26px; padding: 12px 14px;
+  background: var(--surface-sunken); border-radius: var(--radius-sm);
+  font-size: var(--text-meta); line-height: 20px; color: var(--text-muted);
+}
+[data-empties="useful"] .later { display: block; }
+.later { display: none; }
+.dsummary { margin: 20px 0 0; font-size: var(--text-body); line-height: 22px; color: var(--text-muted); }
+.dnote { margin: 10px 0 0; font-size: var(--text-meta); line-height: 20px; color: var(--text-subtle); max-width: 62ch; }
+
+/* The clash panel from 5.2, on the detail rather than only on the row.
+   Every competing record carries how long ago it was last touched, because
+   that is the fact that decides between overriding and making a call. */
+.clashbox {
+  margin-top: 22px; padding: 12px 14px;
+  border-left: 3px solid var(--warning); background: var(--warning-subtle);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.clashbox > b { display: block; font-weight: 500; color: var(--text-strong); font-size: var(--text-body); }
+.clashbox ul { margin: 6px 0 0; padding-left: 0; list-style: none; }
+.clashbox li { font-size: var(--text-meta); line-height: 22px; color: var(--text); }
+.clashbox li .ago { color: var(--text-muted); }
+
+/* The slide-up ----------------------------------------------------------- */
+.toast {
+  position: absolute; left: 12px; right: 12px; z-index: 25;
+  bottom: var(--toast-bottom, 20px);
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface-overlay); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-menu-value);
+  font-size: var(--text-body); line-height: 20px;
+  transform: translateY(14px); opacity: 0; pointer-events: none;
+  transition: transform var(--duration-base) var(--ease-out), opacity var(--duration-base) var(--ease-out);
+}
+.toast.is-in { transform: translateY(0); opacity: 1; pointer-events: auto; }
+.toast p { margin: 0; flex: 1; min-width: 0; }
+.toast .toastx {
+  flex: none; border: 0; background: transparent; cursor: pointer; padding: 0;
+  color: var(--accent-text); font: inherit; font-size: var(--text-body); font-weight: 500;
+}
+
+/* Floating tab bar, per the prompt 7 brief ------------------------------- */
+.tabbar {
+  position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 10;
+  height: 64px; border-radius: var(--radius-lg);
+  background: var(--tabbar-glass);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgb(18 18 23 / 0.10);
+  display: grid; grid-template-columns: repeat(5, 1fr); align-items: center;
+}
+.tabbar button {
+  border: 0; background: transparent; cursor: pointer; padding: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  color: var(--text-subtle); font: inherit; font-size: 10px; line-height: 12px;
+}
+.tabbar button[aria-current="page"] { color: var(--accent-text); font-weight: 500; }
+.tabbar svg { width: 22px; height: 22px; }
+.tabbar .plus {
+  width: 48px; height: 48px; border-radius: var(--radius-pill); background: var(--accent);
+  color: var(--text-on-accent); display: grid; place-items: center;
+  justify-self: center; box-shadow: 0 4px 12px oklch(54.3% 0.2313 287.5 / 0.4);
+}
+.tabbar .plus svg { width: 24px; height: 24px; }
+.tabspacer { flex: none; }
+
+.sidebar { display: none; }
+
+/* ============================================================================
+   CONTAINER QUERIES
+   One breakpoint, the same --container-split token the calendar uses.
+   List column at a FIXED width (finding 198), detail sticky inside the one
+   scroll container (decision 201), nothing preselected.
+   ========================================================================== */
+@container screen (min-width: 760px) {
+  .shell { flex-direction: row; }
+  .statusbar, .tabbar, .tabspacer, .detailhead { display: none; }
+
+  .sidebar {
+    display: flex; flex-direction: column; gap: 2px; flex: none;
+    width: var(--layout-sidebar); padding: 16px 12px;
+    border-right: 1px solid var(--border); background: var(--surface-sunken);
+  }
+  .sidebar .brand {
+    font-size: var(--text-lead); font-weight: 500; color: var(--text-strong);
+    padding: 8px 12px 16px; letter-spacing: -0.01em;
+  }
+  .sidebar a {
+    display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px;
+    border-radius: var(--radius-sm); color: var(--text-muted);
+    text-decoration: none; font-size: var(--text-body);
+  }
+  .sidebar a svg { width: 18px; height: 18px; }
+  .sidebar a[aria-current="page"] { background: var(--accent-subtle); color: var(--accent-text); font-weight: 500; }
+
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .pagehead { padding: 16px 24px 8px; display: flex; }
+  .pagehead h1 { font-size: var(--text-title); line-height: 32px; }
+
+  .cols { display: grid; grid-template-columns: 380px minmax(0, 1fr); align-items: start; }
+  .shell[data-view="detail"] .listcol { display: block; }
+  .listcol { border-right: 1px solid var(--border); }
+  .detailcol {
+    display: block;
+    position: sticky; top: 0; align-self: start;
+    max-height: none;
+  }
+  .detail { padding: 24px 28px 40px; }
+  .filterbar { padding: 12px 16px; }
+  .erow { padding: 11px 16px; }
+  .toast { left: auto; right: 20px; max-width: 460px; }
+
+  .sheet__scrim { background: transparent; }
+  .sheet__panel {
+    left: auto; right: auto; bottom: auto; width: 300px;
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: 6px 16px 16px;
+    transform: translateY(-6px) scale(0.98); opacity: 0; transform-origin: top left;
+    transition: transform var(--duration-base) var(--ease-out), opacity var(--duration-base) var(--ease-out);
+  }
+  .sheet.is-open .sheet__panel { transform: translateY(0) scale(1); opacity: 1; }
+  .sheet__grab { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}
+</style>
+</head>
+<body class="theme-light">
+
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>Klaroly enquiries, proof of concept</h1>
+    <p>The list from <code>enquiries-research.md</code>: one row per enquiry rather than per event, ordered by neglect rather than by date, with the sparse booking screen behind it rather than a second detail layout. Tap a row to open it. Type in the filter. Arrow keys move through the list on desktop.</p>
+    <p class="stamp">Standalone page, not in the codebase. 6 September 2026, and the fixtures are written against that date. Updated after the first review: the stage pill and the stage colours are settled and their controls are kept only so the comparison can be made again, the clash line has moved into the artist's own view menu, and empty sections have a third setting.</p>
+  </div>
+
+  <div class="controls" role="group" aria-label="Proof of concept controls">
+    <label class="ctl"><span>Theme</span>
+      <span class="seg" data-control="theme">
+        <button type="button" data-value="light" aria-pressed="true">Light</button>
+        <button type="button" data-value="dark" aria-pressed="false">Dark</button>
+      </span>
+    </label>
+    <label class="ctl"><span>Stage change on the row</span>
+      <span class="seg" data-control="stagemode">
+        <button type="button" data-value="pill" aria-pressed="true">The pill is the control</button>
+        <button type="button" data-value="chip" aria-pressed="false">A named chip</button>
+        <button type="button" data-value="off" aria-pressed="false">Detail only</button>
+      </span>
+    </label>
+    <label class="ctl"><span>Stage colours</span>
+      <span class="seg" data-control="stagehue">
+        <button type="button" data-value="full" aria-pressed="true">Full</button>
+        <button type="button" data-value="quiet" aria-pressed="false">Quiet</button>
+      </span>
+    </label>
+    <label class="ctl"><span>Gone quiet after</span>
+      <span class="seg" data-control="cold">
+        <button type="button" data-value="7" aria-pressed="false">7 days</button>
+        <button type="button" data-value="14" aria-pressed="true">14 days</button>
+        <button type="button" data-value="21" aria-pressed="false">21 days</button>
+      </span>
+    </label>
+    <label class="ctl"><span>Empty sections on the detail</span>
+      <span class="seg" data-control="empties">
+        <button type="button" data-value="useful" aria-pressed="true">When they are useful</button>
+        <button type="button" data-value="omit" aria-pressed="false">Omit them</button>
+        <button type="button" data-value="draw" aria-pressed="false">Draw them all</button>
+      </span>
+    </label>
+  </div>
+
+  <section class="band">
+    <h2>Phone</h2>
+    <p class="hint">Real pixel sizes with the status bar, page header, sticky filter and floating tab bar all taking their actual space. Tapping a row pushes the booking screen into the same frame, the way <code>/bookings/:id</code> does, because an enquiry and a booking are one record at different stages. The back button returns.</p>
+    <div class="phones">
+      <figure class="frame">
+        <div class="device"><div class="screen" id="screen-se" style="width:375px;height:667px"></div></div>
+        <figcaption>iPhone SE, 375 &times; 667</figcaption>
+      </figure>
+      <figure class="frame">
+        <div class="device"><div class="screen" id="screen-16" style="width:393px;height:852px"></div></div>
+        <figcaption>iPhone 16, 393 &times; 852</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="band">
+    <h2>Desktop</h2>
+    <p class="hint">Same markup, same components. The split comes from a container query at 760px, which is why it works inside a box on this page. Nothing is selected when you arrive. Scroll the list and watch the detail stay put: it is <code>position: sticky</code> inside the one scroll container, so there is no height calculation anywhere.</p>
+    <div class="deskframe"><div class="screen" id="screen-desk" style="height:720px"></div></div>
+  </section>
+
+  <section class="notes">
+    <h2>What to look at</h2>
+
+    <h3>1. The default order, which is the call the screen turns on</h3>
+    <p>Open the view menu beside the filter box and move <strong>Sort</strong> through its three settings. <strong>Staleness</strong> is the default and it is the one that answers the screen's own question: the top of the list is the four people nobody has spoken to for weeks, and <strong>Kit Ardern</strong> is the first row in the whole app that tells you something you did not know, because that enquiry has been silent for six weeks and the wedding is in six weeks.</p>
+    <p>Notice the rule that had to be added to make staleness work. A brand new enquiry has the freshest timestamp in the list and would sort to the bottom, which is exactly backwards, so <strong>Not looked at yet</strong> is pinned above everything and ordered newest first. Two rules instead of one, and the two-rule version is what the artist actually means.</p>
+    <p><strong>Stage</strong> reads as a pipeline and makes the one-tap stage change obvious. It also does the thing the note warned about: <strong>Saoirse Gallagher</strong>, quoted and silent for over three weeks, sits in the middle of the Quoted group looking like everybody else. <strong>Wedding date</strong> is the third, and it is the one I would drop, because the calendar already answers that question properly.</p>
+
+    <h3>2. One row per enquiry, not per event</h3>
+    <p>Two fixtures make the case. <strong>Hannah Crewe</strong> and <strong>Tomasz Nowicki</strong> have no wedding date at all, which is a normal and often promising enquiry, and an events-shaped payload cannot represent either of them: there would be no row. <strong>Delphine Marchetti</strong> has a trial in March and the wedding in May, which is two events and one conversation, and two rows would mean two staleness figures reading the same number and two chances to reply twice to the same person.</p>
+    <p>So this list needs <code>GET /api/enquiries</code> returning bookings, not a filter over <code>GET /api/events</code>. Section 3 of the note has the reasoning.</p>
+
+    <h3>3. The stage change on the row, three shapes</h3>
+    <p>Move the <strong>Stage change on the row</strong> control. <strong>The pill is the control</strong> makes the thing your eye already goes to tappable, and it costs nothing on the row: tap a stage pill and the sheet offers the four stages plus Convert and Mark as lost. It is two taps rather than one, which is the honest objection to it.</p>
+    <p><strong>A named chip</strong> is genuinely one tap and says where it is going by name. Watch what it costs, because it was measured rather than guessed: with the pill as the control, <strong>two of the fourteen second lines truncate</strong> on the 375px frame and one on the 393px frame. With the chip, <strong>seven of fourteen truncate</strong>. Detail only truncates exactly the same two as the pill, which is the number that settles it: <strong>making the pill tappable costs nothing at all on the row</strong>, and the chip costs five more truncated venues out of fourteen.</p>
+    <p>One thing the chip taught us that outlives the chip. Its first version offered the next value in the enum, so a New enquiry was offered <em>In conversation</em>, which is the move nobody is in a hurry to make. It now offers <strong>Possible</strong>, because 5.1 says the soft hold is the interaction the whole feature turns on, and routing New through In conversation makes the one tap into two. Whichever shape wins, that is the rule: the row offers the move that matters, not the next row of the table.</p>
+    <p><strong>Settled on the pill</strong> after the first review, and the control below is kept only so the comparison can be made again. The chip is not being built.</p>
+    <p><strong>Detail only</strong> is the clean list, and it is what 5.1 explicitly rules out: <em>"It has to be one tap from the enquiry row, with no form in the way, or she will not do it."</em> It is here so the cost of obeying that rule is visible beside the cost of ignoring it.</p>
+    <p>Swipe is not built. It is the fastest of the four and the least discoverable, it needs a second gesture for Lost, and it is awkward on a laptop. Worth revisiting with evidence about how often stages actually move, which is a question for real use.</p>
+
+    <h3>4. The clash line, which is the new idea</h3>
+    <p><strong>Settled: it ships, on by default, and it is the artist's setting rather than yours.</strong> It has moved out of the controls at the top of this page and into the view menu as <strong>Show date clashes</strong>, beside the source line and the totals. Turn it off and on there. Three enquiries and one confirmed booking all want <strong>12 June 2027</strong>, which is the Saturday 5.2 exists for. The line does not prevent anything and it is not a warning; it says three of these four are going to book somebody else in the next fortnight, and the one you ring today is the one that converts.</p>
+    <p>Open <strong>Marta Kowalczyk</strong> and look at the panel on the detail. Every competing record carries how long ago it was last touched, which is 5.2's actual point: an enquiry that went quiet three months ago is one you override without a thought, and one that was a conversation last week is a phone call worth making first.</p>
+    <p><strong>One thing to decide.</strong> Marta is at In conversation, so her enquiry holds no date and carries no calendar mark (decision 173 and <code>dayMarks.ts</code>). The clash line still appears on her row, because it describes what is <em>already on the date</em> rather than what this record contributes to it. I think that is right, and it is a deliberate departure from the calendar's rule rather than an oversight, so it is worth your agreement before it goes in a prompt.</p>
+    <p><strong>One reservation, said once and then left alone.</strong> This is the same shape as the amounts-owed switch on contacts, and it has the same problem: a control that hides a double-booked Saturday is a control that gets left off, and the artist then has a calm list and two weddings on the same morning. It is on by default, which is most of the answer, and it is your product. Worth having said.</p>
+    <p><strong>And the wording had to be cut down.</strong> The sentence the note proposed, <em>"Already booked, and two others want this date"</em>, truncates on every frame including the 380px desktop column. What fits is <em>"Booked, and two others want it"</em>. The long version survives on the detail panel, where 5.2's actual wording has room, so the two say the same thing at two lengths rather than one of them saying it badly.</p>
+
+    <h3>4a. Two endings, one stage</h3>
+    <p>Turn <strong>Show ones not going ahead</strong> on in the view menu and look at the group at the bottom. <strong>Ottilie Vance</strong> says <strong>Turned down</strong> and the two below say <strong>Lost</strong>. There is still only one stage behind all three.</p>
+    <p><strong>It is a reason with a side, not a stage of its own.</strong> <code>bookings.lost_reason</code> already exists as <code>varchar(40)</code> with no constraint, so it was going to fill with free text the moment anybody used it. Giving it an enum whose values know whether it was them or you buys the whole distinction and changes nothing else: no new stage, no migration to the check constraint, and no edit to <code>strengthByStage</code>, <code>WaitingOnResolver</code>, either list filter, or any future test of whether a record is still live. The two endings behave identically. Both release the date, both archive the record, and the only thing that differs is who decided, which is exactly what a reason is for.</p>
+    <p><strong>The word is "Turned down".</strong> It is what an artist says out loud, which matters given the promises document says this app gets read aloud. "Rejected" and "refused" read as a judgement on the person and are ambiguous about direction, because a client rejects a quote too. "Unaccepted" is not a phrase anybody uses.</p>
+    <p><strong>The group heading cannot be "Closed",</strong> because that stage is taken by done and paid. "Not going ahead" covers both endings, and the pill on each row says which one it was.</p>
+    <p>Tap a stage pill and then <strong>This one is not going ahead</strong> to see the reason list. The heading carries the side, so no reason has to say who did it, and the two "Another reason" rows are not a duplication: which heading they sit under is the fact being recorded. Endings are deliberately two taps. 5.1 asks for one tap to Possible and nothing asks for one tap to an ending.</p>
+    <p><strong>What this is actually worth</strong> is not the label. It is that the conversion rate stops lying, because a job you turned down comes out of the denominator and the figure then measures how well you sell rather than how often you were free. And <strong>turned away</strong> becomes a number of its own, which is the most useful pricing signal in the product: an artist turning away six Saturdays a year has a rate card that is too low, and nothing else in the app can tell them so.</p>
+    <p><strong>Ottilie Vance is on 12 June 2027 on purpose.</strong> That is the contested Saturday, and turning an enquiry down is the moment the other names on that date matter most. The clash panel already knows about them.</p>
+
+    <h3>5. Gone quiet after how many days</h3>
+    <p>Move the <strong>Gone quiet after</strong> control and watch the top group grow and shrink. This is not a display setting: it drives the <code>artist_enquiry_cold</code> branch that already exists in <code>App\Services\WaitingOnResolver</code>, so whatever number goes here is the number the home screen's attention block will use as well.</p>
+    <p><strong>Settled that it becomes an account setting rather than a constant, and the number itself is deferred.</strong> It is not a per-device view preference like the sort, because two screens read it and it describes the business rather than the browser, so it belongs on the account with the rest of the settings groups. The number is a thing to live with for a while and then choose. Seven days is worth seeing before deciding, because six of fourteen enquiries land in the alarming group and the group stops meaning anything.</p>
+    <p><strong>And there is a disagreement to settle.</strong> The resolver reaches <code>artist_enquiry_cold</code> only for an enquiry at Possible. This list colours the age on any live enquiry that has gone quiet, including <strong>Saoirse Gallagher</strong> at Quoted and <strong>Kit Ardern</strong> at In conversation, both of which are more urgent than most of the Possible ones. Either the resolver widens or the list is showing something the rest of the app disagrees about, and the second of those is how two screens start telling the artist different things.</p>
+
+    <h3>6. The detail is the booking screen, and it is nearly empty</h3>
+    <p>This follows from decision 4.3 rather than being a choice: one table, a stage column, everything else nullable, so there is no separate enquiry screen to keep in step with the booking one. What it exposes is that <strong>the booking screen has to be good when it is nearly empty</strong>, and 19.3 says the summary must be complete on its own and readable at 5am without scrolling.</p>
+    <p>Move <strong>Empty sections on the detail</strong> through its three settings with <strong>Rosie Duthie</strong> open. She arrived this morning through the website and has a name, a date and a venue.</p>
+    <p><strong>Draw them all</strong> is nine sections saying nothing, which pushes the 5am summary below the fold on the most-used screen in the product. <strong>Omit them</strong> is honest and slightly too quiet: nothing tells a new artist that agreements or intake forms exist at all.</p>
+    <p><strong>When they are useful</strong> is the third option and it is the recommendation. A section appears when the stage makes it the next useful thing, and when it appears empty it carries the action rather than a full stop. An enquiry gets dates, party, price, notes and activity. The moment it converts, Agreement and Payments appear saying <em>no agreement yet, send one</em>, which is discovery and a working control at the same time, arriving at the exact moment it is the right thing to do.</p>
+    <p>And the teaching that the nine headings were being asked to do costs one sentence instead, at the foot of the screen: <em>"Price appears once this moves to Possible. Payments, the intake form, agreement, messages and photos appear once this becomes a booking."</em></p>
+    <p><strong>The argument that settles it is one of yours.</strong> Section 21 and section 6 say the app only ever asks about things the artist has switched on: with invoicing off, nothing is ever waiting on a deposit. So a section for a feature that is switched off must not be drawn at any stage, which means "draw them all" can only ever mean "draw the ones already enabled" &mdash; and those are exactly the features the artist already knows about. The discovery argument and the toggle rule cancel each other out. This prototype has no feature toggles in it, so that half of the rule is stated here rather than shown.</p>
+    <p>The one block worth keeping whatever you decide is <strong>What they said</strong>. It is 5.5.1's rule that the source is kept on the record, and it is the difference between a name from four months ago and a conversation you can pick up.</p>
+
+    <h3>7. What the artist owns, and what you do</h3>
+    <p>Same split as contacts. The sort, the source line, the totals, the clash line and whether the ones not going ahead show are view settings on the device in <code>localStorage</code>, so there is no column, no migration and no request; change one and reload this page and it comes back as you left it. The controls at the top of this page are yours rather than the artist's.</p>
+    <p><strong>Three tiers, and it is worth naming them because they keep getting confused.</strong> A <em>view setting</em> lives in <code>localStorage</code> and describes this browser: the sort, the four switches. An <em>account setting</em> lives on the account and describes the business: the gone-quiet threshold, because two screens read it. A <em>decision</em> lives in the code and describes the product: whether the stage pill is tappable at all. Five settings in that menu is close to the limit, which is why the clash line went in and a detail-only third state for it did not.</p>
+    <p>The view menu is built on the measured-anchor precedent from decision 231 rather than on <code>ui/Sheet.vue</code>, and so is the stage menu. That is now two panels hanging off a measured button in this prototype and two in the app, which is the point at which 231 says to extract <code>AnchoredSheet</code> with both callers moving at once.</p>
+
+    <h3>8. Three numbers this prototype exists to report</h3>
+    <ul>
+      <li><strong>The tappable pill is free and the chip is not.</strong> Two truncated second lines out of fourteen at 375px with the pill or with nothing, seven with the chip. That is section 3, and it is the clearest measurement on the page.</li>
+      <li><strong>380px is still not enough for the list column.</strong> Contacts reported 360 as slightly tight and suggested 380 or 400. This screen is at 380 and truncates the same two rows the 375px phone does, because <em>The Glasshouse at Ravensmere</em> is twenty-eight characters and the date takes the first ninety pixels. Either the column goes to about 420, or a long venue name is accepted as something that truncates, which is a perfectly reasonable answer. It is reported rather than decided, per finding 198.</li>
+      <li><strong>At a seven day threshold the middle band disappears.</strong> Gone quiet and Over a week overlap, so the list goes straight from Gone quiet to This week. That is correct behaviour rather than a bug, and it is worth seeing before the number is chosen, because seven days produces a list where six of fourteen enquiries are in the alarming group and the group stops meaning anything.</li>
+    </ul>
+
+    <h3>9. Two things the build found that the note did not</h3>
+    <ul>
+      <li><strong>The row cannot be a <code>&lt;button&gt;</code>.</strong> The contacts row is one, and it works there because nothing inside it is interactive. 5.1 puts a control inside this row, and a button inside a button is invalid markup that browsers resolve by quietly dropping one of them. So the row is a <code>div</code> with <code>role="button"</code>, its own key handling, and controls that stop the click reaching it. That is a real cost of obeying 5.1 and it belongs in the prompt rather than being discovered during it.</li>
+      <li><strong>The info family was missing from the prototype's tokens.</strong> <code>contacts-poc.html</code> lifted layer two from <code>tokens.css</code> and did not need <code>info</code>, so it did not carry it, and this page inherited the gap. The four values are back, lifted from <code>app.css</code> rather than invented, which is what the style guide requires: if something has no token, stop and ask rather than making one up. Worth knowing that the prototype's copy of the theme is a subset and not the theme.</li>
+    </ul>
+
+    <h3>10. The filter</h3>
+    <p>Type <code>ferndale</code> and it matches through the second line. Type <code>quoted</code> and it matches the stage. Type <code>voice</code> and it finds the enquiries that arrived as a voice note. None of this touches the server, which is section 3 of the note: perhaps twenty to forty live enquiries at any moment, one payload, everything else on the device, and it all works in a hotel basement with no signal.</p>
+
+    <div class="warnbox">
+      <p><strong>Not built, on purpose:</strong> bulk actions with a checkbox column, saved filters, replying from the list, the follow-up reminder from 5.6.4, source analytics, and anything to do with AI intake. Section 10 of the note says why each one waits. The first three are what a list like this grows by default and thirty rows do not need any of them.</p>
+    </div>
+
+    <h3>What is fake in here</h3>
+    <p>The data, and only the data. Every person and every venue is invented, which is the rule from Prompt 12 that <code>contacts-poc.html</code> broke: fixture strings reach screenshots. The tokens are lifted from <code>tokens.css</code>, the list row is the style guide's list row, the group headings are the Prompt 12 sticky pattern, the split is the <code>--container-split</code> token, and the stage names, the sources and the waiting-on values are the enums in <code>api/app/Enums</code> rather than anything invented here.</p>
+  </section>
+
+</div>
+
+<script>
+/* ==========================================================================
+   Icons. Same 24 by 24 grid and currentColor stroke as src/components/ui/Icon.
+   ========================================================================== */
+const I = {
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>',
+  right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
+  chevdown: '<svg class="chevdown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  caret: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  sort: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M4 12h7M4 17h4M17 5v14M17 19l-3-3M17 19l3-3"/></svg>',
+  arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>',
+  alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 2.6 20h18.8L12 4.5Z"/><path d="M12 10v4M12 17.2v.1"/></svg>',
+  tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg>',
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>',
+  enq: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.3L3 21l1.3-4.4A8.4 8.4 0 1 1 21 11.5Z"/></svg>',
+  people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><path d="M16.5 5.2a3.4 3.4 0 0 1 0 6.6M17 14.2a6.2 6.2 0 0 1 4.2 5.8"/></svg>',
+  cog: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1v.3a2 2 0 0 1-4 0v-.2a1.6 1.6 0 0 0-2.8-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7h-.3a2 2 0 0 1 0-4h.2a1.6 1.6 0 0 0 1.1-2.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1v-.3a2 2 0 0 1 4 0v.2a1.6 1.6 0 0 0 2.8 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7h.3a2 2 0 0 1 0 4h-.2a1.6 1.6 0 0 0-1.5 1Z"/></svg>',
+  more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h.1M12 12h.1M19 12h.1"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
+}
+
+/* ==========================================================================
+   Fixtures. Today is 6 September 2026.
+   Every person and every venue is invented, per the rule Prompt 12 set and
+   contacts-poc.html broke: fixture strings reach screenshots.
+   Money in pence beside its currency, per decision 77, formatted at the edge.
+   ========================================================================== */
+const TODAY = new Date(2026, 8, 6)
+const NOW = new Date(2026, 8, 6, 10, 30)
+
+function back (days, hours) {
+  const d = new Date(NOW)
+  d.setDate(d.getDate() - days)
+  if (hours) d.setHours(d.getHours() - hours)
+  return d.toISOString()
+}
+
+/* Confirmed and provisional bookings already in the account. They are not in
+   this list, they exist so the clash line has something to clash with. */
+const OTHERS = [
+  { name: 'Elspeth Rowntree', stage: 'confirmed', date: '2027-06-12', venue: 'Marlbrook Hall', touched: back(9) },
+  { name: 'Georgia Bramwell', stage: 'provisional', date: '2026-10-17', venue: 'Whitmoor Court', touched: back(3) },
+  { name: 'Wren Castellan', stage: 'confirmed', date: '2027-03-20', venue: 'Ferndale Barn', touched: back(21) }
+]
+
+const ENQ = [
+  { id: 1, name: 'Rosie Duthie', stage: 'new', touched: back(0, 7), source: 'web_form',
+    events: [{ type: 'main', date: '2027-05-15', venue: 'Ferndale Barn', city: 'Ombersleigh', locationType: 'venue' }],
+    party: 5, msg: 'Hello, we are getting married at Ferndale Barn next May and I would love a quote for me plus four bridesmaids. My mum may want hers done too. Is a trial included?',
+    notes: [] },
+
+  { id: 2, name: 'Tomasz Nowicki', stage: 'new', touched: back(1), source: 'captured_at_event',
+    sourceRef: "Elspeth Rowntree's wedding", events: [],
+    party: null, msg: null,
+    notes: [{ body: 'Best man at the Rowntree wedding. Getting engaged at Christmas, wants to sort the makeup for his partner early.', when: back(1) }] },
+
+  { id: 3, name: 'Bea Ashworth', stage: 'new', touched: back(5), source: 'forwarded_email',
+    events: [{ type: 'main', date: '2027-09-04', venue: 'Penbury Manor', city: 'Halewick', locationType: 'venue' }],
+    party: 3, msg: 'Forwarded from my inbox. Bea is a friend of the Castellans and asked whether I am free on the 4th of September next year for herself and two others.',
+    notes: [] },
+
+  { id: 4, name: 'Imogen Slade', stage: 'in_conversation', touched: back(2), source: 'manual',
+    events: [{ type: 'main', date: '2027-07-03', venue: 'Whitmoor Court', city: 'Nettlebed', locationType: 'venue' }],
+    party: 6, msg: null,
+    notes: [{ body: 'Rang on Thursday. Six in the party, wants a soft look, has seen the Whitmoor photos. Sending dates for a trial.', when: back(2) }] },
+
+  { id: 5, name: 'Marta Kowalczyk', stage: 'in_conversation', touched: back(19), source: 'web_form',
+    events: [{ type: 'main', date: '2027-06-12', venue: 'Marlbrook Hall', city: 'Ludworth', locationType: 'venue' }],
+    party: 4, msg: 'We are at Marlbrook Hall on the 12th of June 2027. There would be four of us. My sister had you at her wedding and would not stop talking about it.',
+    notes: [] },
+
+  { id: 6, name: 'Amelia Fenwick', stage: 'possible', touched: back(11), source: 'web_form',
+    events: [{ type: 'main', date: '2027-06-12', venue: 'The Glasshouse at Ravensmere', city: 'Ravensmere', locationType: 'venue' }],
+    party: 7, msg: 'Hi, our wedding is 12 June 2027 at The Glasshouse at Ravensmere. Seven of us including my two mums. We are very keen and happy to pay to hold the date.',
+    notes: [{ body: 'Very keen. Said they would confirm once the venue deposit clears.', when: back(11) }] },
+
+  { id: 7, name: 'Cerys Llewellyn', stage: 'possible', touched: back(2), source: 'voice_note',
+    events: [{ type: 'main', date: '2027-06-12', venue: 'Alderwick Lodge', city: 'Pentre Fawr', locationType: 'venue' }],
+    party: 3, msg: 'Spoke to Cerys on the way back from Halewick. Wedding is the 12th of June at Alderwick Lodge, three of them, wants a trial in the spring, sending her sister the details.',
+    notes: [] },
+
+  { id: 8, name: 'Priya Ramanathan', stage: 'possible', touched: back(34), source: 'manual',
+    events: [{ type: 'main', date: '2027-08-21', venue: 'Thackston House', city: 'Bellingford', locationType: 'venue' }],
+    party: 9, msg: null,
+    notes: [{ body: 'Two ceremonies over two days, nine people across both. Wants a price for the whole thing rather than per person.', when: back(34) }] },
+
+  { id: 9, name: 'Elin Vaughan', stage: 'quoted', touched: back(6), source: 'web_form',
+    events: [{ type: 'main', date: '2026-11-14', venue: 'The Old Corn Exchange', city: 'Thurlby', locationType: 'venue' }],
+    party: 4, totalMinor: 124000, currency: 'GBP', msg: 'November wedding at The Old Corn Exchange in Thurlby. Four of us. Short notice, I know.',
+    notes: [{ body: 'Quote sent Monday. Said they would speak to their partner at the weekend.', when: back(6) }] },
+
+  { id: 10, name: 'Saoirse Gallagher', stage: 'quoted', touched: back(23), source: 'forwarded_email',
+    events: [{ type: 'main', date: '2027-04-10', venue: 'The Yard at Hollingfen', city: 'Hollingfen', locationType: 'venue' }],
+    party: 5, totalMinor: 86000, currency: 'GBP', msg: null,
+    notes: [{ body: 'Price sent. Nothing back.', when: back(23) }] },
+
+  { id: 11, name: 'Fran Odell', stage: 'quoted', touched: back(1), source: 'manual',
+    events: [{ type: 'main', date: '2027-03-20', venue: 'Ferndale Barn', city: 'Ombersleigh', locationType: 'venue' }],
+    party: 6, totalMinor: 152000, currency: 'GBP', msg: null,
+    notes: [{ body: 'Quote went out yesterday afternoon.', when: back(1) }] },
+
+  { id: 12, name: 'Hannah Crewe', stage: 'in_conversation', touched: back(8), source: 'voice_note',
+    events: [],
+    party: null, msg: 'Hannah rang about next year. No date yet, they are between two venues and will not know until October. Wants to know roughly what it costs before they commit to anything.',
+    notes: [] },
+
+  { id: 13, name: 'Delphine Marchetti', stage: 'possible', touched: back(4), source: 'web_form',
+    events: [
+      { type: 'trial', date: '2027-03-14', venue: null, city: null, locationType: 'base' },
+      { type: 'main', date: '2027-05-29', venue: 'Marlbrook Hall', city: 'Ludworth', locationType: 'venue' }
+    ],
+    party: 4, msg: 'Marlbrook Hall on 29 May 2027, four of us. I would like a trial well ahead of the day if that is possible.',
+    notes: [{ body: 'Trial pencilled for 14 March at mine.', when: back(4) }] },
+
+  { id: 14, name: 'Kit Ardern', stage: 'in_conversation', touched: back(41), source: 'captured_at_event',
+    sourceRef: "Wren Castellan's wedding", events: [{ type: 'main', date: '2026-10-17', venue: 'Whitmoor Court', city: 'Nettlebed', locationType: 'venue' }],
+    party: 2, msg: null,
+    notes: [{ body: 'Met at the Castellan wedding. October date, only two of them, said they would come back with times.', when: back(41) }] },
+
+  { id: 15, name: 'Nadia Kerrigan', stage: 'lost', touched: back(40), source: 'web_form',
+    events: [{ type: 'main', date: '2027-02-13', venue: 'Penbury Manor', city: 'Halewick', locationType: 'venue' }],
+    party: 4, msg: null, lostReason: 'went_elsewhere',
+    notes: [] },
+
+  { id: 16, name: 'Ffion Pryce', stage: 'lost', touched: back(62), source: 'manual',
+    events: [{ type: 'main', date: '2026-12-05', venue: 'Alderwick Lodge', city: 'Pentre Fawr', locationType: 'venue' }],
+    party: 3, msg: null, lostReason: 'wedding_off',
+    notes: [{ body: 'Postponed to 2028, said they would be in touch when the new date is set. Worth a note in the diary.', when: back(62) }] },
+
+  /* The one you ended. It is on the contested Saturday on purpose: turning an
+     enquiry down is the moment the other names on that date matter most. */
+  { id: 17, name: 'Ottilie Vance', stage: 'lost', touched: back(28), source: 'web_form',
+    events: [{ type: 'main', date: '2027-06-12', venue: 'Penbury Manor', city: 'Halewick', locationType: 'venue' }],
+    party: 6, msg: 'Penbury Manor, 12 June 2027, six of us and a very early start. Could you do 4am?',
+    lostReason: 'already_booked',
+    notes: [{ body: 'Had to say no, the Rowntree wedding is the same day and it is already confirmed.', when: back(28) }] }
+]
+
+const BY_ID = new Map(ENQ.map(e => [e.id, e]))
+
+/* ==========================================================================
+   Helpers
+   ========================================================================== */
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+
+const STAGE_LABEL = {
+  new: 'New', in_conversation: 'In conversation', possible: 'Possible',
+  quoted: 'Quoted', lost: 'Lost', provisional: 'Provisional', confirmed: 'Confirmed'
+}
+const STAGE_HINT = {
+  new: 'Arrived, not yet looked at',
+  in_conversation: 'Talking, nothing firm',
+  possible: 'Holds the date softly',
+  quoted: 'Price sent, waiting on an answer'
+}
+const SOURCE_LABEL = {
+  manual: 'Added by you', web_form: 'From the website', forwarded_email: 'Forwarded email',
+  voice_note: 'Voice note', captured_at_event: 'Met at a booking'
+}
+/* Why an enquiry ended, and who ended it. This is decision 2026-09-06.1512: a reason with
+   a side, not a stage of its own. `lost` stays the single ending, so nothing
+   that asks "is this live" changes anywhere in the app, and the side is what
+   the pill, the conversion rate and the turned-away figure all read.
+   The keys fit bookings.lost_reason, which is varchar(40). */
+const LOST_REASONS = [
+  { key: 'went_elsewhere', label: 'Went with someone else', side: 'client' },
+  { key: 'too_expensive', label: 'Too expensive', side: 'client' },
+  { key: 'wedding_off', label: 'Wedding not going ahead', side: 'client' },
+  { key: 'no_reply', label: 'Never heard back', side: 'client' },
+  { key: 'client_other', label: 'Another reason', side: 'client' },
+  { key: 'already_booked', label: 'Already booked that day', side: 'artist' },
+  { key: 'too_far', label: 'Too far to travel', side: 'artist' },
+  { key: 'not_right_fit', label: 'Not the right fit', side: 'artist' },
+  { key: 'artist_other', label: 'Another reason', side: 'artist' }
+]
+const REASON = Object.fromEntries(LOST_REASONS.map(r => [r.key, r]))
+
+/* The two stages that hold a date, per business logic 5.2 and dayMarks.ts. */
+const HOLDS = new Set(['possible', 'quoted'])
+const LIVE = ['new', 'in_conversation', 'possible', 'quoted']
+/* What the advance chip offers. It is NOT simply the next value in the enum:
+   from New the move that matters is Possible, because 5.1 says the soft hold
+   is the interaction the whole feature turns on, and routing New through
+   In conversation would make the one tap two. In conversation is still
+   reachable, through the stage menu, which is where a stage nobody is in a
+   hurry to reach belongs. */
+const NEXT_STAGE = { new: 'possible', in_conversation: 'possible', possible: 'quoted', quoted: null }
+
+/* A day string, 'YYYY-MM-DD', parsed as a local calendar date. Never
+   toISOString anywhere near a day key: that is UTC, and it files an evening
+   in October under the previous day. */
+function day (s) { const p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]) }
+function midnight (d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()) }
+function daysSince (iso) { return Math.round((midnight(TODAY) - midnight(new Date(iso))) / 86400000) }
+function daysUntil (s) { return Math.round((day(s) - midnight(TODAY)) / 86400000) }
+
+function agoWords (n) {
+  if (n <= 0) return 'Today'
+  if (n === 1) return 'Yesterday'
+  if (n < 14) return n + ' days'
+  if (n < 60) return Math.round(n / 7) + ' weeks'
+  return Math.round(n / 30) + ' months'
+}
+function agoPhrase (n) {
+  if (n <= 0) return 'today'
+  if (n === 1) return 'yesterday'
+  return agoWords(n).toLowerCase() + ' ago'
+}
+function money (minor, currency) {
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency', currency: currency || 'GBP',
+    minimumFractionDigits: minor % 100 ? 2 : 0, maximumFractionDigits: minor % 100 ? 2 : 0
+  }).format(minor / 100)
+}
+function fold (s) { return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() }
+function esc (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+function count (n) { return ['no', 'one', 'two', 'three', 'four', 'five', 'six'][n] || String(n) }
+function cap (s) { return s.charAt(0).toUpperCase() + s.slice(1) }
+
+/* Derived, never stored. An ending the artist chose is not a loss, and calling
+   it one costs a wrong conversion rate as well as a small daily annoyance. */
+function endingSide (r) { return (REASON[r.lostReason] || {}).side || 'client' }
+function endingLabel (r) { return endingSide(r) === 'artist' ? 'Turned down' : 'Lost' }
+function reasonLabel (r) { return (REASON[r.lostReason] || {}).label || '' }
+function pillLabel (r) { return r.stage === 'lost' ? endingLabel(r) : STAGE_LABEL[r.stage] }
+
+function mainEvent (r) { return r.events.find(e => e.type === 'main') || r.events[0] || null }
+function trialEvent (r) { return r.events.find(e => e.type === 'trial') || null }
+
+/* The place, never a phrase, because line two is a run of places separated by
+   middots. Reading the venue columns alone cannot tell "not settled" from
+   "at my own place", which is why location_type is on the payload at all. */
+function place (e) {
+  if (!e) return null
+  if (e.venue) return e.venue
+  if (e.locationType === 'base') return 'At yours'
+  if (e.locationType === 'client') return 'At their address'
+  return 'Venue not settled'
+}
+
+/* The shortening rule Prompt 12 measured on the contacts row: drop the year
+   when it is this one, and the town when the venue's name already carries it. */
+function shortDate (s) {
+  const d = day(s)
+  const yr = d.getFullYear() === TODAY.getFullYear() ? '' : ' ' + d.getFullYear()
+  return d.getDate() + ' ' + SHORT[d.getMonth()] + yr
+}
+function longDate (s) {
+  const d = day(s)
+  return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear()
+}
+
+/* ==========================================================================
+   The clash line, business logic 5.2
+   It describes what is ALREADY on the date, so it appears on a row whose own
+   stage holds nothing. That is a deliberate departure from the calendar's
+   rule and section 4 of the page notes explains why.
+   ========================================================================== */
+function competitors (r) {
+  const e = mainEvent(r)
+  if (!e) return null
+  const others = ENQ.filter(x => x.id !== r.id && HOLDS.has(x.stage) && (mainEvent(x) || {}).date === e.date)
+  const booked = OTHERS.filter(o => o.date === e.date)
+  if (!others.length && !booked.length) return null
+  return {
+    others,
+    confirmed: booked.filter(o => o.stage === 'confirmed'),
+    provisional: booked.filter(o => o.stage === 'provisional')
+  }
+}
+/* Measured rather than written: the full sentence version, "Already booked,
+   and two others want this date", truncates on every frame including the
+   380px desktop column. These are the short forms that fit, and the long
+   version survives on the detail panel where there is room for it. */
+function clashLine (c) {
+  if (!c) return null
+  const n = c.others.length
+  const more = n === 1 ? 'one other wants it' : count(n) + ' others want it'
+  const alone = n === 1 ? 'One other wants this date' : cap(count(n)) + ' others want this date'
+  if (c.confirmed.length) return n ? 'Booked, and ' + more : 'You are already booked'
+  if (c.provisional.length) return n ? 'Pencilled in, and ' + more : 'Pencilled in for someone else'
+  return n ? alone : null
+}
+
+/* ==========================================================================
+   Gone quiet
+   The threshold drives App\Services\WaitingOnResolver's artist_enquiry_cold
+   branch, so it is a config value with a real consumer rather than a display
+   choice. Note the widening: the resolver reaches cold only at Possible, and
+   this colours any live enquiry. Page note 5 says why that has to be settled.
+   ========================================================================== */
+function isCold (r, d) { return LIVE.indexOf(r.stage) >= 0 && d >= Number(G.cold) }
+
+function waitingOn (r, d) {
+  if (r.stage === 'lost') return null
+  if (isCold(r, d)) return { key: 'artist_enquiry_cold', label: 'Gone quiet' }
+  if (r.stage === 'possible' && !r.totalMinor) return { key: 'artist_price', label: 'Needs a price' }
+  return null
+}
+
+/* ==========================================================================
+   Global controls
+   Four of these are the artist's own view settings and live on the device,
+   in localStorage, so there is no column, no migration and no request. The
+   rest are the open calls from the note and belong to this page only.
+   ========================================================================== */
+const VIEW_KEYS = ['sort', 'source', 'totals', 'clash', 'lost']
+const G = {
+  sort: 'stale', source: 'off', totals: 'on', lost: 'off',
+  stagemode: 'pill', stagehue: 'full', clash: 'on', cold: '14', empties: 'useful'
+}
+
+function loadView () {
+  try {
+    const raw = localStorage.getItem('klaroly.enquiries.view')
+    if (!raw) return
+    const saved = JSON.parse(raw)
+    VIEW_KEYS.forEach(k => { if (saved[k]) G[k] = saved[k] })
+  } catch (e) { /* private window, file:// origin, cleared storage: use the defaults */ }
+}
+function saveView () {
+  try {
+    const out = {}
+    VIEW_KEYS.forEach(k => { out[k] = G[k] })
+    localStorage.setItem('klaroly.enquiries.view', JSON.stringify(out))
+  } catch (e) { /* never load-bearing */ }
+}
+
+const screens = []
+function applyBodyFlags () {
+  const b = document.body
+  b.dataset.stagemode = G.stagemode
+  b.dataset.stagehue = G.stagehue
+  b.dataset.clash = G.clash
+  b.dataset.source = G.source
+  b.dataset.totals = G.totals
+  b.dataset.empties = G.empties
+}
+function commitView () {
+  saveView()
+  applyBodyFlags()
+  screens.forEach(s => s.render())
+}
+
+document.querySelectorAll('.controls .seg').forEach(seg => {
+  seg.addEventListener('click', e => {
+    const btn = e.target.closest('button'); if (!btn) return
+    seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)))
+    const key = seg.dataset.control, val = btn.dataset.value
+    if (key === 'theme') {
+      document.body.classList.toggle('theme-dark', val === 'dark')
+      document.body.classList.toggle('theme-light', val !== 'dark')
+      return
+    }
+    G[key] = val
+    applyBodyFlags()
+    screens.forEach(s => s.render())
+  })
+})
+
+/* ==========================================================================
+   Sorting and grouping. Three orders, one array, all of it on the device.
+   Lost comes out first in every order and goes to the end as its own group,
+   or a lost enquiry sorts into "Gone quiet" and reads as work to do.
+   ========================================================================== */
+function group (rows) {
+  const live = rows.filter(r => r.stage !== 'lost')
+  const lost = rows.filter(r => r.stage === 'lost')
+    .sort((a, b) => b.touched.localeCompare(a.touched))
+
+  let groups
+  if (G.sort === 'stage') groups = byStage(live)
+  else if (G.sort === 'date') groups = byDate(live)
+  else groups = byStaleness(live)
+
+  /* Not "Closed": that stage is taken by done and paid. One heading covers
+     both endings and the pill on each row says which one it was. */
+  if (lost.length) groups.push({ label: 'Not going ahead', items: lost })
+  return groups
+}
+
+function byStaleness (rows) {
+  /* A brand new enquiry has the freshest timestamp in the list and would sort
+     to the bottom, which is exactly backwards: it is the one nobody has looked
+     at. So New is pinned above everything, newest first, and staleness orders
+     the rest. Two rules, and the two-rule version is what the artist means. */
+  const fresh = rows.filter(r => r.stage === 'new')
+    .sort((a, b) => b.touched.localeCompare(a.touched))
+  const rest = rows.filter(r => r.stage !== 'new')
+    .sort((a, b) => a.touched.localeCompare(b.touched))
+
+  const groups = []
+  if (fresh.length) groups.push({ label: 'Not looked at yet', items: fresh })
+
+  const cold = Number(G.cold)
+  rest.forEach(r => {
+    const d = daysSince(r.touched)
+    const label = d >= cold ? 'Gone quiet'
+      : d >= 8 ? 'Over a week'
+        : d >= 2 ? 'This week' : 'Today and yesterday'
+    push(groups, label, r, label === 'Gone quiet')
+  })
+  return groups
+}
+
+function byStage (rows) {
+  const groups = []
+  LIVE.forEach(stage => {
+    const items = rows.filter(r => r.stage === stage)
+      .sort((a, b) => a.touched.localeCompare(b.touched))
+    if (items.length) groups.push({ label: stage === 'new' ? 'Not looked at yet' : STAGE_LABEL[stage], items })
+  })
+  return groups
+}
+
+function byDate (rows) {
+  const dated = rows.filter(r => mainEvent(r))
+    .sort((a, b) => mainEvent(a).date.localeCompare(mainEvent(b).date))
+  const undated = rows.filter(r => !mainEvent(r))
+    .sort((a, b) => a.touched.localeCompare(b.touched))
+
+  const groups = []
+  dated.forEach(r => {
+    const n = daysUntil(mainEvent(r).date)
+    const label = n <= 31 ? 'This month' : n <= 92 ? 'Next three months' : 'Later'
+    push(groups, label, r, false)
+  })
+  if (undated.length) groups.push({ label: 'No date yet', items: undated })
+  return groups
+}
+
+function push (groups, label, item, cold) {
+  const last = groups[groups.length - 1]
+  if (last && last.label === label) last.items.push(item)
+  else groups.push({ label, items: [item], cold })
+}
+
+/* ==========================================================================
+   Row rendering
+   The row cannot be a <button>. 5.1 puts a control inside it, and a button
+   inside a button is invalid markup that browsers resolve by dropping one of
+   them. So it is a div with role="button", and the controls inside it stop
+   the click from reaching the row.
+   ========================================================================== */
+function metaLine (r, d) {
+  const e = mainEvent(r)
+  const bits = []
+  if (!e) bits.push('<span class="nodate">No date yet</span>')
+  else {
+    bits.push(shortDate(e.date))
+    const p = place(e)
+    if (p) bits.push(esc(p))
+    if (trialEvent(r)) bits.push('and a trial')
+  }
+  const cold = isCold(r, d) ? ' is-cold' : ''
+  /* The separator lives INSIDE the span. In pill mode the span is display:none
+     and a separator joined outside it would leave a middot hanging off the end
+     of every second line in the list. */
+  return '<span class="txt">' + bits.join(' &middot; ') + '</span>' +
+    '<span class="inlineage' + cold + '">&nbsp;&middot; ' + agoWords(d) + '</span>'
+}
+
+function sourceLine (r) {
+  const label = SOURCE_LABEL[r.source]
+  return r.sourceRef ? 'Met at ' + esc(r.sourceRef) : label
+}
+
+function rowHTML (r, selected) {
+  const d = daysSince(r.touched)
+  const cold = isCold(r, d)
+  const tappable = G.stagemode === 'pill' && r.stage !== 'lost'
+  const pill = tappable
+    ? '<button class="pill pill--' + r.stage + '" type="button" data-stage="' + r.id + '" aria-haspopup="dialog"' +
+      ' aria-label="Change the stage, currently ' + STAGE_LABEL[r.stage] + '">' + STAGE_LABEL[r.stage] + I.caret + '</button>'
+    : '<span class="pill pill--' + r.stage + '">' + pillLabel(r) + '</span>'
+
+  const next = NEXT_STAGE[r.stage]
+  const chip = G.stagemode === 'chip' && next
+    ? '<button class="advance" type="button" data-advance="' + r.id + '">' + I.arrow + STAGE_LABEL[next] + '</button>'
+    : ''
+
+  const total = r.totalMinor
+    ? '<span class="pill pill--total">' + money(r.totalMinor, r.currency) + '</span>' : ''
+
+  const line = clashLine(competitors(r))
+  const clash = line && r.stage !== 'lost'
+    ? '<span class="erow__clash">' + I.alert + esc(line) + '</span>' : ''
+
+  const lostWhy = r.stage === 'lost'
+    ? '<span class="erow__src" style="display:block">' + esc(reasonLabel(r)) + '</span>' : ''
+
+  return '<div class="erow" role="button" tabindex="0" data-id="' + r.id + '"' +
+    (selected === r.id ? ' aria-current="true"' : '') + '>' +
+    '<span class="erow__body">' +
+      '<span class="erow__name">' + esc(r.name) + '</span>' +
+      '<span class="erow__meta">' + metaLine(r, d) + '</span>' +
+      (r.stage === 'lost' ? lostWhy : '<span class="erow__src">' + sourceLine(r) + '</span>') +
+      clash +
+    '</span>' +
+    '<span class="erow__end">' +
+      pill + chip +
+      '<span class="erow__foot">' + total +
+        '<span class="erow__age' + (cold ? ' is-cold' : '') + '">' + agoWords(d) + '</span></span>' +
+    '</span>' +
+  '</div>'
+}
+
+/* ==========================================================================
+   The detail, which is the booking screen with almost nothing on it
+   Not a second layout: decision 4.3 says an enquiry is a booking at an early
+   stage, so this is 19.3's header and summary against a record where most of
+   it is still empty. Whether a section with nothing in it is drawn at all is
+   the "Empty sections" control, and it is the one call here that is really a
+   booking-screen question rather than an enquiries one.
+   ========================================================================== */
+/* When a section earns its place. The rule is the stage, not the data: a
+   section appears when it becomes the next useful thing, and it then carries
+   the action rather than a full stop. An enquiry gets five; the rest arrive
+   the moment it becomes a booking, which is when they are worth knowing about.
+   Business logic 21 and 6 add the other half of the rule, which the prototype
+   cannot show because it has no feature toggles: a section for a feature the
+   artist has switched off is never drawn at any stage. */
+const STAGE_RANK = { new: 0, in_conversation: 1, possible: 2, quoted: 3, provisional: 4 }
+const SECTION_DUE = {
+  'Dates and venue': 'new',
+  Party: 'new',
+  Price: 'possible',
+  Payments: 'provisional',
+  Details: 'provisional',
+  Agreement: 'provisional',
+  Messages: 'provisional',
+  Photos: 'provisional',
+  Notes: 'new',
+  Activity: 'new'
+}
+function isDue (title, stage) {
+  const at = SECTION_DUE[title]
+  if (!at) return true
+  const now = stage === 'lost' ? STAGE_RANK.quoted : STAGE_RANK[stage]
+  return now >= STAGE_RANK[at]
+}
+
+function drow (k, v, blank) {
+  return '<div class="drow"><span class="k">' + k + '</span>' +
+    '<span class="v' + (blank ? ' blank' : '') + '">' + v + '</span></div>'
+}
+function section (title, body, emptyText, stage) {
+  const empty = !body
+  const due = isDue(title, stage)
+  return '<div class="dsection' + (empty ? ' is-empty' : '') + (due ? '' : ' not-due') + '">' +
+    '<h3>' + title + '</h3>' +
+    (empty ? '<p class="dempty">' + emptyText + '</p>' : body) + '</div>'
+}
+
+function actionsFor (r) {
+  if (r.stage === 'lost') return { primary: 'Reopen this enquiry', rest: ['Delete'] }
+  if (r.stage === 'quoted') return { primary: 'Convert to booking', rest: ['Change the price', 'Not going ahead'] }
+  if (r.stage === 'possible') return { primary: 'Build a price', rest: ['Move to Quoted', 'Not going ahead'] }
+  return { primary: 'Move to Possible', rest: ['Build a price', 'Not going ahead'] }
+}
+
+function detailHTML (r) {
+  const d = daysSince(r.touched)
+  const e = mainEvent(r)
+  const w = waitingOn(r, d)
+  const acts = actionsFor(r)
+
+  /* Header. 19.3: always visible, complete on its own, readable at 5am with
+     no signal. Which is the same thing as saying it has to work empty. */
+  let h = '<div class="detail"><div class="bhead">' +
+    '<h2>' + esc(r.name) + '</h2>' +
+    '<span class="when">' + (e ? longDate(e.date) : '<span class="nodate">No date yet</span>') + '</span>' +
+    '<span class="where">' + (e ? esc(place(e)) + (e.city && e.venue && e.venue.indexOf(e.city) < 0 ? ', ' + esc(e.city) : '') : 'Nothing settled') + '</span>' +
+    '<span class="pills">' +
+      '<span class="pill pill--' + r.stage + '">' + pillLabel(r) + '</span>' +
+      (w ? '<span class="pill pill--waiting">' + w.label + '</span>' : '') +
+      '<span class="pill pill--src">' + sourceLine(r) + '</span>' +
+    '</span>' +
+    (r.totalMinor
+      ? '<span class="money">' + money(r.totalMinor, r.currency) + '</span>'
+      : '<span class="money none">No price yet</span>') +
+  '</div>'
+
+  h += '<div class="bactions">' +
+    '<button class="kbtn kbtn--primary" type="button" data-act="' + esc(acts.primary) + '" data-on="' + r.id + '">' + acts.primary + '</button>' +
+    acts.rest.map(a => '<button class="actbtn' + (a === 'Not going ahead' || a === 'Delete' ? ' actbtn--danger' : '') +
+      '" type="button" data-act="' + esc(a) + '" data-on="' + r.id + '">' + a + '</button>').join('') +
+  '</div>'
+
+  /* The clash panel from 5.2. Every competing record carries how long ago it
+     was last touched, because that is the fact that decides between
+     overriding without a thought and making a phone call first. */
+  const c = competitors(r)
+  if (c && r.stage !== 'lost' && G.clash === 'on') {
+    let list = ''
+    c.confirmed.concat(c.provisional).forEach(o => {
+      list += '<li>' + esc(o.name) + ', ' + o.stage + ', ' + esc(o.venue) +
+        ' <span class="ago">&middot; touched ' + agoPhrase(daysSince(o.touched)) + '</span></li>'
+    })
+    c.others.forEach(o => {
+      list += '<li>' + esc(o.name) + ', ' + STAGE_LABEL[o.stage].toLowerCase() + ', ' + esc(place(mainEvent(o))) +
+        ' <span class="ago">&middot; touched ' + agoPhrase(daysSince(o.touched)) + '</span></li>'
+    })
+    h += '<div class="clashbox"><b>' + longDate(mainEvent(r).date) + ' already has:</b><ul>' + list + '</ul></div>'
+  }
+
+  /* 5.5.1 rule 2: the source is kept on the record, so a wrong extraction can
+     be checked against what it was working from. */
+  if (r.msg) {
+    h += '<div class="said"><span class="from">' + sourceLine(r) + ', ' + agoPhrase(daysSince(r.touched)) + '</span>' +
+      '<p>' + esc(r.msg) + '</p></div>'
+  }
+
+  /* Dates and venue */
+  let dates = ''
+  r.events.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(ev => {
+    const label = ev.type === 'main' ? 'Wedding' : cap(ev.type)
+    dates += drow(label, longDate(ev.date) + '<br>' + esc(place(ev)))
+  })
+  const st = r.stage
+  h += section('Dates and venue', dates, 'No date agreed yet. Add one and it appears on the calendar.', st)
+
+  h += section('Party', r.party ? drow('Having something done', r.party + ' people') : '',
+    'Nobody has said how many yet.', st)
+
+  h += section('Price', r.totalMinor
+    ? drow('Quoted', money(r.totalMinor, r.currency))
+    : '', 'No price yet. Building one moves this to Quoted.', st)
+
+  h += section('Payments', '', 'Nothing invoiced yet.', st)
+  h += section('Details', '', 'The intake form has not been sent. Send it', st)
+  h += section('Agreement', '', 'No agreement yet. Send one', st)
+  h += section('Messages', '', 'Nothing scheduled and nothing sent.', st)
+  h += section('Photos', '', 'None yet.', st)
+
+  let notes = ''
+  r.notes.forEach(n => { notes += drow(agoWords(daysSince(n.when)), esc(n.body)) })
+  h += section('Notes', notes, 'Nothing written down.', st)
+
+  let activity = drow('Arrived', sourceLine(r) + ', ' + agoPhrase(daysSince(r.touched)))
+  activity += drow('Last touched', cap(agoPhrase(d)))
+  if (r.stage === 'lost') activity += drow(endingLabel(r), esc(reasonLabel(r)))
+  h += section('Activity', activity, '', st)
+
+  /* The teaching an empty section was being asked to do, in one sentence.
+     It only appears where something is genuinely still to come. */
+  const WHEN = [
+    { at: 'possible', words: 'once this moves to Possible' },
+    { at: 'provisional', words: 'once this becomes a booking' }
+  ]
+  const lines = WHEN.map(g => {
+    const titles = Object.keys(SECTION_DUE)
+      .filter(t => SECTION_DUE[t] === g.at && !isDue(t, st))
+      .map(t => t === 'Details' ? 'the intake form' : t.toLowerCase())
+    if (!titles.length) return ''
+    const list = titles.join(', ').replace(/, ([^,]*)$/, ' and $1')
+    return cap(list) + (titles.length === 1 ? ' appears ' : ' appear ') + g.words + '.'
+  }).filter(Boolean)
+  if (lines.length) h += '<p class="later">' + lines.join(' ') + '</p>'
+
+  h += '<p class="dnote">Nine sections, and on an enquiry most of them have nothing in them. That is the ' +
+    'thing this screen exposes rather than causes: an enquiry and a booking are one record ' +
+    '(4.3), so there is no second layout to keep in step, and the price of that is a booking ' +
+    'screen that has to read well empty.</p>'
+
+  return h + '</div>'
+}
+
+/* ==========================================================================
+   The screen. One factory, three instances.
+   ========================================================================== */
+function visible () {
+  return ENQ.filter(r => LIVE.indexOf(r.stage) >= 0 || (r.stage === 'lost' && G.lost === 'on'))
+}
+function haystack (r) {
+  const e = mainEvent(r)
+  return [r.name, STAGE_LABEL[r.stage], SOURCE_LABEL[r.source], r.sourceRef, r.msg,
+    e ? place(e) : 'no date', e ? e.city : '', e ? longDate(e.date) : '',
+    reasonLabel(r), r.stage === 'lost' ? endingLabel(r) : '',
+    r.notes.map(n => n.body).join(' ')].join(' ')
+}
+
+function createScreen (el, opts) {
+  const state = { q: '', selected: null, stageFor: null }
+
+  el.innerHTML =
+    '<div class="shell" data-view="list">' +
+    (opts.statusbar ? '<div class="statusbar" style="height:' + opts.statusbar + 'px"><span>09:41</span><span class="dots"><i></i><i></i><i></i></span></div>' : '') +
+    '<nav class="sidebar">' +
+      '<div class="brand">Klaroly</div>' +
+      '<a href="#">' + I.home + 'Home</a>' +
+      '<a href="#">' + I.book + 'Bookings</a>' +
+      '<a href="#" aria-current="page">' + I.enq + 'Enquiries</a>' +
+      '<a href="#">' + I.people + 'Contacts</a>' +
+      '<a href="#">' + I.cog + 'Settings</a>' +
+    '</nav>' +
+    '<div class="main">' +
+      '<header class="pagehead">' +
+        '<h1>Enquiries<span class="count"></span></h1>' +
+        '<button class="iconbtn" type="button" aria-label="New enquiry">' + I.plus + '</button>' +
+      '</header>' +
+      '<div class="cols">' +
+        '<div class="listcol">' +
+          '<div class="filterbar">' +
+            '<span class="field">' + I.search +
+              '<input type="search" placeholder="Name, venue or stage" aria-label="Filter enquiries">' +
+              '<button class="clearx" type="button" aria-label="Clear">' + I.x + '</button>' +
+            '</span>' +
+            '<button class="viewbtn" type="button" aria-haspopup="dialog" aria-expanded="false">' +
+              I.sort + '<span>Filter</span>' + I.chevdown + '</button>' +
+          '</div>' +
+          '<div class="list"></div>' +
+        '</div>' +
+        '<div class="detailcol"></div>' +
+      '</div>' +
+      (opts.tabbar ? '<div class="tabspacer" style="height:' + (76 + (opts.homeIndicator || 0)) + 'px"></div>' : '') +
+    '</div>' +
+    '<div class="toast" role="status" aria-live="polite"><p></p><button class="toastx" type="button">OK</button></div>' +
+    '<div class="sheet viewmenu" role="dialog" aria-modal="true" aria-label="How the list looks">' +
+      '<button class="sheet__scrim" type="button" aria-label="Close"></button>' +
+      '<div class="sheet__panel" tabindex="-1">' +
+        '<div class="sheet__grab"></div>' +
+        '<div class="vgroup"><span>Sort</span>' +
+          '<div class="vseg" data-view-control="sort">' +
+            '<button type="button" data-value="stale">Staleness</button>' +
+            '<button type="button" data-value="stage">Stage</button>' +
+            '<button type="button" data-value="date">Date</button>' +
+          '</div></div>' +
+        '<div class="vrow"><span>Show where it came from</span>' +
+          '<button class="vswitch" type="button" role="switch" data-view-switch="source"></button></div>' +
+        '<div class="vrow"><span>Show quoted totals</span>' +
+          '<button class="vswitch" type="button" role="switch" data-view-switch="totals"></button></div>' +
+        '<div class="vrow"><span>Show date clashes</span>' +
+          '<button class="vswitch" type="button" role="switch" data-view-switch="clash"></button></div>' +
+        '<div class="vrow"><span>Show ones not going ahead</span>' +
+          '<button class="vswitch" type="button" role="switch" data-view-switch="lost"></button></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="sheet stagemenu" role="dialog" aria-modal="true" aria-label="Move this enquiry">' +
+      '<button class="sheet__scrim" type="button" aria-label="Close"></button>' +
+      '<div class="sheet__panel" tabindex="-1"><div class="sheet__grab"></div>' +
+        '<div class="sheet__head">' +
+          '<button class="sheet__back" type="button" aria-label="Back" hidden>' + I.left + '</button>' +
+          '<span class="sheet__title"></span></div>' +
+        '<div class="stagelist"></div></div>' +
+    '</div>' +
+    (opts.tabbar ? '<nav class="tabbar" style="bottom:' + (12 + (opts.homeIndicator || 0)) + 'px">' +
+      '<button type="button">' + I.home + 'Home</button>' +
+      '<button type="button">' + I.book + 'Bookings</button>' +
+      '<button type="button" class="plus" aria-label="Create">' + I.plus + '</button>' +
+      '<button type="button" aria-current="page">' + I.enq + 'Enquiries</button>' +
+      '<button type="button">' + I.more + 'More</button>' +
+    '</nav>' : '') +
+    '</div>'
+
+  const shell = el.querySelector('.shell')
+  const list = el.querySelector('.list')
+  const detailcol = el.querySelector('.detailcol')
+  const input = el.querySelector('.filterbar input')
+  const filterbar = el.querySelector('.filterbar')
+  const clearx = el.querySelector('.clearx')
+  const cols = el.querySelector('.cols')
+  const viewbtn = el.querySelector('.viewbtn')
+  const viewmenu = el.querySelector('.viewmenu')
+  const stagemenu = el.querySelector('.stagemenu')
+  const toast = el.querySelector('.toast')
+  const toastText = toast.querySelector('p')
+  const toastBtn = toast.querySelector('.toastx')
+  let toastTimer = null
+  let undo = null
+
+  el.style.setProperty('--toast-bottom',
+    (opts.tabbar ? 12 + (opts.homeIndicator || 0) + 64 + 10 : 20) + 'px')
+
+  function showToast (msg, undoFn) {
+    toastText.textContent = msg
+    undo = undoFn || null
+    toastBtn.textContent = undo ? 'Undo' : 'OK'
+    toast.classList.add('is-in')
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => { toast.classList.remove('is-in'); undo = null }, 5000)
+  }
+  toastBtn.addEventListener('click', () => {
+    clearTimeout(toastTimer)
+    toast.classList.remove('is-in')
+    if (undo) { undo(); undo = null; screens.forEach(s => s.render()) }
+  })
+
+  function isSplit () { return el.clientWidth >= 760 }
+
+  function matches (r) {
+    const q = state.q.trim()
+    if (!q) return true
+    return fold(haystack(r)).includes(fold(q))
+  }
+
+  function render () {
+    paintView()
+    const all = visible()
+    const rows = all.filter(matches)
+    el.querySelector('.pagehead .count').textContent =
+      rows.length === all.length ? ' ' + all.length : ' ' + rows.length + ' of ' + all.length
+
+    if (!rows.length) {
+      list.innerHTML = '<div class="empty"><p class="big">Nothing matches that</p>' +
+        '<p>Try part of a name, a venue, or a stage such as Quoted.</p></div>'
+    } else {
+      let h = ''
+      group(rows).forEach(g => {
+        /* Finding 205: each heading needs its own containing block, or every
+           heading pins at the same offset and only paint order decides which
+           one you can see. */
+        h += '<div class="group"><div class="grouphead' + (g.cold ? ' grouphead--cold' : '') + '">' +
+          '<span>' + g.label + '</span><span class="n">' + g.items.length + '</span></div>'
+        g.items.forEach(r => { h += rowHTML(r, state.selected) })
+        h += '</div>'
+      })
+      list.innerHTML = h
+    }
+
+    if (state.selected && BY_ID.has(state.selected) && visible().indexOf(BY_ID.get(state.selected)) >= 0) {
+      detailcol.innerHTML =
+        '<div class="detailhead">' +
+          '<button class="backbtn" type="button">' + I.left + 'Enquiries</button>' +
+          '<span class="title">' + esc(BY_ID.get(state.selected).name) + '</span>' +
+        '</div>' + detailHTML(BY_ID.get(state.selected))
+    } else {
+      state.selected = null
+      detailcol.innerHTML = '<div class="empty" style="padding-top:120px">' +
+        '<p class="big">Select an enquiry</p>' +
+        '<p>It opens the booking screen, because an enquiry is a booking with almost nothing on it yet.</p></div>'
+    }
+    shell.dataset.view = state.selected && !isSplit() ? 'detail' : 'list'
+  }
+
+  function select (id) {
+    state.selected = id
+    render()
+    if (!isSplit()) cols.scrollTop = 0
+  }
+
+  /* Moving a stage is a touch, so the timestamp moves with it and the row
+     leaves whichever staleness band it was in. That is the behaviour, not a
+     side effect: the list is a list of things not done. */
+  function setStage (id, stage, msg, reason) {
+    const r = BY_ID.get(id)
+    const before = { stage: r.stage, touched: r.touched, lostReason: r.lostReason }
+    r.stage = stage
+    if (stage === 'lost') r.lostReason = reason
+    else if (before.stage === 'lost') r.lostReason = undefined
+    r.touched = new Date(NOW).toISOString()
+    screens.forEach(s => s.render())
+    showToast(msg, () => {
+      r.stage = before.stage; r.touched = before.touched; r.lostReason = before.lostReason
+    })
+  }
+  function endIt (id, key) {
+    const r = BY_ID.get(id)
+    const reason = REASON[key]
+    setStage(id, 'lost',
+      reason.side === 'artist'
+        ? r.name + ' turned down: ' + reason.label.toLowerCase() + '.'
+        : r.name + ' marked as lost: ' + reason.label.toLowerCase() + '.',
+      key)
+  }
+
+  list.addEventListener('click', e => {
+    const pill = e.target.closest('[data-stage]')
+    if (pill) { e.stopPropagation(); openStage(Number(pill.dataset.stage), pill); return }
+    const adv = e.target.closest('[data-advance]')
+    if (adv) {
+      e.stopPropagation()
+      const r = BY_ID.get(Number(adv.dataset.advance))
+      const next = NEXT_STAGE[r.stage]
+      if (next) setStage(r.id, next, r.name + ' moved to ' + STAGE_LABEL[next] + '.')
+      return
+    }
+    const row = e.target.closest('.erow'); if (!row) return
+    select(Number(row.dataset.id))
+  })
+  list.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return
+    const row = e.target.closest('.erow'); if (!row) return
+    e.preventDefault(); select(Number(row.dataset.id))
+  })
+
+  detailcol.addEventListener('click', e => {
+    if (e.target.closest('.backbtn')) { state.selected = null; render(); return }
+    const act = e.target.closest('[data-act]'); if (!act) return
+    const id = Number(act.dataset.on)
+    const r = BY_ID.get(id)
+    const what = act.dataset.act
+    if (what === 'Convert to booking') {
+      setStage(id, 'provisional', r.name + ' is now a provisional booking. Nothing was copied and nothing was lost.')
+    } else if (what === 'Not going ahead') {
+      openStage(id, act, 'reasons')
+    } else if (what === 'Move to Possible') {
+      setStage(id, 'possible', r.name + ' moved to Possible, and the date is now held softly.')
+    } else if (what === 'Move to Quoted') {
+      setStage(id, 'quoted', r.name + ' moved to Quoted.')
+    } else if (what === 'Reopen this enquiry') {
+      setStage(id, 'in_conversation', r.name + ' reopened.')
+    } else {
+      showToast('Not built in this prototype: ' + what + '.')
+    }
+  })
+
+  input.addEventListener('input', () => {
+    state.q = input.value
+    filterbar.classList.toggle('has-text', !!state.q)
+    render()
+  })
+  clearx.addEventListener('click', () => {
+    input.value = ''; state.q = ''
+    filterbar.classList.remove('has-text')
+    render(); input.focus()
+  })
+
+  /* One open and close for both panels. Two panels hanging off a measured
+     button is the pair decision 231 says to extract AnchoredSheet from, and
+     extracting from two is the rule; extracting from one is guessing. */
+  function anchor (sheet, trigger) {
+    const panel = sheet.querySelector('.sheet__panel')
+    if (isSplit()) {
+      const s0 = el.getBoundingClientRect()
+      const t = trigger.getBoundingClientRect()
+      panel.style.top = Math.round(t.bottom - s0.top + 6) + 'px'
+      panel.style.left = Math.round(Math.max(8, Math.min(t.right - s0.left - 300, el.clientWidth - 316))) + 'px'
+    } else {
+      panel.style.top = ''
+      panel.style.left = ''
+    }
+    sheet.classList.add('is-open')
+    /* The panel takes focus, which is what the app's dialog behaviour does and
+       what keeps Escape working: without it, a control that disappears on
+       re-render drops focus to <body> and the key never reaches the screen. */
+    panel.focus()
+  }
+  function closeSheets (returnTo) {
+    const wasOpen = viewmenu.classList.contains('is-open') || stagemenu.classList.contains('is-open')
+    viewmenu.classList.remove('is-open')
+    stagemenu.classList.remove('is-open')
+    viewbtn.setAttribute('aria-expanded', 'false')
+    if (wasOpen && returnTo && returnTo.isConnected) returnTo.focus()
+  }
+
+  function paintView () {
+    viewmenu.querySelectorAll('.vseg').forEach(seg => {
+      const key = seg.dataset.viewControl
+      seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.value === G[key])))
+    })
+    viewmenu.querySelectorAll('.vswitch').forEach(sw => {
+      sw.setAttribute('aria-checked', String(G[sw.dataset.viewSwitch] === 'on'))
+    })
+  }
+
+  viewbtn.addEventListener('click', () => {
+    if (viewmenu.classList.contains('is-open')) { closeSheets(viewbtn); return }
+    closeSheets(null); paintView(); anchor(viewmenu, viewbtn)
+    viewbtn.setAttribute('aria-expanded', 'true')
+  })
+
+  /* Two views, one sheet. Endings are deliberately two taps: 5.1 asks for one
+     tap to Possible, and nothing asks for one tap to an ending. */
+  function openStage (id, trigger, mode) {
+    closeSheets(null)
+    state.stageFor = id
+    state.stageTrigger = trigger
+    const r = BY_ID.get(id)
+    const back = stagemenu.querySelector('.sheet__back')
+    let h = ''
+
+    if (mode === 'reasons') {
+      stagemenu.querySelector('.sheet__title').textContent = 'Why is it not going ahead?'
+      back.hidden = false
+      ;['client', 'artist'].forEach(side => {
+        h += '<span class="stagegroup">' + (side === 'client' ? 'They ended it' : 'You turned it down') + '</span>'
+        LOST_REASONS.filter(x => x.side === side).forEach(x => {
+          h += '<button class="stagepick stagepick--reason" type="button" data-reason="' + x.key + '"' +
+            (x.key === r.lostReason ? ' aria-current="true"' : '') + '>' +
+            '<span class="tick">' + I.tick + '</span><span class="lede">' + x.label + '</span></button>'
+        })
+      })
+    } else {
+      stagemenu.querySelector('.sheet__title').textContent = r.name
+      back.hidden = true
+      LIVE.forEach(s => {
+        h += '<button class="stagepick" type="button" data-pick="' + s + '"' +
+          (s === r.stage ? ' aria-current="true"' : '') + '>' +
+          '<span class="tick">' + I.tick + '</span>' +
+          '<span class="lede">' + STAGE_LABEL[s] + '<span class="hint">' + STAGE_HINT[s] + '</span></span></button>'
+      })
+      h += '<hr class="sheet__rule">' +
+        '<button class="stagepick stagepick--go" type="button" data-pick="provisional">' +
+          '<span class="tick">' + I.tick + '</span><span class="lede">Convert to booking' +
+          '<span class="hint">Provisional, and reversible until something is signed</span></span></button>' +
+        '<button class="stagepick stagepick--lost" type="button" data-pick="reasons">' +
+          '<span class="tick">' + I.tick + '</span><span class="lede">This one is not going ahead' +
+          '<span class="hint">Kept, with a reason, so it still counts</span></span></button>'
+    }
+    stagemenu.querySelector('.stagelist').innerHTML = h
+    anchor(stagemenu, trigger)
+  }
+
+  stagemenu.addEventListener('click', e => {
+    if (e.target.closest('.sheet__scrim')) { closeSheets(state.stageTrigger); return }
+    const id = state.stageFor
+    const r = BY_ID.get(id)
+
+    if (e.target.closest('.sheet__back')) { openStage(id, state.stageTrigger); return }
+
+    const reason = e.target.closest('[data-reason]')
+    if (reason) { closeSheets(null); endIt(id, reason.dataset.reason); return }
+
+    const pick = e.target.closest('[data-pick]'); if (!pick) return
+    const s = pick.dataset.pick
+    if (s === 'reasons') { openStage(id, state.stageTrigger, 'reasons'); return }
+    closeSheets(null)
+    if (s === r.stage) return
+    const msg = s === 'provisional'
+      ? r.name + ' is now a provisional booking. Nothing was copied and nothing was lost.'
+      : s === 'possible' ? r.name + ' moved to Possible, and the date is now held softly.'
+        : r.name + ' moved to ' + STAGE_LABEL[s] + '.'
+    setStage(id, s, msg)
+  })
+
+  viewmenu.addEventListener('click', e => {
+    if (e.target.closest('.sheet__scrim')) { closeSheets(viewbtn); return }
+    const seg = e.target.closest('.vseg')
+    if (seg) {
+      const btn = e.target.closest('button'); if (!btn) return
+      G[seg.dataset.viewControl] = btn.dataset.value
+      commitView(); return
+    }
+    const sw = e.target.closest('.vswitch')
+    if (sw) {
+      const key = sw.dataset.viewSwitch
+      G[key] = G[key] === 'on' ? 'off' : 'on'
+      commitView()
+    }
+  })
+
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeSheets(state.stageTrigger); return }
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+    const rows = Array.from(list.querySelectorAll('.erow'))
+    if (!rows.length) return
+    e.preventDefault()
+    const ids = rows.map(r => Number(r.dataset.id))
+    let i = ids.indexOf(state.selected)
+    i = e.key === 'ArrowDown' ? Math.min(i + 1, ids.length - 1) : Math.max(i - 1, 0)
+    if (i < 0) i = 0
+    select(ids[i])
+    const row = list.querySelector('.erow[data-id="' + ids[i] + '"]')
+    if (row) row.scrollIntoView({ block: 'nearest' })
+  })
+
+  /* Finding 206: a ResizeObserver writes the filter bar's height, so the
+     sticky group headings rest under it rather than behind it, and the
+     offset is not hardcoded in two places. */
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => {
+      el.style.setProperty('--filter-h', filterbar.offsetHeight + 'px')
+    }).observe(filterbar)
+  }
+
+  const api = { render }
+  render()
+  el.style.setProperty('--filter-h', filterbar.offsetHeight + 'px')
+  return api
+}
+
+loadView()
+applyBodyFlags()
+document.querySelectorAll('.controls .seg').forEach(seg => {
+  const key = seg.dataset.control
+  if (!key || key === 'theme') return
+  seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.value === G[key])))
+})
+screens.push(createScreen(document.getElementById('screen-se'), { statusbar: 20, tabbar: true, homeIndicator: 0 }))
+screens.push(createScreen(document.getElementById('screen-16'), { statusbar: 54, tabbar: true, homeIndicator: 22 }))
+screens.push(createScreen(document.getElementById('screen-desk'), { statusbar: 0, tabbar: false }))
+</script>
+</body>
+</html>

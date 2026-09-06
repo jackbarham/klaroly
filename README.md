@@ -146,6 +146,25 @@ entry becomes `amount_minor` / `is_overdue` / `is_account_currency`, a booking's
 `src/lib/contacts.guards.test.ts` fails if a component reaches past the store to
 those fixtures.
 
+**The enquiries screen has its endpoints and no screen yet.** Three of them.
+`GET /api/enquiries` returns every booking at an enquiry stage, one row per
+enquiry rather than one per event, ordered by neglect: the ones nobody has
+looked at first, then the ones nobody has touched for longest, with the archive
+last. `GET /api/enquiries/{booking}` is that row opened, adding the message the
+enquiry arrived with, the party size and the note stream.
+`PATCH /api/enquiries/{booking}` takes a stage, and a reason when that stage is
+lost, and answers with the detail shape so the screen replaces what it is
+holding rather than refetching. It is the only way a record crosses the line
+between the two lists.
+
+`/enquiries` is still `PlaceholderView.vue`. Prompt 18 writes
+`src/types/enquiries.ts` against the key constants in `api/tests/Pest.php`, then
+`src/lib/enquiries.ts` the way `src/lib/bookings.ts` is written. `CLAUDE.md`
+covers what is on the payload and why, including the `clash` counts, the
+`lost_reason` enum, the nullable `total_minor` and the one asymmetry worth
+knowing before you meet it: after converting, the client holds an object it may
+PATCH back but may not GET.
+
 **Signing in locally.** With the API seeded (`php artisan db:seed`), open
 http://app.klaroly.test/login and sign in as `ellie@example.com` with the
 password in the API's `DEMO_PASSWORD` (`password` by default). The demo
