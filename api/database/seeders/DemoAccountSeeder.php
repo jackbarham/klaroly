@@ -448,7 +448,7 @@ class DemoAccountSeeder extends Seeder
             'Deposit came through twice on the same day, refunded the second one.',
         ]);
 
-        // 10. Confirmed, deposit paid.
+        // 10. Confirmed, deposit paid, agreement sent and not signed back yet.
         $this->bookings[10] = $this->booking('hannah', [
             'stage' => BookingStage::Confirmed,
             'source' => BookingSource::Manual,
@@ -1084,18 +1084,49 @@ class DemoAccountSeeder extends Seeder
             ->orderByDesc('version')
             ->firstOrFail();
 
-        foreach ([6, 7, 8, 9, 10, 11, 12, 13] as $index) {
+        foreach ([6, 7, 8, 9, 11, 12, 13] as $index) {
             $booking = $this->bookings[$index];
             $signedAt = ($booking->confirmed_at ?? now())->toImmutable();
 
             $this->agreement($booking, $template, 1, AgreementStatus::Signed, $signedAt);
         }
 
-        $this->agreement($this->bookings[7], $template, 2, AgreementStatus::Draft, null);
+        // **Sent rather than Draft**, which makes the note on this booking true:
+        // "Agreement redrafted to add the second trial, waiting for her to sign
+        // the new version" described an unsigned agreement the data did not
+        // have. A seeder whose fixtures describe a state the rows do not hold is
+        // decision 220's failure in prose rather than in columns.
+        $this->agreement($this->bookings[7], $template, 2, AgreementStatus::Sent, null, now()->subDays(6)->toImmutable());
+
+        /*
+         * **Booking 10 is the one that makes client_signature reachable**, and
+         * it is not booking 7, which is worth writing down because 7 is the
+         * obvious guess.
+         *
+         * WaitingOnResolver::signature() returns nothing when the booking holds
+         * ANY signed agreement, and 7 has a signed version 1 under its sent
+         * version 2. So a redraft awaiting signature reports nothing. That is
+         * arguably wrong, since business logic 10.2 makes the agreement in
+         * force the HIGHEST signed version rather than any of them, and it is
+         * not this prompt's to change.
+         *
+         * 10 is left out of the signed loop above instead: deposit paid,
+         * contract gone out, nothing back yet. An ordinary state, and the one
+         * where the value can actually fire, because the deposit branch sits
+         * above the signature branch and a provisional booking still owing one
+         * reports the deposit instead.
+         */
+        $this->agreement($this->bookings[10], $template, 1, AgreementStatus::Sent, null, now()->subDays(11)->toImmutable());
     }
 
-    private function agreement(Booking $booking, ContractTemplate $template, int $version, AgreementStatus $status, ?CarbonImmutable $signedAt): void
-    {
+    private function agreement(
+        Booking $booking,
+        ContractTemplate $template,
+        int $version,
+        AgreementStatus $status,
+        ?CarbonImmutable $signedAt,
+        ?CarbonImmutable $sentAt = null,
+    ): void {
         $total = $this->pricing->total($booking)->minor;
         $body = $this->render($template->body, $booking, $total);
 
@@ -1108,7 +1139,7 @@ class DemoAccountSeeder extends Seeder
             'rendered_sha256' => Agreement::hashBody($body),
             'total_minor' => $total,
             'deposit_minor' => $this->pricing->deposit($booking)->minor,
-            'sent_at' => $signedAt?->subDays(2),
+            'sent_at' => $sentAt ?? $signedAt?->subDays(2),
             'signed_at' => $signedAt,
             'signed_method' => $signedAt === null ? null : SignedMethod::Manual,
             'signed_name' => $signedAt === null ? null : $booking->contact->fullName(),

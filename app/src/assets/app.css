@@ -707,3 +707,19 @@ body {
 @utility stick-top {
   top: calc(env(safe-area-inset-top) + var(--stick-offset, 0px));
 }
+
+/* The home screen's two columns above --container-split: a main column that
+   grows and a fixed rail.
+
+   **Attention takes the main column at every desktop size**, because a task
+   list in a 340px rail truncates its second lines, so the artist's block order
+   rearranges the rail and nothing else. 360px is the rail, measured the same
+   way the contacts list's 400px column was.
+
+   It is a utility rather than an arbitrary value in the component for two
+   reasons: src/lib/styleRules.test.ts bans arbitrary values in components, and
+   the rail's width wants one place to change. It is not a token, because it is
+   a layout rule for one screen rather than a value anything else reads. */
+@utility home-columns {
+  grid-template-columns: minmax(0, 1fr) 22.5rem;
+}

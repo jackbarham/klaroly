@@ -59,6 +59,7 @@ import KsCards from '@/views/kitchen-sink/KsCards.vue'
 import KsChips from '@/views/kitchen-sink/KsChips.vue'
 import KsForm from '@/views/kitchen-sink/KsForm.vue'
 import KsHeaders from '@/views/kitchen-sink/KsHeaders.vue'
+import KsHome from '@/views/kitchen-sink/KsHome.vue'
 import KsIcons from '@/views/kitchen-sink/KsIcons.vue'
 import KsOverlays from '@/views/kitchen-sink/KsOverlays.vue'
 import KsPills from '@/views/kitchen-sink/KsPills.vue'
@@ -104,6 +105,12 @@ const sections: Section[] = [
     title: 'RadioCard',
     note: 'The one control whose focus is a ring rather than a recoloured edge, because its edge is already saying whether it is selected.',
     component: KsRadioCards,
+  },
+  {
+    id: 'home',
+    title: 'The home screen',
+    note: 'Every block in the states worth looking at, including the three money toggle states and the all-clear line. The only colour on the screen is money that is genuinely late.',
+    component: KsHome,
   },
   {
     id: 'page-header',

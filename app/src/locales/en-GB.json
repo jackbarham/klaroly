@@ -120,8 +120,116 @@
   },
   "home": {
     "title": "Home",
-    "greeting": "Welcome, {account}",
-    "empty_state": "Nothing to show yet."
+    "summary_title": "Your summary",
+    "adjust": "Adjust",
+    "load_failed": "Your summary could not be loaded.",
+    "format": {
+      "weekday": "EEE",
+      "month": "MMM"
+    },
+    "countdown": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "days": "In {count} days",
+      "next_week": "Next week",
+      "weeks": "In {count} weeks",
+      "months": "In {count} months"
+    },
+    "attention": {
+      "title": "Attention",
+      "see_all": "See all {count}",
+      "need_you": "{count} needs you | {count} need you",
+      "waiting_on_clients": "{count} waiting on a client | {count} waiting on clients",
+      "all_clear": "Nothing needs you today",
+      "sentence": {
+        "artist_not_held": "{name}'s date is not held",
+        "artist_enquiry_cold": "{name} has heard nothing back",
+        "artist_price": "{name} needs a price",
+        "artist_review": "{name}'s details are back",
+        "client_signature": "{name} has not signed",
+        "client_deposit": "{name}'s deposit is overdue",
+        "client_balance": "{name}'s balance is overdue",
+        "client_form": "{name}'s form has not come back",
+        "client_deposit_unpaid": "{name}'s deposit is not paid"
+      },
+      "detail": {
+        "not_held": "Provisional today · {date} | Provisional, 1 day · {date} | Provisional, {days} days · {date}",
+        "cold": "Last touched today · {date} | Last touched yesterday · {date} | Last touched {days} days ago · {date}",
+        "price": "Arrived today · {date} | Arrived yesterday · {date} | Arrived {days} days ago · {date}",
+        "review": "Trial {trial} · wedding {date}",
+        "balance": "{amount} of {total}",
+        "deposit": "{amount} · {date}",
+        "client_signature": "Sent today · {date} | Sent yesterday · {date} | Sent {days} days ago · {date}",
+        "client_form": "Sent today · {date} | Sent yesterday · {date} | Sent {days} days ago · {date}"
+      },
+      "late": "{count} day late | {count} days late"
+    },
+    "next": {
+      "title": "Next up",
+      "all": "Bookings",
+      "trial": "Trial",
+      "party": "Bride and {count}",
+      "party_one": "Bride",
+      "travel": "{count} min",
+      "place": {
+        "base": "Your place",
+        "client": "At {venue}",
+        "client_unknown": "At the client's",
+        "venue": "{venue}",
+        "unknown": "No venue yet"
+      }
+    },
+    "money": {
+      "title": "Money",
+      "export": "Export",
+      "owed": "{amount} owed to you",
+      "owed_from": "From {count} wedding that has already happened | From {count} weddings that have already happened",
+      "snoozed": "plus {amount} snoozed",
+      "received": "Received",
+      "booked_in_period": "Booked in this period",
+      "under_period": "{count} wedding, {average} average | {count} weddings, {average} average",
+      "outstanding": "Outstanding",
+      "under_outstanding_overdue": "{overdue} overdue",
+      "under_outstanding_due": "{due} due",
+      "booked_ahead": "Booked ahead",
+      "under_booked_ahead": "{count} confirmed",
+      "provisional": "Provisional",
+      "under_provisional": "{count} held, not confirmed",
+      "excludes": "Work in other currencies is not counted.",
+      "foot_payments": "Received is for the period. Outstanding, booked ahead and provisional are as of today.",
+      "foot_value": "Booked in this period is for the period. Booked ahead and provisional are as of today. Turn on payment tracking in Settings to see what has actually come in.",
+      "period": {
+        "label": "Period",
+        "this_month": "This month",
+        "three_months": "3 months",
+        "twelve_months": "12 months",
+        "business_year": "Tax year"
+      }
+    },
+    "adjust_sheet": {
+      "label": "Adjust your summary",
+      "order": "Order",
+      "order_hint": "Drag a handle, or focus one and use the arrow keys.",
+      "move": "Move {block}",
+      "block": {
+        "next": "Next up",
+        "attention": "Attention",
+        "money": "Money"
+      },
+      "count": "Attention items",
+      "count_all": "All",
+      "wide_note": "On a wide screen Attention takes the main column and shows every item, so the count applies to a phone.",
+      "reset": "Reset"
+    },
+    "first_run": {
+      "title": "Nothing here yet",
+      "body": "Put in the weddings you already have, or start from an enquiry that is still a conversation.",
+      "add_booking": "Add a booking",
+      "add_enquiry": "Add an enquiry",
+      "setup_title": "One sit-down job, and it is worth it",
+      "setup_body": "Put your services and prices in once, and every quote after that is a few taps rather than typing. Settings, then Rate card."
+    },
+    "retry": "Try again"
   },
   "bookings": {
     "title": "Bookings",

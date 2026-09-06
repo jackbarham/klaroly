@@ -41,8 +41,45 @@ export type IconName =
   | 'page'
   | 'search'
   | 'sink'
+  | 'check'
+  | 'sliders'
+  | 'grip'
+  | 'alert'
 
 const paths: Record<IconName, string[]> = {
+  // The all-clear on a quiet week. A tick and nothing else: it is the one
+  // thing on Home that says a state rather than a task.
+  check: [
+    'm5 12.5 4.5 4.5L19 7',
+  ],
+  // Adjust, in the page header. Sliders rather than a cog, because a cog is
+  // Settings and this changes how one screen is drawn on this device.
+  sliders: [
+    'M5 6h14',
+    'M5 12h14',
+    'M5 18h14',
+    'M9 4v4',
+    'M15 10v4',
+    'M11 16v4',
+  ],
+  // The drag handle in Adjust's order list. Two columns of dots is the
+  // convention for "this row moves", and it is a real button so the keyboard
+  // reorder has something to focus.
+  grip: [
+    'M9 6.5h.01',
+    'M15 6.5h.01',
+    'M9 12h.01',
+    'M15 12h.01',
+    'M9 17.5h.01',
+    'M15 17.5h.01',
+  ],
+  // The owed headline, which is the one figure on this screen that is a
+  // problem rather than a fact.
+  alert: [
+    'M12 4.5 2.6 20h18.8Z',
+    'M12 10v4',
+    'M12 17.2v.1',
+  ],
   home: [
     'M4 11.5 12 5l8 6.5',
     'M6.5 10.5V19h11v-8.5',

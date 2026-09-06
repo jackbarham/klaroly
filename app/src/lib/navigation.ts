@@ -116,6 +116,11 @@ export const accountGroups: SectionGroup[] = [
 // navigation marks the right thing on a detail page as well as on a list.
 const sections: Record<string, string> = {
   home: 'home',
+  // The full attention list is a page under Home, the way a booking's page is
+  // one under Bookings. Without this line sectionKey returns null, activeTabKey
+  // returns null, activeTabIndex is minus one, and the tab bar's pill hides
+  // itself with no error anywhere.
+  attention: 'home',
   bookings: 'bookings',
   booking: 'bookings',
   enquiries: 'enquiries',

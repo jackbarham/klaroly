@@ -22,19 +22,56 @@ export type Check<T> = (value: unknown, fallback: T) => T
 export type Checks<T> = { [K in keyof T]: Check<T[K]> }
 
 /**
- * A check for a field that may only hold one of a closed set of strings.
+ * A check for a field that may only hold one of a closed set of values.
  *
  * Built from the values rather than from the type, so the runtime list and the
  * union cannot drift: a fourth sort order added to the type without being
  * added here is a type error at the call site.
+ *
+ * Numbers as well as strings, because the home screen's preview count is
+ * 3 | 4 | 6 | 'all', which is one closed set with two primitive types in it
+ * rather than a reason for a second function.
  */
-export function oneOf<T extends string>(...allowed: readonly T[]): Check<T> {
+export function oneOf<T extends string | number>(...allowed: readonly T[]): Check<T> {
   return (value, fallback) => (allowed.includes(value as T) ? value as T : fallback)
 }
 
 export const boolean: Check<boolean> = (value, fallback) => (
   typeof value === 'boolean' ? value : fallback
 )
+
+/**
+ * A check for a field holding every one of a closed set of strings, once each,
+ * in some order.
+ *
+ * The home screen's block order is one: three keys, each exactly once. It joins
+ * oneOf and boolean here rather than living beside that screen's settings
+ * because it is the same category of thing, a runtime guard tied to a union,
+ * and a second copy written by the fourth screen is the drift this file exists
+ * to stop.
+ *
+ * **A permutation is not a list of allowed values and cannot be checked as
+ * one.** A stored ['money', 'money', 'money'] is three known keys and would
+ * pass a per-item oneOf, then render one block three times and lose the other
+ * two. So the length, the membership and the absence of duplicates are all
+ * checked, and anything short of all three falls back whole rather than being
+ * repaired: a half-mended order is a screen nobody asked for.
+ */
+export function permutationOf<T extends string>(...values: readonly T[]): Check<T[]> {
+  return (value, fallback) => {
+    if (!Array.isArray(value) || value.length !== values.length) {
+      return [...fallback]
+    }
+
+    const seen = new Set<unknown>(value)
+
+    if (seen.size !== values.length || !values.every((allowed) => seen.has(allowed))) {
+      return [...fallback]
+    }
+
+    return [...value] as T[]
+  }
+}
 
 /**
  * The settings as they were left, or the defaults.

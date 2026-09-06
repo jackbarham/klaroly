@@ -63,6 +63,17 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/HomeView.vue'),
         meta: { titleKey: 'home.title' },
       },
+      // The attention list in full. A route rather than a flag on Home
+      // (decision 2026-09-06.1942), because a notification can link straight to
+      // it, the back gesture works, and a flag cannot be linked to. It has no
+      // tab of its own and marks Home, which is the line in navigation.ts's
+      // sectionKey map.
+      {
+        path: 'attention',
+        name: 'attention',
+        component: () => import('@/views/AttentionView.vue'),
+        meta: { titleKey: 'home.attention.title', backTo: 'home' },
+      },
       {
         path: 'bookings',
         name: 'bookings',
