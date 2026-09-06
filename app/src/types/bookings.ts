@@ -55,6 +55,20 @@ export type WaitingOn =
   | 'artist_not_held'
   | 'artist_enquiry_cold'
 
+// events.location_type, the check constraint from schema 5.9. Nullable,
+// because nobody has necessarily said yet.
+//
+// Business logic 4.1 calls these "at artist", "at client" and "at venue"; the
+// schema's names win and that disagreement is listed in section 0 of the
+// business logic document.
+//
+// The screen needs this because the venue columns cannot tell "not known" from
+// "at her own place": a trial at base has a null venue_name and a null city
+// because the base address lives in settings, and so does a wedding whose
+// venue nobody has settled. Reading the nulls alone made every trial say the
+// venue was missing.
+export type LocationType = 'base' | 'client' | 'venue'
+
 export interface BookingEvent {
   // events.id and events.booking_id. Two events can share a booking.
   id: number
@@ -72,6 +86,8 @@ export interface BookingEvent {
   // events.start_time as 'HH:mm', or null when no call time is agreed yet,
   // which is normal on an enquiry.
   start_time: string | null
+
+  location_type: LocationType | null
 
   // events.venue_name, the occasion's venue when it differs from the address
   // the work happens at, and events.city. Either can be absent on an enquiry.

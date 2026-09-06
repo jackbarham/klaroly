@@ -45,6 +45,7 @@ use App\Services\InvoiceNumbering;
 use App\Support\CurrentAccount;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
@@ -154,10 +155,10 @@ class DemoAccountSeeder extends Seeder
             'payment_instructions' => "Bank transfer to Ellie Marsh Makeup\nSort code 04-00-04\nAccount number 12345678\nPlease use your surname and the date as the reference.",
             'invoice_prefix' => 'INV',
             'legal_name' => 'Ellie Marsh',
-            'address_line_1' => '14 Cotham Hill',
+            'address_line_1' => '27 Ilminster Rise',
             'city' => 'Bristol',
-            'postcode' => 'BS6 6LF',
-            'base_postcode' => 'BS6 6LF',
+            'postcode' => 'BS6 6XA',
+            'base_postcode' => 'BS6 6XA',
             'travel_charging' => TravelCharging::PerMile,
             'travel_free_radius_miles' => 10,
             'travel_rate_per_mile_minor' => 45,
@@ -226,14 +227,22 @@ class DemoAccountSeeder extends Seeder
     private function seedContacts(): void
     {
         $rows = [
-            ['sophie', 'Sophie', 'Bennett', 'sophie.bennett@example.com', '07700 900101', '22 Chandos Road', 'Bristol', 'BS6 6PF'],
-            ['hannah', 'Hannah', 'Whitfield', 'hannah.whitfield@example.com', '07700 900102', '8 Widcombe Hill', 'Bath', 'BA2 6AA'],
-            ['amelia', 'Amelia', 'Hart', 'amelia.hart@example.com', '07700 900103', '41 Lansdown Road', 'Cheltenham', 'GL50 2LG'],
-            ['chloe', 'Chloe', 'Dawson', 'chloe.dawson@example.com', '07700 900104', '17 Pennsylvania Road', 'Exeter', 'EX4 6DE'],
-            ['megan', 'Megan', 'Fletcher', 'megan.fletcher@example.com', '07700 900105', '5 Staplegrove Road', 'Taunton', 'TA1 1DG'],
-            ['lucy', 'Lucy', 'Pritchard', 'lucy.pritchard@example.com', '07700 900106', '63 London Road', 'Gloucester', 'GL1 3HF'],
-            ['jessica', 'Jessica', 'Rowe', 'jessica.rowe@example.com', '07700 900107', '12 Clevedon Road', 'Weston-super-Mare', 'BS23 1DA'],
-            ['emily', 'Emily', 'Carver', 'emily.carver@example.com', '07700 900108', '30 Bath Road', 'Swindon', 'SN1 4AS'],
+            ['sophie', 'Sophie', 'Bennett', 'sophie.bennett@example.com', '07700 900101', '14 Thurlow Rise', 'Bristol', 'BS6 6XJ'],
+            ['hannah', 'Hannah', 'Whitfield', 'hannah.whitfield@example.com', '07700 900102', '31 Marlcombe Rise', 'Bath', 'BA2 6XE'],
+            ['amelia', 'Amelia', 'Hart', 'amelia.hart@example.com', '07700 900103', '7 Peverell Walk', 'Cheltenham', 'GL50 2XB'],
+            ['chloe', 'Chloe', 'Dawson', 'chloe.dawson@example.com', '07700 900104', '26 Halberton Rise', 'Exeter', 'EX4 6XN'],
+            ['megan', 'Megan', 'Fletcher', 'megan.fletcher@example.com', '07700 900105', '12 Ashcott Row', 'Taunton', 'TA1 1XP'],
+            ['lucy', 'Lucy', 'Pritchard', 'lucy.pritchard@example.com', '07700 900106', '48 Kempsley Way', 'Gloucester', 'GL1 3XR'],
+            ['jessica', 'Jessica', 'Rowe', 'jessica.rowe@example.com', '07700 900107', '9 Sandbay Rise', 'Weston-super-Mare', 'BS23 1XQ'],
+            ['emily', 'Emily', 'Carver', 'emily.carver@example.com', '07700 900108', '55 Draycott Mead', 'Swindon', 'SN1 4XT'],
+            // The clients on the two days that collide. One each, because two
+            // weddings on a Saturday are two different families.
+            ['priya', 'Priya', 'Raman', 'priya.raman@example.com', '07700 900109', '3 Redwill Vale', 'Bristol', 'BS8 2XG'],
+            ['rosie', 'Rosie', 'Kerr', 'rosie.kerr@example.com', '07700 900110', '18 Fennimore Place', 'Bath', 'BA1 2XL'],
+            ['nadia', 'Nadia', 'Iqbal', 'nadia.iqbal@example.com', '07700 900111', '61 Aldergrove Walk', 'Cheltenham', 'GL52 2XW'],
+            ['charlotte', 'Charlotte', 'Dean', 'charlotte.dean@example.com', '07700 900112', '24 Millbourne Row', 'Frome', 'BA11 1XD'],
+            ['aoife', 'Aoife', 'Sheridan', 'aoife.sheridan@example.com', '07700 900113', '39 Havenscroft Road', 'Bristol', 'BS7 8XM'],
+            ['martha', 'Martha', 'Oyelaran', 'martha.oyelaran@example.com', '07700 900114', '6 Berrymead Close', 'Gloucester', 'GL2 4XF'],
         ];
 
         foreach ($rows as [$key, $first, $last, $email, $phone, $address, $city, $postcode]) {
@@ -262,7 +271,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(1),
         ], [
             'date' => $today->addMonths(9)->addDays(10),
-            'venue' => ['Harbourmead Hall', 'Elton Road', 'Clevedon', 'BS21 7XN'],
+            'venue' => ['Harbourmead Hall', 'Sedgemoor Lane', 'Clevedon', 'BS21 7XN'],
             'start' => '07:00:00', 'ready' => '12:30:00',
         ], null, [
             ['Sophie', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
@@ -277,7 +286,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(4),
         ], [
             'date' => $today->addMonths(8)->addDays(6),
-            'venue' => ['Wrenfield Mill', 'Priston', 'Bath', 'BA2 9XT'],
+            'venue' => ['Wrenfield Mill', 'Barleyfield Lane', 'Bath', 'BA2 9XT'],
             'start' => '07:30:00', 'ready' => '12:00:00',
         ], null, [
             ['Hannah', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'],
@@ -295,7 +304,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(6),
         ], [
             'date' => $today->addMonths(7)->addDays(22),
-            'venue' => ['Alderway Court', 'Elmore', 'Gloucester', 'GL2 3XP'],
+            'venue' => ['Alderway Court', 'Thornhaugh Lane', 'Gloucester', 'GL2 3XP'],
             'start' => '06:30:00', 'ready' => '11:30:00',
         ], null, [
             ['Amelia', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
@@ -315,7 +324,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(2),
         ], [
             'date' => $today->addMonths(6)->addDays(18),
-            'venue' => ['Fallowmere House', 'Weston', 'Honiton', 'EX14 3XR'],
+            'venue' => ['Fallowmere House', 'Combewell Lane', 'Honiton', 'EX14 3XR'],
             'start' => '08:00:00', 'ready' => '13:00:00',
         ], $today->addMonths(5)->addDays(25), [
             ['Chloe', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'],
@@ -334,7 +343,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(19),
         ], [
             'date' => $today->addMonths(5)->addDays(11),
-            'venue' => ['Netherstone Lodge', 'Bourne Lane', 'Blagdon', 'BS40 7XQ'],
+            'venue' => ['Netherstone Lodge', 'Fernbrook Lane', 'Blagdon', 'BS40 7XQ'],
             'start' => '07:30:00', 'ready' => '12:30:00',
         ], $today->addMonths(4)->addDays(20), [
             ['Megan', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'], ['Nan', 'Senior'],
@@ -353,7 +362,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(3),
         ], [
             'date' => $today->addMonth()->addDays(15),
-            'venue' => ['Marlbury Court', 'Tortworth', 'Wotton-under-Edge', 'GL12 8XJ'],
+            'venue' => ['Marlbury Court', 'Whitleigh Lane', 'Wotton-under-Edge', 'GL12 8XJ'],
             'start' => '07:00:00', 'ready' => '12:00:00',
         ], $today->addDays(17), [
             ['Lucy', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
@@ -379,7 +388,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(8),
         ], [
             'date' => $today->addMonths(2)->addDays(26),
-            'venue' => ['Pearmain House', 'Orchardleigh', 'Frome', 'BA11 2XW'],
+            'venue' => ['Pearmain House', 'Marlpit Lane', 'Frome', 'BA11 2XW'],
             'start' => '07:30:00', 'ready' => '13:00:00',
         ], $today->addMonths(2)->addDays(5), [
             ['Jessica', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'], ['Mother-in-law', 'Mother of the bride'],
@@ -402,7 +411,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(12),
         ], [
             'date' => $today->addMonths(4)->addDays(14),
-            'venue' => ['Saltway Barn', 'Tetbury', 'Tetbury', 'GL8 8XD'],
+            'venue' => ['Saltway Barn', 'Cranmore Row', 'Tetbury', 'GL8 8XD'],
             'start' => '08:00:00', 'ready' => '13:30:00',
         ], $today->addMonths(3)->addDays(20), [
             ['Emily', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'],
@@ -421,7 +430,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(5),
         ], [
             'date' => $today->addMonths(10)->addDays(8),
-            'venue' => ['Quillet Court', 'Long Ashton', 'Bristol', 'BS41 9XG'],
+            'venue' => ['Quillet Court', 'Greenway Rise', 'Bristol', 'BS41 9XG'],
             'start' => '07:30:00', 'ready' => '12:30:00',
         ], $today->addMonths(9)->addDays(15), [
             ['Sarah', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
@@ -441,7 +450,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(9),
         ], [
             'date' => $today->addMonths(11)->addDays(19),
-            'venue' => ['The Verity Rooms', 'Bennett Street', 'Bath', 'BA1 2XF'],
+            'venue' => ['The Verity Rooms', 'Pindar Street', 'Bath', 'BA1 2XF'],
             'start' => '08:00:00', 'ready' => '13:00:00',
         ], $today->addMonths(10)->addDays(28), [
             ['Hannah', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'],
@@ -460,7 +469,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(15),
         ], [
             'date' => $today->subMonth()->subDays(22),
-            'venue' => ['Brackendown Lodge', 'Berwick Drive', 'Bristol', 'BS10 7XB'],
+            'venue' => ['Brackendown Lodge', 'Ellerslie Drive', 'Bristol', 'BS10 7XB'],
             'start' => '07:00:00', 'ready' => '12:00:00',
         ], $today->subMonths(2)->subDays(20), [
             ['Lucy', 'Bride'], ['Amelia', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
@@ -480,7 +489,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subDays(10),
         ], [
             'date' => $today->subDays(18),
-            'venue' => ['Sheldrake House', 'Kings Weston Lane', 'Bristol', 'BS11 0XL'],
+            'venue' => ['Sheldrake House', 'Ferndown Lane', 'Bristol', 'BS11 0XL'],
             'start' => '07:30:00', 'ready' => '12:30:00',
         ], $today->subMonth()->subDays(10), [
             ['Grace', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Nan', 'Senior'], ['Flower girl', 'Child'],
@@ -500,7 +509,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subMonths(2),
         ], [
             'date' => $today->subMonths(2)->subDays(27),
-            'venue' => ['The Pallantine Rooms', 'Imperial Square', 'Cheltenham', 'GL50 1XN'],
+            'venue' => ['The Pallantine Rooms', 'Alverton Square', 'Cheltenham', 'GL50 1XN'],
             'start' => '08:00:00', 'ready' => '13:00:00',
         ], $today->subMonths(3)->subDays(20), [
             ['Emily', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
@@ -519,7 +528,7 @@ class DemoAccountSeeder extends Seeder
             'last_touched_at' => now()->subWeeks(3),
         ], [
             'date' => $today->addYear()->addDays(2),
-            'venue' => ['The Conduit Room', 'Stall Street', 'Bath', 'BA1 1XM'],
+            'venue' => ['The Conduit Room', 'Cobbett Street', 'Bath', 'BA1 1XM'],
             'start' => '08:00:00', 'ready' => '13:00:00',
         ], null, [
             ['Megan', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'],
@@ -531,6 +540,186 @@ class DemoAccountSeeder extends Seeder
 
         // The quoted enquiry was captured on the day of the completed booking.
         $this->bookings[3]->update(['source_booking_id' => $this->bookings[11]->id]);
+
+        $this->seedCollisionDays();
+    }
+
+    /**
+     * The two days the calendar exists to show, seeded as properties rather
+     * than as dates because the seeder runs whenever it runs.
+     *
+     * Business logic 19.1 names the first as the case the whole screen is
+     * built around: one confirmed booking and three live enquiries on the same
+     * Saturday, where the day mark has to say both things at once. Without it
+     * the demo account cannot demonstrate the feature it is a demo of, which
+     * is how it stood until now.
+     *
+     * 5.2 names the second: two weddings in one day is normal in this trade,
+     * and the clash warning exists because of it rather than in spite of it.
+     */
+    private function seedCollisionDays(): void
+    {
+        $this->seedBusySaturday();
+        $this->seedTwoWeddingsInADay();
+    }
+
+    /**
+     * One confirmed booking and three enquiries on one Saturday.
+     *
+     * Far enough out to sit in the list's "next three months" group on first
+     * load, and in the future because three live enquiries on a date that has
+     * already passed is nonsense rather than demo data.
+     */
+    private function seedBusySaturday(): void
+    {
+        $date = $this->saturdayAtLeast(60);
+
+        $this->bookings[15] = $this->booking('priya', [
+            'stage' => BookingStage::Confirmed,
+            'source' => BookingSource::WebForm,
+            'converted_at' => now()->subMonths(4),
+            'confirmed_at' => now()->subMonths(3),
+            'last_touched_at' => now()->subDays(12),
+        ], [
+            'date' => $date,
+            'venue' => ['Cathermere Barn', 'Lynmore Lane', 'Berkeley', 'GL13 9XE'],
+            'start' => '06:30:00', 'ready' => '12:00:00',
+            // Seven weeks and not six: six lands this trial on the last
+            // Saturday of the month, which is the two-wedding day below, and a
+            // ten o'clock trial between a half five start and a one o'clock
+            // ceremony is not a busy day, it is an impossible one.
+        ], $date->subWeeks(7), [
+            ['Priya', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
+        ], [
+            ['Bride', 1], ['Bridesmaid', 2], ['Mother of the bride', 1], ['Bridal trial', 1],
+        ], [
+            'Booked at the wedding fair in March. Very organised, everything agreed already.',
+        ]);
+
+        // Three enquiries on the same date, each from a different family, so
+        // the count badge reads three rather than one booking listed oddly.
+        $this->bookings[16] = $this->booking('rosie', [
+            'stage' => BookingStage::Possible,
+            'source' => BookingSource::WebForm,
+            'enquiry_message' => 'Hello, we are at Larkspur Court that day and there are five of us. Is there any chance you are still free?',
+            'last_touched_at' => now()->subDays(3),
+        ], [
+            'date' => $date,
+            'venue' => ['Larkspur Court', 'Danesbrook Road', 'Stroud', 'GL6 0XQ'],
+            'start' => '07:00:00', 'ready' => '13:00:00',
+        ], null, [
+            ['Rosie', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'],
+        ], [], [
+            'Same Saturday as Priya Raman. Worth a call before it goes any further.',
+        ]);
+
+        $this->bookings[17] = $this->booking('nadia', [
+            'stage' => BookingStage::Quoted,
+            'source' => BookingSource::ForwardedEmail,
+            'enquiry_message' => 'Forwarded from the venue. Bride plus four, ready by one.',
+            'last_touched_at' => now()->subDays(9),
+        ], [
+            'date' => $date,
+            'venue' => ['The Rookery Rooms', 'Kingsmill Street', 'Cheltenham', 'GL52 2XN'],
+            'start' => '07:30:00', 'ready' => '13:00:00',
+        ], null, [
+            ['Nadia', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'], ['Mum', 'Mother of the bride'],
+        ], [
+            ['Bride', 1], ['Bridesmaid', 3], ['Mother of the bride', 1],
+        ], [
+            'Quoted on the same Saturday as two others. First to sign takes it.',
+        ]);
+
+        $this->bookings[18] = $this->booking('charlotte', [
+            'stage' => BookingStage::Possible,
+            'source' => BookingSource::Manual,
+            'enquiry_message' => 'Rang about the same weekend. Venue not settled yet, somewhere near Bath.',
+            'last_touched_at' => now()->subDays(26),
+        ], [
+            'date' => $date,
+            'venue' => ['Stonewell Grange', 'Halstock Hill', 'Bath', 'BA1 7XR'],
+            'start' => '08:00:00', 'ready' => '13:30:00',
+        ], null, [
+            ['Charlotte', 'Bride'], ['Bridesmaid', 'Bridesmaid'],
+        ], [], [
+            'Gone quiet since the first call. Third enquiry on that Saturday.',
+        ]);
+    }
+
+    /**
+     * Two weddings worked in one day, in the current month so a mark is on
+     * screen the moment the app opens.
+     *
+     * The last Saturday of the month is usually behind us by the time anybody
+     * runs this, so the stage follows the date rather than the date following
+     * the stage: a past date is seeded as completed, which decision 187 marks
+     * exactly as confirmed, so the calendar looks the same and the data stays
+     * honest. Seeding a past Saturday as confirmed to satisfy a test would be
+     * writing a booking that has not happened yet into last week.
+     */
+    private function seedTwoWeddingsInADay(): void
+    {
+        $date = $this->lastSaturdayOfThisMonth();
+        $stage = $date->lessThan(today()) ? BookingStage::Completed : BookingStage::Confirmed;
+
+        $this->bookings[19] = $this->booking('aoife', [
+            'stage' => $stage,
+            'source' => BookingSource::WebForm,
+            'converted_at' => now()->subMonths(8),
+            'confirmed_at' => now()->subMonths(7),
+            'last_touched_at' => now()->subDays(20),
+        ], [
+            'date' => $date,
+            'venue' => ['Ferrenden Hall', 'Ravensmead Road', 'Bath', 'BA1 9XD'],
+            // The early start, which is what makes two in a day possible at
+            // all: the first is finished before the second is awake.
+            'start' => '05:30:00', 'ready' => '10:30:00',
+        ], $date->subWeeks(8), [
+            ['Aoife', 'Bride'], ['Bridesmaid', 'Bridesmaid'], ['Bridesmaid', 'Bridesmaid'],
+        ], [
+            ['Bride', 1], ['Bridesmaid', 2], ['Early start supplement', 1], ['Bridal trial', 1],
+        ], [
+            'Five thirty start so the afternoon is free for the second wedding.',
+        ]);
+
+        $this->bookings[20] = $this->booking('martha', [
+            'stage' => $stage,
+            'source' => BookingSource::Manual,
+            'converted_at' => now()->subMonths(6),
+            'confirmed_at' => now()->subMonths(5),
+            'last_touched_at' => now()->subDays(20),
+        ], [
+            'date' => $date,
+            'venue' => ['The Mulberry Room', 'Ludworth Street', 'Gloucester', 'GL1 2XT'],
+            'start' => '13:00:00', 'ready' => '16:30:00',
+        ], null, [
+            ['Martha', 'Bride'], ['Bridesmaid', 'Bridesmaid'],
+        ], [
+            ['Bride', 1], ['Bridesmaid', 1],
+        ], [
+            'Afternoon ceremony, so both fit in the day. Booked knowing about the morning one.',
+        ]);
+    }
+
+    /**
+     * The first Saturday at least this many days from today.
+     */
+    private function saturdayAtLeast(int $days): CarbonImmutable
+    {
+        $date = today()->addDays($days);
+
+        return $date->isSaturday() ? $date : $date->next(CarbonInterface::SATURDAY);
+    }
+
+    /**
+     * The last Saturday of the month we are in, which always exists and is
+     * always inside the month the calendar opens on.
+     */
+    private function lastSaturdayOfThisMonth(): CarbonImmutable
+    {
+        $end = today()->endOfMonth()->startOfDay();
+
+        return $end->isSaturday() ? $end : $end->previous(CarbonInterface::SATURDAY);
     }
 
     /**

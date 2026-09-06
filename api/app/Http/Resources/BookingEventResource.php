@@ -53,6 +53,13 @@ class BookingEventResource extends JsonResource
             'start_time' => $this->start_time === null
                 ? null
                 : substr($this->start_time, 0, 5),
+            // Where the artist works for this event: base, client or venue,
+            // and null when nobody has said. The screen needs it because the
+            // venue columns cannot tell the difference between "not known" and
+            // "at her own place, whose address lives in settings": both are a
+            // null venue_name and a null city, and a trial at base was reading
+            // as a wedding with a missing venue.
+            'location_type' => $this->location_type?->value,
             'venue_name' => $this->venue_name,
             'city' => $this->city,
             'client_name' => $booking->contact->fullName(),

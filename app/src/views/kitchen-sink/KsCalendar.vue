@@ -216,6 +216,7 @@ function event(day: number, over: Partial<BookingEvent> = {}): BookingEvent {
     label: null,
     date: dayKey(new Date(2026, 8, day)),
     start_time: '06:30',
+    location_type: 'venue',
     venue_name: 'Thornleigh Hall',
     city: 'Marlow',
     client_name: 'Hannah Wallace',
@@ -273,6 +274,15 @@ const rowSamples = computed<BookingEvent[]>(() => [
   event(24, { client_name: 'Martha Oyelaran', stage: 'lost', total_minor: 0, start_time: null, venue_name: null, city: null }),
   event(25, { client_name: 'Nadia Iqbal', stage: 'possible', total_minor: 0, start_time: null, venue_name: null, city: 'Bath', last_touched_at: new Date(2026, 7, 24).toISOString() }),
   event(26, { client_name: 'Rosie Kerr', stage: 'quoted', total_minor: 54000, start_time: null, venue_name: null, city: null, waiting_on: 'artist_enquiry_cold', last_touched_at: new Date(2026, 6, 26).toISOString() }),
+  // All four location types, so the line that says where can be read against
+  // itself. The venue columns cannot tell "not known" from "at her own place",
+  // which is why the row asks the location type instead.
+  event(27, { client_name: 'At a venue', location_type: 'venue', venue_name: 'Cathermere Barn', city: 'Berkeley' }),
+  event(28, { client_name: 'At a venue with no name yet', location_type: 'venue', venue_name: null, city: 'Berkeley' }),
+  event(29, { client_name: 'At the artist\'s own place', location_type: 'base', type: 'trial', venue_name: null, city: null, start_time: '10:00' }),
+  event(30, { client_name: 'At the client\'s, town known', location_type: 'client', venue_name: null, city: 'Bath' }),
+  event(31, { client_name: 'At the client\'s, no town', location_type: 'client', venue_name: null, city: null }),
+  event(1, { client_name: 'Nobody has said where', location_type: null, venue_name: null, city: null, start_time: null }),
 ])
 
 function onSelect(date: Date): void {

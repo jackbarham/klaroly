@@ -7,6 +7,27 @@
 
 ---
 
+## 0. Where this document is superseded
+
+This is the product specification, written on 31 August 2026 and describing behaviour.
+It is **not** the authority on names, types or storage. Where it disagrees with
+`database-schema.md`, `CLAUDE.md` or the decision log, those win, because they were
+written later and against real code.
+
+Three disagreements are known and settled, listed here so nobody re-derives the wrong
+answer from the prose below:
+
+| This document says | The settled answer | Where |
+|---|---|---|
+| Event location types are *at artist*, *at client*, *at venue* (4.1) | `base`, `client`, `venue`, and the column is nullable | `database-schema.md` 5.9, `App\Enums\LocationType` |
+| The event types are *trial* and *wedding* (4.1) | Eight values, and the wedding day is `main` | `database-schema.md` 5.9 |
+| Store every event as a UTC timestamp (4.1, date rule 1) | Local wall clock plus an IANA zone; the API sends the calendar date as `YYYY-MM-DD` | `CLAUDE.md`, decision log |
+
+If you find a fourth, add it here rather than fixing the prose in place. The prose is a
+record of what was intended in August and is more useful left as it was written.
+
+---
+
 ## 1. What this document is, and what it is not
 
 This is **the whole thing**. Everything the product could eventually be, written down in one place so that nothing has to be remembered or rediscovered later.

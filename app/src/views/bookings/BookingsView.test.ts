@@ -31,6 +31,7 @@ function event(date: Date, over: Partial<BookingEvent> = {}): BookingEvent {
     label: null,
     date: dayKey(date),
     start_time: '06:30',
+    location_type: 'venue',
     venue_name: 'Thornleigh Hall',
     city: 'Marlow',
     client_name: `Client ${nextId}`,

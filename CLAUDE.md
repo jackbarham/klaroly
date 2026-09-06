@@ -800,7 +800,22 @@ What sits on top of the tables:
 - Factories for every model, `SystemDefaultsSeeder` (system message and
   contract templates) and `DemoAccountSeeder` (the "Ellie Marsh Makeup"
   account, which doubles as the App Store review account; owner login
-  `ellie@example.com` with the password from `DEMO_PASSWORD`).
+  `ellie@example.com` with the password from `DEMO_PASSWORD`). Its feature map
+  starts from `config('features.defaults')`, so the demo is the shape a real
+  registration produces, plus three named extras. **Every person and every
+  venue in it is invented**, because that account is what gets screenshotted
+  and handed to Apple, and a rule about seeded content is checked against the
+  strings rather than the columns you expect them in: a real venue survived the
+  first sweep inside an `enquiry_message`.
+  **It seeds two days the calendar exists to show**, expressed as properties
+  rather than dates because it runs whenever it runs: a future Saturday with
+  one confirmed booking and three live enquiries, which is the case business
+  logic 19.1 names as the reason for the whole screen, and a day in the current
+  month with two weddings, seeded as `completed` rather than `confirmed` when
+  that date has already passed. `tests/Feature/DemoAccountSeederTest.php`
+  asserts both as stage sets rather than exact stages, because a seeder is
+  exactly the kind of file edited for one reason that quietly loses a property
+  it was carrying for another.
 - Pest tests in `api/tests` run against a real Postgres database named
   `klaroly_test`, because the check constraints and partial indexes are part
   of what is tested. Create it once with `createdb klaroly_test`. The
@@ -905,6 +920,15 @@ testing library and there is not going to be one.
 `GET /api/events` and `GET /api/events/months` are what the bookings screen
 reads. `App\Http\Controllers\EventController` serves both.
 
+- **The row says where from `location_type`, not from whether the venue
+  columns are null.** `base`, `client` and `venue` per schema 5.9, and null for
+  nobody-has-said. The columns cannot tell "not known" from "at her own place",
+  because a trial at base has a null venue and a null city, its address being
+  in settings, and so does a wedding whose venue is not settled: reading the
+  nulls alone said "Venue not given" on every trial. Every branch returns a
+  place rather than a phrase, because the line is a run of places separated by
+  middots. Business logic 4.1 calls these "at artist", "at client" and "at
+  venue"; that disagreement is listed in section 0 of that document.
 - **The unit is an event, not a booking**, so four fields on each row are
   per-booking and two events of one booking repeat them. That is deliberate:
   nesting a booking object would make the list sort, group and filter through

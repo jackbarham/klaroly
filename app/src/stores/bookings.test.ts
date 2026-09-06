@@ -23,6 +23,7 @@ function event(date: string, over: Partial<BookingEvent> = {}): BookingEvent {
     label: null,
     date,
     start_time: '06:30',
+    location_type: 'venue',
     venue_name: null,
     city: 'Bath',
     client_name: 'Test Client',

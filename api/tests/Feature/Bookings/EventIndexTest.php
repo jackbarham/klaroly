@@ -22,6 +22,7 @@ const EVENT_KEYS = [
     'label',
     'date',
     'start_time',
+    'location_type',
     'venue_name',
     'city',
     'client_name',

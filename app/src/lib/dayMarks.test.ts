@@ -14,6 +14,7 @@ function event(date: string, stage: BookingStage): BookingEvent {
     label: null,
     date,
     start_time: null,
+    location_type: 'venue',
     venue_name: null,
     city: null,
     client_name: 'Test Client',

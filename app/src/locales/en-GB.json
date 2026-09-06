@@ -179,6 +179,8 @@
       "empty_day": "Nothing on this day",
       "empty_day_hint": "Free for a wedding or a trial.",
       "no_venue": "Venue not given",
+      "at_base": "Your place",
+      "at_client": "Their place",
       "no_time": "Time not set",
       "touched": "Last touched today | Last touched {count} day ago | Last touched {count} days ago"
     },

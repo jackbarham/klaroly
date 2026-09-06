@@ -111,10 +111,36 @@ const total = computed(() => n(props.event.total_minor / 100, {
   currency: props.event.currency,
 }))
 
-// The date, the time when there is one, and the venue. venue_name is only set
-// when the occasion's venue differs from the address the work happens at, so
-// the fall back to the city is the common case rather than the exception, and
-// an enquiry with neither says so in words rather than leaving a gap.
+// Where the work happens, decided by the location type rather than by whether
+// the venue columns happen to be null.
+//
+// Reading the nulls alone said "Venue not given" on every trial, which was
+// wrong in the way that matters: the venue was not unknown, it was the
+// artist's own place, whose address lives in settings and never on the event.
+// "Venue not given" now means only what it says, which is a real state for a
+// wedding whose venue is not settled.
+//
+// Every branch returns a place rather than a phrase, because the line is a run
+// of places separated by middots and "Bath" beside "At your place" reads as
+// two different kinds of thing.
+function place(): string {
+  switch (props.event.location_type) {
+    case 'base':
+      // Not "the studio": a spare room, a rented chair and a kitchen table are
+      // all real, and the travel settings screen already avoids the word.
+      return t('bookings.list.at_base')
+    case 'client':
+      // The client's name is directly above this line, so the town alone reads
+      // as at their place in that town.
+      return props.event.city ?? t('bookings.list.at_client')
+    case 'venue':
+      return props.event.venue_name ?? props.event.city ?? t('bookings.list.no_venue')
+    default:
+      return t('bookings.list.no_venue')
+  }
+}
+
+// The date, the time when there is one, and where.
 const meta = computed(() => {
   const parts = [format(parseISO(props.event.date), t('bookings.calendar.format.row_date'))]
 
@@ -122,7 +148,7 @@ const meta = computed(() => {
     parts.push(props.event.start_time)
   }
 
-  parts.push(props.event.venue_name ?? props.event.city ?? t('bookings.list.no_venue'))
+  parts.push(place())
 
   return parts.join(' · ')
 })
