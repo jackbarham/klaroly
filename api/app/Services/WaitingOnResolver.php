@@ -128,7 +128,29 @@ class WaitingOnResolver
     }
 
     /**
-     * An issued invoice still owing something past its balance due date.
+     * An issued invoice still owing something past its balance due date, and
+     * not snoozed.
+     *
+     * **The snooze is asked of the invoice rather than restated here**
+     * (decision 2026-09-06.1436). Snoozing means "I know, stop telling me",
+     * and a flag that ignores it makes the snooze useless: the artist clears
+     * the reminder and the row is still on the home screen the next morning.
+     * App\Models\Invoice::isOverdue() already owns that rule, along with
+     * "issued", "still owing" and the artist's own day, so this asks it rather
+     * than holding a second opinion. The two disagreeing is not hypothetical:
+     * GET /api/contacts reads isOverdue() and this reads the columns, so for
+     * a snoozed invoice the contacts screen said no while the bookings and
+     * enquiries screens said yes.
+     *
+     * The second clause is what keeps this branch about the BALANCE.
+     * isOverdue() is true for an overdue deposit as well, so delegating to it
+     * alone would answer client_balance where deposit() should answer
+     * client_deposit, and the precedence test between the two would pass
+     * while testing nothing.
+     *
+     * deposit() below deliberately does not gain the same check. A snooze is
+     * about chasing money; that branch is about the date not being secured,
+     * which is still true whether or not anybody is being chased about it.
      */
     private function balance(Booking $booking): ?WaitingOn
     {
@@ -139,9 +161,9 @@ class WaitingOnResolver
         $today = $this->today($booking);
 
         foreach ($this->liveInvoices($booking) as $invoice) {
-            if ($invoice->balance_due_on !== null
-                && $invoice->balance_due_on->lessThan($today)
-                && $invoice->outstandingMinor() > 0) {
+            if ($invoice->isOverdue($today)
+                && $invoice->balance_due_on !== null
+                && $invoice->balance_due_on->lessThan($today)) {
                 return WaitingOn::ClientBalance;
             }
         }

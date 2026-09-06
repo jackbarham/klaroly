@@ -1,0 +1,1655 @@
+<!-- CURRENT as of 6 September 2026. Built against Business logic section 18, decisions 27, 196, 213, 217 and 219. No prompt is written against it yet. Kept as history, not a source of truth: where it disagrees with the codebase, design/style-guide.md or decision-log.md, it is wrong. -->
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klaroly home screen, proof of concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================================
+   LAYER 1  PRIMITIVES
+   Lifted verbatim from tokens.css by way of enquiries-poc.html, so the colours
+   here are the app's colours rather than an approximation.
+   ========================================================================== */
+:root {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --color-white: oklch(100% 0 0);
+  --color-neutral-50: oklch(97.6% 0.0013 286.4);
+  --color-neutral-100: oklch(93.2% 0.0067 286.3);
+  --color-neutral-200: oklch(86.4% 0.0137 286.1);
+  --color-neutral-300: oklch(74.1% 0.0271 285.7);
+  --color-neutral-400: oklch(64.2% 0.0371 285.3);
+  --color-neutral-500: oklch(54.2% 0.0450 284.8);
+  --color-neutral-600: oklch(46.0% 0.0400 285.0);
+  --color-neutral-700: oklch(37.5% 0.0289 284.9);
+  --color-neutral-800: oklch(28.2% 0.0201 285.0);
+  --color-neutral-850: oklch(26.8% 0.0148 285.4);
+  --color-neutral-900: oklch(18.5% 0.0101 285.4);
+
+  --color-ink-base: oklch(24.8% 0.0132 292.0);
+  --color-ink-raised: oklch(28.1% 0.0128 292.1);
+  --color-ink-overlay: oklch(30.1% 0.0126 292.2);
+  --color-ink-muted: oklch(33.0% 0.0158 290.6);
+  --color-ink-text: oklch(96.1% 0.0013 286.4);
+
+  --color-white-a05: oklch(100% 0 0 / 0.05);
+  --color-white-a08: oklch(100% 0 0 / 0.08);
+  --color-white-a10: oklch(100% 0 0 / 0.10);
+  --color-white-a12: oklch(100% 0 0 / 0.12);
+  --color-white-a16: oklch(100% 0 0 / 0.16);
+  --color-white-a24: oklch(100% 0 0 / 0.24);
+  --color-white-a50: oklch(100% 0 0 / 0.50);
+  --color-white-a65: oklch(100% 0 0 / 0.65);
+  --color-white-a80: oklch(100% 0 0 / 0.80);
+
+  --color-accent-50: oklch(95.9% 0.0191 299.1);
+  --color-accent-300: oklch(68.0% 0.1700 287.5);
+  --color-accent-400: oklch(58.3% 0.2119 289.7);
+  --color-accent-500: oklch(54.3% 0.2313 287.5);
+  --color-accent-600: oklch(47.7% 0.2606 281.5);
+
+  --color-danger-50: oklch(96.7% 0.0159 358.0);
+  --color-danger-500: oklch(64.8% 0.2188 11.7);
+  --color-danger-600: oklch(61.7% 0.2396 17.0);
+  --color-danger-700: oklch(55.6% 0.2190 18.3);
+
+  --color-success-50: oklch(97.6% 0.0165 162.8);
+  --color-success-500: oklch(74.1% 0.1781 152.9);
+  --color-success-700: oklch(55.1% 0.1297 153.2);
+  --color-success-800: oklch(45.1% 0.1232 153.2);
+
+  --color-warning-50: oklch(97.0% 0.0151 37.9);
+  --color-warning-500: oklch(73.2% 0.1690 38.7);
+  --color-warning-700: oklch(61.6% 0.2190 34.5);
+  --color-warning-800: oklch(51.6% 0.2081 34.5);
+
+  --color-info-50: oklch(97.9% 0.0125 228.9);
+  --color-info-500: oklch(71.2% 0.1663 241.1);
+  --color-info-700: oklch(53.6% 0.1229 240.0);
+  --color-info-800: oklch(45.5% 0.1130 240.0);
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 9999px;
+
+  --text-caption: 12px;
+  --text-meta: 13px;
+  --text-body: 14px;
+  --text-control: 15px;
+  --text-lead: 16px;
+  --text-section: 20px;
+  --text-title: 24px;
+
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --duration-fast: 100ms;
+  --duration-base: 200ms;
+
+  --shadow-popover: 0 0 0 1px rgb(18 18 23 / 0.10), 0 24px 48px rgb(18 18 23 / 0.03),
+    0 10px 18px rgb(18 18 23 / 0.03), 0 5px 8px rgb(18 18 23 / 0.04),
+    0 2px 4px rgb(18 18 23 / 0.04);
+  --shadow-popover-dark: 0 0 0 1px rgb(255 255 255 / 0.12),
+    0 24px 48px rgb(0 0 0 / 0.40), 0 5px 8px rgb(0 0 0 / 0.30);
+
+  --tap-target-min: 44px;
+  --layout-content-max: 1096px;
+  --layout-sidebar: 264px;
+  --container-split: 760px;
+  --border-width-strong: 2px;
+}
+
+/* ============================================================================
+   LAYER 2  SEMANTICS
+   ========================================================================== */
+:root, .theme-light {
+  --surface: var(--color-white);
+  --surface-sunken: var(--color-neutral-50);
+  --surface-hover: var(--color-neutral-100);
+  --surface-raised: var(--color-white);
+  --surface-overlay: var(--color-white);
+
+  --text: var(--color-neutral-850);
+  --text-strong: var(--color-neutral-900);
+  --text-muted: var(--color-neutral-600);
+  --text-subtle: var(--color-neutral-500);
+  --text-placeholder: var(--color-neutral-400);
+  --text-on-accent: var(--color-white);
+
+  --border: var(--color-neutral-100);
+  --border-strong: var(--color-neutral-200);
+
+  --accent: var(--color-accent-500);
+  --accent-hover: var(--color-accent-600);
+  --accent-text: var(--color-accent-600);
+  --accent-subtle: var(--color-accent-50);
+  --danger: var(--color-danger-500);
+  --danger-text: var(--color-danger-700);
+  --danger-subtle: var(--color-danger-50);
+  --success: var(--color-success-500);
+  --success-solid: var(--color-success-700);
+  --success-subtle: var(--color-success-50);
+  --success-text: var(--color-success-800);
+  --warning: var(--color-warning-500);
+  --warning-solid: var(--color-warning-700);
+  --warning-subtle: var(--color-warning-50);
+  --warning-text: var(--color-warning-800);
+  --info: var(--color-info-500);
+  --info-subtle: var(--color-info-50);
+  --info-text: var(--color-info-800);
+
+  --shadow-menu-value: var(--shadow-popover);
+  --tabbar-glass: oklch(100% 0 0 / 0.72);
+  --scrim: oklch(0% 0 0 / 0.10);
+  --row-hover: color-mix(in oklab, var(--surface-sunken) 50%, transparent);
+}
+
+.theme-dark {
+  --surface: var(--color-ink-base);
+  --surface-sunken: var(--color-white-a05);
+  --surface-hover: var(--color-white-a08);
+  --surface-raised: var(--color-ink-raised);
+  --surface-overlay: var(--color-ink-overlay);
+
+  --text: var(--color-white-a80);
+  --text-strong: var(--color-ink-text);
+  --text-muted: var(--color-white-a65);
+  --text-subtle: var(--color-white-a50);
+  --text-placeholder: var(--color-white-a50);
+  --text-on-accent: var(--color-white);
+
+  --border: var(--color-white-a12);
+  --border-strong: var(--color-white-a24);
+
+  --accent: var(--color-accent-500);
+  --accent-hover: var(--color-accent-400);
+  --accent-text: var(--color-accent-300);
+  --accent-subtle: var(--color-white-a10);
+  --danger: var(--color-danger-500);
+  --danger-text: var(--color-danger-500);
+  --danger-subtle: var(--color-white-a10);
+  --success: var(--color-success-500);
+  --success-solid: var(--color-success-500);
+  --success-subtle: var(--color-white-a10);
+  --success-text: var(--color-success-500);
+  --warning: var(--color-warning-500);
+  --warning-solid: var(--color-warning-500);
+  --warning-subtle: var(--color-white-a10);
+  --warning-text: var(--color-warning-500);
+  --info: var(--color-info-500);
+  --info-subtle: var(--color-white-a10);
+  --info-text: var(--color-info-500);
+
+  --shadow-menu-value: var(--shadow-popover-dark);
+  --tabbar-glass: oklch(28.1% 0.0128 292.1 / 0.72);
+  --scrim: oklch(0% 0 0 / 0.50);
+  --row-hover: color-mix(in oklab, var(--surface-sunken) 50%, transparent);
+}
+
+/* ============================================================================
+   THE HARNESS
+   Chrome around the demo. Nothing here is a proposal.
+   ========================================================================== */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 24px;
+  color: var(--text);
+  background: var(--surface-sunken);
+  -webkit-font-smoothing: antialiased;
+}
+body.theme-dark { background: var(--color-neutral-900); }
+
+.wrap { max-width: 1240px; margin: 0 auto; padding: 32px 20px 96px; }
+
+.masthead { margin-bottom: 28px; }
+.masthead h1 {
+  font-size: var(--text-title); line-height: 32px; letter-spacing: -0.01em;
+  font-weight: 500; color: var(--text-strong); margin: 0 0 8px;
+}
+.masthead p { margin: 0 0 6px; color: var(--text-muted); max-width: 68ch; }
+.masthead .stamp { font-size: var(--text-caption); color: var(--text-subtle); }
+
+.controls {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; flex-wrap: wrap; gap: 20px 28px; align-items: flex-end;
+  padding: 14px 16px; margin: 0 0 28px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-menu-value);
+}
+.ctl { display: flex; flex-direction: column; gap: 6px; }
+.ctl > span {
+  font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.04em;
+}
+.seg { display: flex; background: var(--surface-sunken); border-radius: var(--radius-sm); padding: 2px; gap: 2px; }
+.seg button {
+  font: inherit; font-size: var(--text-meta); line-height: 20px;
+  border: 0; background: transparent; color: var(--text-muted);
+  padding: 6px 12px; border-radius: 6px; cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+  white-space: nowrap;
+}
+.seg button:hover { color: var(--text-strong); }
+.seg button[aria-pressed="true"] {
+  background: var(--surface); color: var(--text-strong); font-weight: 500;
+  box-shadow: 0 1px 1px rgb(10 10 46 / 0.06);
+}
+.theme-dark .seg button[aria-pressed="true"] { background: var(--color-white-a12); box-shadow: none; }
+
+.band { margin: 0 0 40px; }
+.band > h2 {
+  font-size: var(--text-section); line-height: 28px; font-weight: 500;
+  color: var(--text-strong); margin: 0 0 4px;
+}
+.band > .hint { margin: 0 0 16px; color: var(--text-muted); font-size: var(--text-meta); max-width: 76ch; }
+.phones { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
+figure.frame { margin: 0; }
+figure.frame figcaption {
+  font-size: var(--text-caption); line-height: 16px; color: var(--text-subtle);
+  margin-top: 10px; text-align: center;
+}
+.device {
+  border-radius: 34px; padding: 10px; background: var(--color-neutral-800);
+  box-shadow: 0 18px 40px rgb(18 18 23 / 0.18);
+}
+.theme-dark .device { background: #000; box-shadow: 0 18px 40px rgb(0 0 0 / 0.5); }
+.device .screen { border-radius: 26px; overflow: hidden; }
+.deskframe {
+  border: 1px solid var(--border-strong); border-radius: var(--radius-md);
+  overflow: hidden; background: var(--surface);
+}
+
+.notes {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 24px;
+}
+.notes h2 { font-size: var(--text-section); line-height: 28px; font-weight: 500; color: var(--text-strong); margin: 0 0 12px; }
+.notes h3 { font-size: var(--text-body); font-weight: 500; color: var(--text-strong); margin: 20px 0 6px; }
+.notes p, .notes li { color: var(--text-muted); }
+.notes p { margin: 0 0 10px; max-width: 76ch; }
+.notes ul { margin: 0 0 10px; padding-left: 20px; }
+.notes li { margin-bottom: 6px; max-width: 74ch; }
+.notes code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+  background: var(--surface-sunken); padding: 1px 5px; border-radius: var(--radius-xs);
+  color: var(--text-strong);
+}
+.notes table { border-collapse: collapse; margin: 0 0 14px; font-size: var(--text-meta); }
+.notes th, .notes td { text-align: left; padding: 6px 14px 6px 0; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+.notes th { color: var(--text-strong); font-weight: 500; }
+.warnbox {
+  border-left: 3px solid var(--warning); background: var(--warning-subtle);
+  padding: 12px 16px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin: 12px 0;
+}
+.warnbox p { margin: 0; color: var(--text); }
+
+/* ============================================================================
+   THE COMPONENT
+   Sizes itself from its container, never from the viewport, so the same markup
+   is a phone screen inside a 375px frame and a two column layout inside the
+   desktop frame. Shell, status bar, tab bar and sidebar carried over from
+   enquiries-poc.html unchanged.
+   ========================================================================== */
+.screen {
+  container-type: inline-size;
+  container-name: screen;
+  background: var(--surface);
+  color: var(--text);
+  position: relative;
+  overflow: hidden;
+  font-size: var(--text-body);
+}
+.shell { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+
+.statusbar {
+  flex: none; display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 0 22px 4px; font-size: 12px; font-weight: 500; color: var(--text-strong);
+}
+.statusbar .dots { display: flex; gap: 4px; align-items: center; opacity: 0.75; }
+.statusbar .dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; display: block; }
+
+.main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.scroller { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+.pagehead {
+  flex: none; display: flex; align-items: center; gap: 8px;
+  padding: 0 8px 0 16px; height: 44px;
+  border-bottom: 1px solid var(--border);
+}
+.pagehead h1 {
+  margin: 0; flex: 1; min-width: 0;
+  font-size: var(--text-lead); line-height: 22px;
+  font-weight: 500; letter-spacing: -0.005em; color: var(--text-strong);
+}
+.adjustbtn {
+  flex: none; border: 0; background: transparent; cursor: pointer;
+  font: inherit; font-size: var(--text-meta); font-weight: 500; color: var(--accent-text);
+  padding: 0 10px; border-radius: var(--radius-sm);
+  display: inline-flex; align-items: center; gap: 4px; height: 34px;
+}
+.adjustbtn:hover, .adjustbtn[aria-expanded="true"] { background: var(--accent-subtle); }
+.adjustbtn svg { width: 15px; height: 15px; }
+
+.iconbtn {
+  border: 0; background: transparent; color: var(--text-muted); cursor: pointer;
+  width: 40px; height: 40px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; flex: none;
+}
+.iconbtn:hover { background: var(--surface-hover); color: var(--text-strong); }
+.iconbtn svg { width: 20px; height: 20px; }
+
+/* --- blocks ------------------------------------------------------------- */
+.blocks { padding: 8px 0 0; display: flex; flex-direction: column; }
+.block { padding: 0 0 26px; }
+.block__head {
+  display: flex; align-items: baseline; gap: 8px; padding: 0 16px 8px;
+}
+.block__head h2 {
+  margin: 0; flex: 1; font-size: var(--text-lead); line-height: 24px;
+  font-weight: 500; color: var(--text-strong); letter-spacing: -0.005em;
+}
+.block__more {
+  border: 0; background: transparent; padding: 0; cursor: pointer;
+  font: inherit; font-size: var(--text-meta); color: var(--accent-text); font-weight: 500;
+}
+button.block__more:hover { text-decoration: underline; }
+.block__more { display: inline-flex; align-items: center; gap: 1px; }
+.block__more svg { width: 15px; height: 15px; }
+
+/* --- See all, and the full list behind it -------------------------------- */
+.seeall {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 0; background: transparent; border: 0;
+  font: inherit; font-size: var(--text-meta); font-weight: 500; color: var(--accent-text);
+  cursor: pointer;
+}
+.seeall svg { width: 15px; height: 15px; }
+.seeall:hover { text-decoration: underline; }
+.seeall:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--radius-xs); }
+
+.attfull { display: none; }
+.attpreview { display: block; }
+.pagehead--back { gap: 2px; padding-left: 8px; }
+.pagehead--back .backbtn {
+  border: 0; background: transparent; color: var(--accent-text); cursor: pointer;
+  width: 36px; height: 36px; border-radius: var(--radius-sm); display: grid; place-items: center;
+  flex: none;
+}
+.pagehead--back .backbtn:hover { background: var(--accent-subtle); }
+.pagehead--back .backbtn svg { width: 20px; height: 20px; }
+.attview { display: none; flex: 1; min-height: 0; flex-direction: column; }
+.shell[data-view="attention"] .attview { display: flex; }
+.shell[data-view="attention"] > .main > .pagehead,
+.shell[data-view="attention"] > .main > .scroller { display: none; }
+
+/* --- the adjust sheet ---------------------------------------------------- */
+.sheet { position: absolute; inset: 0; z-index: 30; display: none; }
+.sheet.is-open { display: block; }
+.sheet__scrim {
+  position: absolute; inset: 0; border: 0; padding: 0; cursor: default;
+  background: var(--scrim);
+}
+.sheet__panel:focus-visible { outline: none; }
+.sheet__panel {
+  position: absolute; left: 12px; right: 12px; bottom: 12px;
+  background: var(--surface-overlay); color: var(--text);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-menu-value);
+  padding: 8px 16px 20px;
+  max-height: calc(100cqh - 88px); overflow-y: auto;
+  transform: translateY(10px);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+.sheet.is-open .sheet__panel { transform: translateY(0); }
+.sheet__grab {
+  width: 36px; height: 4px; border-radius: var(--radius-pill);
+  background: var(--border-strong); margin: 0 auto 10px;
+}
+.vgroup { margin-top: 14px; }
+.vgroup:first-of-type { margin-top: 4px; }
+.vgroup > span {
+  display: block; font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.vseg { display: flex; background: var(--surface-sunken); border-radius: var(--radius-sm); padding: 3px; gap: 3px; }
+.vseg button {
+  flex: 1; font: inherit; font-size: var(--text-meta); line-height: 20px;
+  border: 0; background: transparent; color: var(--text-muted);
+  padding: 8px 6px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+}
+.vseg button:hover { color: var(--text-strong); }
+.vseg button[aria-pressed="true"] { background: var(--accent); color: var(--text-on-accent); font-weight: 500; }
+.vseg button[aria-pressed="true"]:hover { color: var(--text-on-accent); }
+
+.draglist { list-style: none; margin: 0; padding: 0; }
+.dragrow {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface-sunken); border-radius: var(--radius-sm);
+  padding: 0 10px 0 4px; margin-bottom: 6px; min-height: var(--tap-target-min);
+  font-size: var(--text-body); color: var(--text-strong);
+  touch-action: none;
+}
+.dragrow.is-dragging { background: var(--accent-subtle); box-shadow: var(--shadow-menu-value); }
+.dragrow.is-off { color: var(--text-subtle); }
+.handle {
+  width: 40px; height: 40px; flex: none; display: grid; place-items: center;
+  color: var(--text-placeholder); cursor: grab; border: 0; background: transparent;
+  border-radius: var(--radius-xs);
+}
+.handle:active { cursor: grabbing; }
+.handle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.handle svg { width: 18px; height: 18px; }
+.dragrow > span { flex: 1; }
+.dragrow .pos { font-size: var(--text-caption); color: var(--text-subtle); }
+.sheetnote {
+  margin: 14px 0 0; font-size: var(--text-caption); line-height: 16px; color: var(--text-subtle);
+}
+
+/* --- attention ---------------------------------------------------------- */
+.attgroup { display: block; }
+.atthead {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 8px 16px; margin: 0;
+  background: var(--surface-sunken);
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.atthead--you { color: var(--text); }
+.atthead .n { font-weight: 400; color: var(--text-subtle); letter-spacing: 0; text-transform: none; }
+.attgroup:first-child .atthead { border-top: 0; }
+
+.attrow {
+  display: flex; align-items: flex-start; gap: 10px;
+  width: 100%; text-align: left; background: transparent;
+  padding: 11px 16px; border: 0; border-bottom: 1px solid var(--border);
+  cursor: pointer; font: inherit; color: inherit;
+  min-height: var(--tap-target-min);
+  transition: background var(--duration-fast) var(--ease-out);
+  position: relative;
+}
+.attrow:hover { background: var(--row-hover); }
+.attrow:hover .attrow__name { color: var(--accent-text); }
+.attrow:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.attrow__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.attrow__name {
+  font-size: var(--text-body); line-height: 20px; font-weight: 500;
+  color: var(--text-strong);
+}
+.attrow__meta {
+  font-size: var(--text-meta); line-height: 18px; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.attrow__meta .money { font-variant-numeric: tabular-nums; }
+.attrow__meta .late { color: var(--danger-text); font-weight: 500; }
+
+.attrow__end { flex: none; display: flex; align-items: center; gap: 4px; align-self: center; }
+.attrow__chev { color: var(--text-placeholder); display: grid; place-items: center; }
+.attrow__chev svg { width: 18px; height: 18px; }
+
+.act {
+  border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--text-strong); font: inherit; font-size: var(--text-meta); line-height: 18px;
+  font-weight: 500; padding: 6px 11px; border-radius: var(--radius-pill);
+  cursor: pointer; white-space: nowrap;
+  transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+}
+.act:hover { background: var(--surface-hover); border-color: var(--text-placeholder); }
+.act--primary { background: var(--accent-subtle); border-color: transparent; color: var(--accent-text); }
+.act--primary:hover { background: color-mix(in oklab, var(--accent) 16%, transparent); border-color: transparent; }
+.act--quiet { border-color: transparent; color: var(--text-muted); padding-left: 8px; padding-right: 8px; }
+.act--quiet:hover { background: var(--surface-hover); border-color: transparent; }
+.act { position: relative; min-height: 32px; }
+.act::after { content: ''; position: absolute; inset: -6px -2px; }
+
+.allclear {
+  margin: 0 16px; padding: 14px 16px;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--success-subtle);
+  display: flex; align-items: center; gap: 10px;
+}
+.allclear svg { width: 18px; height: 18px; flex: none; color: var(--success-text); }
+.allclear p { margin: 0; font-size: var(--text-body); line-height: 20px; color: var(--success-text); }
+
+/* --- next up ------------------------------------------------------------ */
+.nextrow {
+  display: flex; align-items: flex-start; gap: 12px;
+  width: 100%; text-align: left; background: transparent;
+  padding: 12px 16px; border: 0; border-bottom: 1px solid var(--border);
+  cursor: pointer; font: inherit; color: inherit;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.nextrow:hover { background: var(--row-hover); }
+.nextrow:hover .nextrow__name { color: var(--accent-text); }
+.nextrow:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.nextrow__when {
+  flex: none; width: 52px; display: flex; flex-direction: column; align-items: center;
+  padding-top: 1px;
+}
+.nextrow__when .dow {
+  font-size: var(--text-caption); line-height: 14px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-subtle);
+}
+.nextrow__when .dom {
+  font-size: 22px; line-height: 26px; font-weight: 500; color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+}
+.nextrow__when .mon {
+  font-size: var(--text-caption); line-height: 14px; color: var(--text-subtle);
+}
+.nextrow--soon .dow { color: var(--accent-text); }
+.nextrow--soon .dom { color: var(--accent-text); }
+
+.nextrow__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.nextrow__name {
+  font-size: var(--text-body); line-height: 20px; font-weight: 500; color: var(--text-strong);
+}
+.nextrow__where, .nextrow__extra {
+  font-size: var(--text-meta); line-height: 18px; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nextrow__extra { color: var(--text-subtle); }
+.nextrow__extra .sep { color: var(--text-placeholder); padding: 0 4px; }
+.nextrow__extra .early { color: inherit; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  padding: 2px 8px; border-radius: var(--radius-pill); white-space: nowrap;
+}
+.pill--trial { background: var(--info-subtle); color: var(--info-text); }
+.pill--countdown { background: var(--surface-hover); color: var(--text-muted); }
+
+/* --- money -------------------------------------------------------------- */
+.moneyowed {
+  margin: 0 16px 14px; padding: 14px 16px;
+  border-radius: var(--radius-md); background: var(--danger-subtle);
+  border: 1px solid transparent;
+  display: flex; align-items: center; gap: 12px;
+  width: calc(100% - 32px); text-align: left; font: inherit; cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.moneyowed:hover { background: color-mix(in oklab, var(--danger) 14%, transparent); }
+.moneyowed:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.moneyowed__body { flex: 1; min-width: 0; }
+.moneyowed .fig {
+  display: block; font-size: var(--text-section); line-height: 26px; font-weight: 500;
+  color: var(--danger-text); font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+}
+.moneyowed .cap { display: block; font-size: var(--text-meta); line-height: 18px; color: var(--danger-text); }
+.moneyowed svg { width: 18px; height: 18px; flex: none; color: var(--danger-text); }
+
+.periodbar { padding: 0 16px 12px; }
+.periodbar .seg { width: 100%; }
+.periodbar .seg button { flex: 1; padding: 6px 4px; }
+
+.figs {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+  background: var(--border); border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.figbox { background: var(--surface); padding: 12px 16px; }
+.figbox dt {
+  font-size: var(--text-caption); line-height: 16px; color: var(--text-subtle);
+  margin: 0 0 2px;
+}
+.figbox dd {
+  margin: 0; font-size: var(--text-lead); line-height: 22px; font-weight: 500;
+  color: var(--text-strong); font-variant-numeric: tabular-nums;
+}
+.figbox .under { display: block; font-size: var(--text-caption); line-height: 16px; color: var(--text-subtle); font-weight: 400; }
+.figbox .under .bad { color: var(--danger-text); }
+.figbox--wide { grid-column: 1 / -1; }
+.moneyfoot {
+  padding: 10px 16px 0; font-size: var(--text-meta); line-height: 18px; color: var(--text-subtle);
+}
+
+/* --- empty account ------------------------------------------------------ */
+.firstrun { padding: 32px 24px 24px; text-align: center; }
+.firstrun .big {
+  margin: 0 0 8px; font-size: var(--text-section); line-height: 28px;
+  font-weight: 500; color: var(--text-strong);
+}
+.firstrun p { margin: 0 auto 20px; max-width: 34ch; color: var(--text-muted); }
+.firstrun .btnrow { display: flex; flex-direction: column; gap: 10px; align-items: stretch; max-width: 280px; margin: 0 auto; }
+.btn {
+  font: inherit; font-size: var(--text-control); font-weight: 500; line-height: 20px;
+  border-radius: var(--radius-sm); padding: 12px 18px; cursor: pointer;
+  min-height: var(--tap-target-min); border: 1px solid transparent;
+}
+.btn--primary { background: var(--accent); color: var(--text-on-accent); }
+.btn--primary:hover { background: var(--accent-hover); }
+.btn--ghost { background: var(--surface); color: var(--text-strong); border-color: var(--border-strong); }
+.btn--ghost:hover { background: var(--surface-hover); }
+.firstrun .setup {
+  margin: 24px auto 0; padding: 14px 16px; max-width: 320px;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface-sunken); text-align: left;
+}
+.firstrun .setup h3 { margin: 0 0 4px; font-size: var(--text-body); line-height: 20px; font-weight: 500; color: var(--text-strong); }
+.firstrun .setup p { margin: 0; max-width: none; font-size: var(--text-meta); line-height: 18px; }
+
+/* --- toast -------------------------------------------------------------- */
+.toast {
+  position: absolute; left: 16px; right: 16px; bottom: var(--toast-bottom, 20px);
+  z-index: 50; display: flex; align-items: center; gap: 12px;
+  background: var(--color-neutral-850); color: var(--color-neutral-50);
+  border-radius: var(--radius-md); padding: 12px 12px 12px 16px;
+  box-shadow: 0 10px 30px rgb(18 18 23 / 0.28);
+  opacity: 0; transform: translateY(8px); pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-out);
+}
+.theme-dark .toast { background: var(--color-ink-overlay); border: 1px solid var(--border); }
+.toast.is-in { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.toast p { margin: 0; flex: 1; font-size: var(--text-meta); line-height: 18px; }
+.toastx {
+  border: 0; background: transparent; color: var(--color-accent-300);
+  font: inherit; font-size: var(--text-meta); font-weight: 500; cursor: pointer;
+  padding: 6px 8px; border-radius: var(--radius-xs); flex: none;
+}
+.toastx:hover { background: var(--color-white-a10); }
+
+/* --- tab bar and sidebar ------------------------------------------------ */
+.tabbar {
+  position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 10;
+  height: 64px; border-radius: var(--radius-lg);
+  background: var(--tabbar-glass);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgb(18 18 23 / 0.10);
+  display: grid; grid-template-columns: repeat(5, 1fr); align-items: center;
+}
+.tabbar button {
+  border: 0; background: transparent; cursor: pointer; padding: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  color: var(--text-subtle); font: inherit; font-size: 10px; line-height: 12px;
+}
+.tabbar button[aria-current="page"] { color: var(--accent-text); font-weight: 500; }
+.tabbar svg { width: 22px; height: 22px; }
+.tabbar .plus {
+  width: 48px; height: 48px; border-radius: var(--radius-pill); background: var(--accent);
+  color: var(--text-on-accent); display: grid; place-items: center;
+  justify-self: center; box-shadow: 0 4px 12px oklch(54.3% 0.2313 287.5 / 0.4);
+}
+.tabbar .plus svg { width: 24px; height: 24px; }
+.tabspacer { flex: none; }
+
+.sidebar { display: none; }
+
+/* --- the fold marker ---------------------------------------------------- */
+.fold {
+  position: absolute; left: 0; right: 0; z-index: 9; pointer-events: none;
+  border-top: 1px dashed var(--danger);
+  display: none;
+}
+.screen.show-fold .fold { display: block; }
+.fold span {
+  position: absolute; right: 6px; top: 2px;
+  font-size: 10px; line-height: 14px; font-weight: 500; color: var(--text-on-accent);
+  background: var(--danger); padding: 0 6px; border-radius: var(--radius-xs);
+}
+
+/* ============================================================================
+   CONTAINER QUERIES
+   One breakpoint, the same --container-split token the calendar and the
+   enquiries list use. Attention takes the wide column at every desktop size;
+   next up and money stack in the rail in whichever order the control says.
+   ========================================================================== */
+@container screen (min-width: 760px) {
+  .shell { flex-direction: row; }
+  .statusbar, .tabbar, .tabspacer { display: none; }
+  .fold { display: none !important; }
+
+  .sidebar {
+    display: flex; flex-direction: column; gap: 2px; flex: none;
+    width: var(--layout-sidebar); padding: 16px 12px;
+    border-right: 1px solid var(--border); background: var(--surface-sunken);
+  }
+  .sidebar .brand {
+    font-size: var(--text-lead); font-weight: 500; color: var(--text-strong);
+    padding: 8px 12px 16px; letter-spacing: -0.01em;
+  }
+  .sidebar a {
+    display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px;
+    border-radius: var(--radius-sm); color: var(--text-muted);
+    text-decoration: none; font-size: var(--text-body);
+  }
+  .sidebar a svg { width: 18px; height: 18px; }
+  .sidebar a[aria-current="page"] { background: var(--accent-subtle); color: var(--accent-text); font-weight: 500; }
+
+  .pagehead { padding: 0 20px 0 28px; height: 52px; }
+  .pagehead h1 { font-size: var(--text-section); line-height: 26px; }
+
+  /* There is room, so the block is the full list and nothing is summarised.
+     The preview, See all and the whole second screen never draw here. */
+  .seeall { display: none; }
+  .attpreview { display: none; }
+  .attfull { display: block; }
+  .attview { display: none !important; }
+  .shell[data-view="attention"] > .main > .pagehead,
+  .shell[data-view="attention"] > .main > .scroller { display: flex; }
+  .shell[data-view="attention"] > .main > .scroller { display: block; }
+
+  .blocks {
+    display: grid; grid-template-columns: minmax(0, 1fr) 340px;
+    align-items: start; gap: 0 36px; padding: 12px 28px 40px;
+    max-width: calc(var(--layout-content-max) + 56px);
+  }
+  .block { padding-bottom: 40px; }
+  .block--attention { grid-column: 1; grid-row: 1 / span 2; }
+  .block--rail { grid-column: 2; }
+  .block__head { padding-bottom: 12px; }
+  .atthead { padding-top: 16px; padding-bottom: 8px; }
+  .attrow { padding-top: 14px; padding-bottom: 14px; }
+  .nextrow { padding-top: 16px; padding-bottom: 16px; gap: 16px; }
+  .nextrow__body { gap: 3px; }
+  .figbox { padding: 16px 18px; }
+  .moneyowed { padding: 16px 18px; margin-bottom: 18px; }
+  .periodbar { padding-bottom: 16px; }
+  .moneyfoot { padding-top: 14px; }
+  .block__head { padding-left: 0; padding-right: 0; }
+  .attrow, .nextrow { padding-left: 0; padding-right: 0; }
+  .atthead { padding-left: 0; padding-right: 0; }
+  .allclear, .moneyowed { margin-left: 0; margin-right: 0; width: auto; }
+  .periodbar { padding-left: 0; padding-right: 0; }
+  .figs { grid-template-columns: 1fr 1fr; }
+  .moneyfoot { padding-left: 0; padding-right: 0; }
+  .firstrun { padding: 56px 24px; }
+  .toast { left: auto; right: 24px; max-width: 460px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}
+</style>
+</head>
+<body class="theme-light">
+
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>Klaroly home screen, proof of concept</h1>
+    <p>Business logic section 18, built so the arguments in it can be settled by looking rather than by reasoning: what the screen says on a week when nothing is wrong, whether an attention row does the thing or only points at it, and how much of a long list belongs on a first screen. The same fixtures as <code>enquiries-poc.html</code>, so this is one artist's business seen from a second screen. <strong>Which block goes first is no longer a control on this page:</strong> it is Adjust, inside the screen, because it turned out to be the artist's setting rather than a design question.</p>
+    <p class="stamp">Standalone page, not in the codebase. 6 September 2026, and the fixtures are written against that date. Waiting-on values and their precedence are decisions 196, 213, 217 and 219 rather than anything invented here. Updated after the third review: Next up leads, Attention previews four rows with See all in its heading, the group headings carry the list band, and the header is a 44px bar saying Your summary with Adjust on the right. Order and the attention count are settings on the device, in Adjust; the money period stays on the money block. The money block is no longer removed by the feature toggles, which was a misreading of 21.2 and is section 4 below.</p>
+  </div>
+
+  <div class="controls" role="group" aria-label="Proof of concept controls">
+    <label class="ctl"><span>Theme</span>
+      <span class="seg" data-control="theme">
+        <button type="button" data-value="light" aria-pressed="true">Light</button>
+        <button type="button" data-value="dark" aria-pressed="false">Dark</button>
+      </span>
+    </label>
+    <label class="ctl"><span>The week you are having</span>
+      <span class="seg" data-control="state">
+        <button type="button" data-value="busy" aria-pressed="true">Busy</button>
+        <button type="button" data-value="quiet" aria-pressed="false">Quiet</button>
+        <button type="button" data-value="off" aria-pressed="false">Everything off</button>
+        <button type="button" data-value="new" aria-pressed="false">Brand new</button>
+      </span>
+    </label>
+    <label class="ctl"><span>Attention rows</span>
+      <span class="seg" data-control="rows">
+        <button type="button" data-value="through" aria-pressed="true">Tap through</button>
+        <button type="button" data-value="inline" aria-pressed="false">Actions on the row</button>
+      </span>
+    </label>
+    <label class="ctl"><span>Mark the fold</span>
+      <span class="seg" data-control="fold">
+        <button type="button" data-value="off" aria-pressed="true">Off</button>
+        <button type="button" data-value="on" aria-pressed="false">On</button>
+      </span>
+    </label>
+  </div>
+
+  <section class="band">
+    <h2>Phone</h2>
+    <p class="hint">Real pixel sizes with the status bar, page header and floating tab bar all taking their actual space. <strong>Mark the fold</strong> draws a line where the screen ends, which is the measurement this prototype mostly exists to take: on a busy week, does anything except attention survive the first screenful.</p>
+    <div class="phones">
+      <figure class="frame">
+        <div class="device"><div class="screen" id="screen-se" style="width:375px;height:667px"></div></div>
+        <figcaption>iPhone SE, 375 &times; 667</figcaption>
+      </figure>
+      <figure class="frame">
+        <div class="device"><div class="screen" id="screen-16" style="width:393px;height:852px"></div></div>
+        <figcaption>iPhone 16, 393 &times; 852</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="band">
+    <h2>Desktop</h2>
+    <p class="hint">Same markup, same components, one container query at the <code>--container-split</code> token. Attention takes the wide column at every desktop size and the other two stack in the rail, so the order control only reorders the rail here. That is a finding rather than a shortcut, and section 2 of the notes says why.</p>
+    <div class="deskframe"><div class="screen" id="screen-desk" style="height:760px"></div></div>
+  </section>
+
+  <section class="notes">
+    <h2>What to look at</h2>
+
+    <h3>1. Next up leads, and the cap is what made that affordable</h3>
+    <p>18.3 left the order open and framed it as useful against pleasant. Two rounds of measuring turned it into something simpler: <strong>with a cap on Attention, the order stops costing anything, and the calmer arrangement wins on tone alone.</strong></p>
+    <table>
+      <tr><th>First block</th><th>On the first 375px screenful</th></tr>
+      <tr><td><strong>Next up</strong> (default)</td><td>All three weddings, the Attention heading, its first group band and two rows</td></tr>
+      <tr><td>Attention</td><td>Both group bands, all four preview rows, and the first wedding</td></tr>
+      <tr><td>Money</td><td>The owed figure and all four figures. Not one attention row</td></tr>
+    </table>
+    <p><strong>Money first is still ruled out by height rather than by taste.</strong> An owed line, a period selector and a two by two grid of figures is a whole phone screen, so everything else starts below the fold. It is a good block and it cannot go first. Both other arrangements now show a bit of everything, which is the whole point of capping the list.</p>
+    <p><strong>Next up as the default is a tone judgement and worth naming as one.</strong> The first thing an artist meets is the next two weddings, not a list of things they have not done. Attention is one flick below with its count in the heading, so nothing is buried and nothing is nagging. My earlier recommendation was the other way round on the grounds that attention is the only block that decays, and that argument is still true; what changed is that a four-row cap means the decaying things are visible either way, and once both work, the pleasant one should win.</p>
+
+    <h3>1a. Adjust, which makes the order the artist's rather than ours</h3>
+    <p>The header is a 44px bar saying <strong>Your summary</strong> with <strong>Adjust</strong> on the right, and no date. The date was drawn first and removed: every countdown on the screen already says <em>in 6 days</em> or <em>next week</em>, which is the useful half of knowing what day it is, and the calendar is one tap away for the other half. It was costing 24 vertical pixels on the screen with the least room, and it bought a fact nobody was looking for. Taking it out puts a whole extra attention row above the fold.</p>
+    <p>Adjust opens a sheet holding two things: the order of the three blocks, dragged or moved with the arrow keys, and how many attention rows show before See all.</p>
+    <p><strong>The money period was in here for a round and came out.</strong> It is one value, so the sheet and the block's own selector had to stay in step forever, and a &ldquo;default&rdquo; that differs from the current view is an artist who cannot work out why the block keeps changing back. The block's selector is on screen and persists like every other view setting. A setting earns a second home when it is hard to reach, and that one is not.</p>
+    <p><strong>This is a view setting on the device</strong>, in the three tiers the enquiries prototype named: it describes this browser rather than the business, so it is <code>localStorage</code>, no column, no migration and no request. Same measured sheet as the enquiries view menu rather than <code>ui/Sheet.vue</code>, which is the fourth caller for the <code>AnchoredSheet</code> extraction in decision 231.</p>
+    <p><strong>Two things it must not become.</strong> It must not grow switches that turn a block off, because a control that hides an unheld Saturday is the amounts-owed switch problem again and Home is where that would hurt most. And the count must never hide the total: the heading says <em>See all 8</em> whatever the cap is set to, so the four that are not drawn are still announced.</p>
+    <p><strong>The label says Attention items rather than naming the phone</strong>, because this is a phone product and saying so on every control is noise. The sheet's one footnote still says what happens on a wide screen, because that is a genuine difference and an artist on a laptop deserves to know the count is not being ignored by accident.</p>
+    <p><strong>The honest reservation, said once.</strong> A settings screen for the order of three blocks is a lot of machinery for a decision most artists will never touch, and every default that is adjustable is a default nobody has to get right. It is two controls and a drag handle, which is cheap, and it is your product. Worth having said.</p>
+    <p>One thing the build found. <code>preventDefault</code> on <code>pointerdown</code>, which is what stops a drag turning into a text selection, also stops the handle taking focus, so the keyboard reorder was dead after any tap. Focus is given back by hand. That belongs in the prompt rather than being discovered during it.</p>
+
+    <h3>1b. Four rows, and what the cut does to the grouping</h3>
+    <p>Four is the default and 3, 6 and All are in Adjust. Four leaves the first wedding visible with Attention on top, and one group band and one row visible with Next up on top, which is the right amount of overlap: enough to say there is more, not enough to be a list.</p>
+    <p><strong>The cut is made on decision 217's precedence order and then grouped, and that ordering is load bearing.</strong> The fixtures are written grouped by party because that is how they read, and slicing them in that order gave four artist rows and no client group at all, so an overdue balance could never reach the preview. Sorting by precedence first fixes it: the four shown are <em>not held</em>, <em>balance</em>, <em>deposit</em> and <em>enquiry cold</em>, which is exactly the four the resolver considers most urgent, and they group into two and two.</p>
+    <p><strong>What that costs is that the headings count what is drawn.</strong> The preview says <em>2 need you</em> and <em>2 waiting on clients</em> while the real figures are four and four. The heading's <em>See all 8</em> carries the total, and the full list says four and four properly. It is honest and it is slightly odd, and it is the one thing here I would want a second opinion on.</p>
+
+    <h3>1c. The group headings, with the list band</h3>
+    <p>They were plain uppercase type sitting between rows, and they read as lost. They now carry the enquiries list's <code>grouphead</code> treatment exactly: <code>--surface-sunken</code>, a hairline top and bottom, and sticky inside their own group so the band pins while its rows scroll and releases when the group ends.</p>
+    <p><strong>Sticky is scoped to <code>.attgroup</code> rather than to the scroller</strong>, which is decision 205's lesson applied before it could bite: a heading stuck to the whole scroll container would still be pinned at the top while the artist reads the money figures.</p>
+
+    <h3>2. Desktop does not summarise, because it does not need to</h3>    <h3>2. Desktop does not summarise, because it does not need to</h3>
+    <p>Look at the desktop frame. <strong>The cap, the See all link and the second screen never draw here.</strong> The attention block is the full list, grouped, all eight rows, because there is a column of room for it and a summary of something already visible is just a second thing to read. One container query decides, the same <code>--container-split</code> token the calendar and the enquiries list use, and one function draws the list in both places.</p>
+    <p>Attention keeps the main column at every desktop size, because a task list in a 340px rail truncates its second lines. So Adjust's order rearranges the side column here and nothing else, and its count does nothing at all, which the sheet says rather than leaving the artist to work out.</p>
+    <p>Worth stating plainly, because it is easy to spend an afternoon on a layout decision that only exists on one of the two form factors: <strong>the order is a phone question</strong>, and on a wide screen all three blocks are above the fold whatever it is set to.</p>
+    <p>Worth stating plainly, because it is easy to spend an afternoon on a layout decision that only exists on one of the two form factors. <strong>If the order is ever offered to the artist at all, it is a phone setting.</strong> On the evidence here it should probably not be offered: it is one more switch, and 18.1&rsquo;s rule that an empty block disappears already does most of the work a setting would do.</p>
+
+    <h3>3. The quiet week, which is the case the spec does not really cover</h3>
+    <p>Switch to <strong>Quiet</strong>. Nothing is waiting, so per 18.1 the attention block disappears rather than showing an empty state, and Home becomes two events and some figures. That is fine. What is not obviously fine is that <strong>the screen no longer tells you it checked</strong>. An artist used to seeing four things who now sees none cannot tell a clear week from a bug.</p>
+    <p>So this draws one line, <em>&ldquo;Nothing needs you today&rdquo;</em>, in place of the block. It is a single row, it disappears the moment anything is waiting, and it is the cheapest possible answer to a real doubt. <strong>It is a proposal rather than a decision.</strong> The argument against it is that it is furniture on the most-used screen in the product, which is the argument that killed the nine empty sections on the booking screen.</p>
+    <p>Note what does <em>not</em> happen on a quiet week. Money does not move up, next up does not become a hero, and no block changes size. The order is fixed and blocks drop out of it. A screen that rearranges itself depending on how the week is going is a screen nobody can learn.</p>
+
+    <h3>4. Everything off, and the money block that does not disappear</h3>
+    <p>Switch to <strong>Everything off</strong>: invoicing, payment tracking, agreements and the intake form all switched off, which section 21.2 says is a supported way to use this product and not an edge case. Five of the eight waiting-on values are suppressed and <strong>the whole &ldquo;waiting on clients&rdquo; group disappears</strong>, which is section 6's rule doing exactly what it is for.</p>
+    <p><strong>An earlier version of this prototype took the money block away with them, and that was wrong.</strong> It is worth recording as a mistake rather than quietly fixing, because the reasoning that produced it is the kind that will be made again. It went: no invoicing, so no invoices, so nothing to report. What that misses is that <strong>a booking carries a price whether or not anybody ever raised an invoice for it</strong>. An artist quoting from the rate card, or typing a number in, has said what the wedding is worth, and that is the number the whole product exists to accumulate. Reporting it has nothing to do with invoicing.</p>
+    <p>21.2 says so plainly and it took a second reading to see it. Switching a toggle off &ldquo;hides the section on the booking screen, stops the related scheduled messages, and removes the related items from <em>the home screen's attention block</em>&rdquo;. The attention block, named, and nothing about the figures.</p>
+    <p><strong>So the toggles take the cash half away one figure at a time, and never the block.</strong></p>
+    <table>
+      <tr><th>State</th><th>What Money shows</th></tr>
+      <tr><td>Invoicing and payment tracking on</td><td>The owed headline, Received, Outstanding, Booked ahead, Provisional</td></tr>
+      <tr><td>Invoicing off, payments tracked</td><td>Received, Booked ahead, Provisional. No owed headline and no Outstanding, because nothing was ever given a due date</td></tr>
+      <tr><td>Both off</td><td><strong>Booked in this period</strong>, Booked ahead, Provisional, with the count and the average</td></tr>
+    </table>
+    <p><strong>The last row is the interesting one and it is the reason this matters.</strong> With every money feature off, the period figure stops being cash and becomes value: what the weddings in this period were worth, rather than what arrived in the bank. Those are different numbers and the block says which it is showing. And it is still the pair of figures 18.3 says an artist wants when deciding whether to put prices up, on an account that does none of the invoicing.</p>
+    <p>The footnote in that state says what would be gained by turning payment tracking on. That is discovery arriving where it is useful, which is the rule decision 2026-09-06.1806 settled for the booking screen, applied to a figure rather than to a section.</p>
+    <p><strong>What still follows from the toggles.</strong> Attention is three rows and no client group, so an artist in this configuration has a Home that is mostly Next up and Money. That is a perfectly good screen, and it means the order default costs nothing here either.</p>
+
+    <h3>5. Attention rows: tap through, or do the thing</h3>
+    <p>Move <strong>Attention rows</strong> to <strong>Actions on the row</strong>. 18.1 says every row taps through; promise 2 says the things you do fifty times a year take one tap. The prototype&rsquo;s answer is that <strong>those two only conflict for two of the eight rows</strong>, and not the ones you would expect.</p>
+    <table>
+      <tr><th>Row</th><th>Inline action</th><th>What one tap does</th></tr>
+      <tr><td>Date is not held</td><td>Hold the date</td><td><strong>Finishes it</strong></td></tr>
+      <tr><td>Balance overdue</td><td>Snooze</td><td><strong>Finishes it</strong></td></tr>
+      <tr><td>Needs a price</td><td>Build a quote</td><td>Opens the quote screen</td></tr>
+      <tr><td>Details are back</td><td>Read them</td><td>Opens the booking</td></tr>
+      <tr><td>Balance, deposit, signature, form</td><td>Chase</td><td>Opens a message. Two taps, by rule</td></tr>
+    </table>
+    <p><strong>Every client-facing action is two taps and cannot be fewer.</strong> Promise 6 says nothing reaches a client until the artist has read it, so Chase prepares a message and stops. Tap one and read the toast: <em>&ldquo;Message ready. Nothing has been sent.&rdquo;</em> That is the promise working, and it means the one-tap argument only ever applied to the actions that do not speak to anybody.</p>
+    <p><strong>And the cost was measured rather than guessed</strong>, now on the See all screen, which is where the eight rows live. With tap-through, nothing truncates and nothing wraps, and seven of the eight rows are on the first screenful. With an action button on every row, <strong>two rows truncate and six of the eight names wrap onto a second line</strong>. The wrapping is the expensive half: a wrapped name makes the row three lines tall and two fewer rows fit.</p>
+    <p>The pills carry no actions at all, and that is deliberate rather than an omission. A pill is a preview and previews should not do things, or the cap starts hiding not only rows but the controls on them.</p>
+    <p><strong>So the recommendation has a smaller footprint than the control implies.</strong> Put an inline action only on the rows where one tap genuinely finishes the job, which is <em>Hold the date</em> and <em>Snooze</em>. Two buttons on the whole screen rather than eight. Every other row stays tap-through, the rows stay one-line, and Chase lives on the booking where the message can be read on a surface bigger than a Home row.</p>
+    <p>Snooze earns its place for a reason worth restating. Decision 27 says that if the only way to stop the chasers is to mark the invoice paid, artists will mark it paid, and the earnings figures then quietly become wrong. Snooze on the Home row is the honest escape hatch put exactly where the temptation is.</p>
+
+    <h3>6. The money owed figure appears twice, and it should be deliberate</h3>
+    <p>On <strong>Busy</strong>, Amelia Fenwick&rsquo;s overdue balance is an attention row, and the same &pound;340 is inside the &pound;1,020 headline in the money block. Decision 27 asks for that headline explicitly and says it must not be something reached by filtering. 18.1 asks for the row. Both are right, and together they are a duplication.</p>
+    <p><strong>I think the duplication is correct.</strong> They answer different questions: the row is a task with a name on it, and the figure is the size of the problem. An artist owed &pound;1,020 across three weddings needs the total to decide whether to spend an evening on it, and the names to spend it. What would be wrong is the two disagreeing, so <strong>they have to come from one computation</strong>: the headline is the sum of the <code>client_balance</code> rows, not a second query. Otherwise the day arrives when Home shows two rows and a total that does not match them.</p>
+
+    <h3>7. Three of the four money figures do not take a period, and 18.3 puts them under one selector</h3>
+    <p>Move the period selector. <strong>Received</strong> changes, and so do the booking count and the average. <strong>Outstanding</strong>, <strong>Booked ahead</strong> and <strong>Provisional</strong> do not move, because they cannot: outstanding is what is unpaid right now, and booked ahead is money in the future. A selector sitting above all four implies it governs all four.</p>
+    <p>So the block carries one line under the figures saying which is which. It costs a line of type and it stops the likeliest misreading of the most-scrutinised numbers in the app. The alternative, two separate blocks, was tried and is worse: it doubles the headings for a distinction that one sentence makes.</p>
+    <p>The tax-year period is there because 18.3 asks for it, and it is the only one needing an account setting behind it. Sole traders are commonly on 6 April rather than a calendar year, which is another row for the settings work.</p>
+
+    <h3>8. Brand new, which is the screen most likely to lose somebody</h3>
+    <p>Switch to <strong>Brand new</strong>. There is no data, every block is empty, and the empty-block rule would leave a blank screen. It gets a first-run state instead, doing two things rather than one.</p>
+    <p>It offers both ways in, <strong>Add a booking</strong> and <strong>Add an enquiry</strong>, because an artist arriving with a diary full of work wants the first and an artist arriving mid-conversation wants the second. And it names the sit-down job underneath: the rate card is what makes every later quote take taps instead of typing, and promise 1 already says setting it up is a desk job you do once. Saying so here is the difference between an artist who quotes in three taps in October and one who never finds the rate card at all.</p>
+    <p><strong>What it deliberately does not do</strong> is start a tour, ask for a profile photo, or show a checklist with ticks on it. Each of those delays the first useful thing, and the first useful thing is one real booking on the calendar.</p>
+
+    <h3>9. The page header is the date, and there is no bell</h3>
+    <p>The heading is <strong>Sunday 6 September</strong> rather than the word Home. The tab still says Home, and the screen says what day it is, because every figure and every countdown on it is relative to today and nothing else on the phone says so.</p>
+    <p><strong>No bell is drawn, and that is decision 106 rather than an oversight.</strong> Home is the screen a bell most obviously belongs on, and 106 is open: there is no top bar on the phone, and putting a bell in <code>PageHeader</code> means adding it to every view and watching it move as headings change length. 106 says it needs settling before the restyle prompt. This prototype does not pre-empt it and does not pretend the question is not there.</p>
+
+    <h3>10. Two things that were drawn and then removed</h3>
+    <ul>
+      <li><strong>A coloured dot at the start of every attention row.</strong> Orange for the artist&rsquo;s, grey for the client&rsquo;s. Removed, because the group heading two lines above already says whose court the ball is in, and the dot cost eighteen pixels off the line that truncates. Decision 183 is the other half of it: <code>--warning-text</code> reads red, so a dot in it says <em>problem</em> on a row that only says <em>to do</em>.</li>
+      <li><strong>A 6:30 call time in warning colour.</strong> Same trap from the other direction. An early start is a fact about a Saturday, not a fault, and the only thing on this screen that should be red is money that is genuinely late. The early-start reminder in section 23 is where that idea belongs, not a coloured time on Home.</li>
+    </ul>
+
+    <h3>11. What this reports back to the rest of the work</h3>
+    <ul>
+      <li><strong>The gone-quiet threshold reaches this screen and is never counted here.</strong> Kit Ardern is on Home as <code>artist_enquiry_cold</code> because the resolver said so. That is decision 2026-09-06.1828 working: the threshold is read once on the server and the two screens cannot disagree.</li>
+      <li><strong>Two of the eight values cannot fire today.</strong> <code>artist_review</code> and <code>client_form</code> are drawn here because the screen has to be judged with all eight on it, but decision 219 says both stand down while <code>intake_available</code> is false. On a real account this week, Home shows six, and the &ldquo;waiting on clients&rdquo; group is half the size it is in the busy fixture.</li>
+      <li><strong>Precedence is decision 217&rsquo;s order, unchanged:</strong> not held, balance, deposit, enquiry cold, price, review, signature, form. Grouping by party cuts across that order rather than replacing it, so each group is the surviving subsequence and there is no second rule to keep in step.</li>
+      <li><strong>See all wants a route rather than a view flag.</strong> It is drawn here as a second view inside Home, which is what the enquiries prototype does for its detail. In the app it should be its own route, because it is a screen an artist will want to reach from a notification and to leave with the back gesture, and a flag on Home cannot be linked to.</li>
+      <li><strong>Adjust is a fourth caller for the anchored sheet.</strong> Decision 231 said to extract <code>AnchoredSheet</code> once there were two in the app and two in a prototype. The enquiries view menu, the stage menu and this make it plain, and prompt 17 already exists for the extraction.</li>
+      <li><strong>The empty-block rule applies to Attention and to Next up, and never to Money.</strong> 18.1 states it for Attention. Next up follows it for the same reason. Money does not, because a diary has a value on every account and the toggles only remove figures from inside the block. Worth writing down, because the opposite was built first.</li>
+    </ul>
+
+    <h3>12. The numbers this prototype exists to report</h3>
+    <ul>
+      <li><strong>Four rows is the number that leaves room for something else.</strong> With Next up leading, three weddings plus the Attention heading, its group band and two rows fit one 375px screen. With Attention leading, both bands, all four rows and the first wedding fit. Eight rows fitted neither.</li>
+      <li><strong>Dropping the date bought a row.</strong> The header went from a two-line 56px block to a 44px bar, and the second attention row came above the fold with it. Twelve pixels, one whole row, which is the ratio worth remembering on this screen.</li>
+      <li><strong>Nothing truncates in the preview.</strong> Zero of four names and zero of four detail lines at 375px, once the venue is dropped from the money rows. It was in them at first and it is what pushed five rows over: an overdue balance is found by the name and the amount, and the venue there was decoration.</li>
+      <li><strong>Tap-through truncates nothing on the See all screen either</strong>, and seven of the eight rows are on its first screenful.</li>
+      <li><strong>Actions on the row cost two truncated lines and six wrapped names.</strong> With tap-through, nothing wraps. That is why the recommendation in section 5 is two buttons rather than eight.</li>
+      <li><strong>A venue with its town does not fit the next-up row at 375px.</strong> <em>The Old Corn Exchange, Saffron Walden</em> truncates. That is the same finding the enquiries list reported at 380px, arriving on a second screen, which makes it a question about the field rather than about either layout: either venue and town are two fields, or the town is dropped from rows and kept for the booking screen.</li>
+    </ul>
+
+    <div class="warnbox">
+      <p><strong>Not built, on purpose:</strong> search (18.4), the notification bell (decision 106, open), live travel time on the next-up rows, pull to refresh, and any greeting with a name in it. Search wants the projection table from decision 102 and belongs with the search work rather than with Home.</p>
+    </div>
+
+    <h3>What is fake in here</h3>
+    <p>The data, and only the data. Every person and every venue is invented and carried over from <code>enquiries-poc.html</code> so that the two screens describe one business rather than two. The tokens are lifted from <code>tokens.css</code>, the shell, the tab bar and the sidebar are the enquiries prototype's, the waiting-on values are <code>App\Enums\WaitingOn</code>, and the precedence is decision 217. The money figures are invented and internally consistent: the owed headline is the sum of the balance rows.</p>
+  </section>
+
+</div>
+
+<script>
+'use strict'
+
+const I = {
+  chevright: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
+  left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>',
+  grip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 7h.01M15 7h.01M9 12h.01M15 12h.01M9 17h.01M15 17h.01"/></svg>',
+  sliders: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 6h14M5 12h14M5 18h14"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="11" cy="18" r="2" fill="currentColor" stroke="none"/></svg>',
+  tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg>',
+  alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 2.6 20h18.8L12 4.5Z"/><path d="M12 10v4M12 17.2v.1"/></svg>',
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>',
+  enq: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.3L3 21l1.3-4.4A8.4 8.4 0 1 1 21 11.5Z"/></svg>',
+  people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><path d="M16.5 5.2a3.4 3.4 0 0 1 0 6.6M17 14.2a6.2 6.2 0 0 1 4.2 5.8"/></svg>',
+  cog: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1v.3a2 2 0 0 1-4 0v-.2a1.6 1.6 0 0 0-2.8-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7h-.3a2 2 0 0 1 0-4h.2a1.6 1.6 0 0 0 1.1-2.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1v-.3a2 2 0 0 1 4 0v.2a1.6 1.6 0 0 0 2.8 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7h.3a2 2 0 0 1 0 4h-.2a1.6 1.6 0 0 0-1.5 1Z"/></svg>',
+  more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h.1M12 12h.1M19 12h.1"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
+}
+
+/* ==========================================================================
+   Fixtures. Today is Sunday 6 September 2026.
+   Every person and every venue is invented and carried over from
+   enquiries-poc.html, so the two screens describe one business.
+   Money in pence beside its currency, per decision 77, formatted at the edge.
+   ========================================================================== */
+const TODAY = new Date(2026, 8, 6)
+
+/* How many attention rows the phone previews before See all. The artist sets
+   it in Adjust; four is the default. 'all' turns the cap off. */
+const PREVIEW_DEFAULT = 4
+
+/* Decision 217, first match wins. ATTENTION below is written grouped by party
+   because that is how it reads; this is the order the preview cuts on, so the
+   four it shows are the four most urgent rather than the first four artist
+   rows. Without it an overdue balance could never reach the preview. */
+const PRECEDENCE = [
+  'artist_not_held', 'client_balance', 'client_deposit', 'artist_enquiry_cold',
+  'artist_price', 'artist_review', 'client_signature', 'client_form'
+]
+const BLOCK_LABEL = { attention: 'Attention', next: 'Next up', money: 'Money' }
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+  'August', 'September', 'October', 'November', 'December']
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+function money (minor) {
+  const p = Math.round(minor)
+  const whole = Math.floor(p / 100)
+  const pence = p % 100
+  const s = whole.toLocaleString('en-GB')
+  return pence === 0 ? '£' + s : '£' + s + '.' + String(pence).padStart(2, '0')
+}
+function d (iso) { const p = iso.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]) }
+function daysFromToday (iso) { return Math.round((d(iso) - TODAY) / 86400000) }
+function countdown (iso) {
+  const n = daysFromToday(iso)
+  if (n === 0) return 'Today'
+  if (n === 1) return 'Tomorrow'
+  if (n < 7) return 'In ' + n + ' days'
+  if (n < 14) return 'Next week'
+  const w = Math.round(n / 7)
+  if (n < 60) return 'In ' + w + ' weeks'
+  const m = Math.round(n / 30)
+  return 'In ' + m + ' months'
+}
+function longDate (iso) {
+  const x = d(iso)
+  const sameYear = x.getFullYear() === TODAY.getFullYear()
+  return x.getDate() + ' ' + MONTHS[x.getMonth()] + (sameYear ? '' : ' ' + x.getFullYear())
+}
+
+/* --- the attention rows -------------------------------------------------
+   waiting_on values and their order are decision 217, first match wins:
+   not held, balance, deposit, enquiry cold, price, review, signature, form.
+   The grouping by party (decision 196) cuts across that order rather than
+   replacing it, so each group is the surviving subsequence.
+   `needs` says which feature toggle has to be on for the row to exist at all,
+   which is section 6's rule: with invoicing off, nothing waits on a deposit.
+   ------------------------------------------------------------------------ */
+const ATTENTION = [
+  {
+    on: 'artist_not_held', party: 'artist', needs: null,
+    name: 'Georgia Bramwell’s date is not held',
+    meta: 'Provisional, 16 days · 17 October',
+    action: { label: 'Hold the date', kind: 'primary', done: 'Held until 4 October. Georgia Bramwell has not been told.' }
+  },
+  {
+    on: 'artist_enquiry_cold', party: 'artist', needs: null,
+    name: 'Kit Ardern has heard nothing for 6 weeks',
+    meta: 'In conversation · wedding in 6 weeks',
+    action: { label: 'Reply', kind: 'plain', done: 'Message ready. Nothing has been sent.' }
+  },
+  {
+    on: 'artist_price', party: 'artist', needs: null,
+    name: 'Rosie Duthie needs a price',
+    meta: 'Arrived this morning · 4 July 2027',
+    action: { label: 'Build a quote', kind: 'plain', done: 'Opens the quote screen.' }
+  },
+  {
+    on: 'artist_review', party: 'artist', needs: 'intake',
+    name: 'Delphine Marchetti’s details are back',
+    meta: 'Trial 14 March · wedding 22 May 2027',
+    action: { label: 'Read them', kind: 'plain', done: 'Opens the booking.' }
+  },
+  {
+    on: 'client_balance', party: 'client', needs: 'invoicing', overdue: true, owed: 34000,
+    name: 'Amelia Fenwick’s balance is overdue',
+    meta: '<span class="money">£340</span> of £680 · <span class="late">9 days late</span>',
+    action: { label: 'Chase', kind: 'plain', done: 'Message ready. Nothing has been sent.' },
+    second: { label: 'Snooze', kind: 'quiet', done: 'Chasers paused until 20 September. The balance is unchanged.' }
+  },
+  {
+    on: 'client_deposit', party: 'client', needs: 'invoicing', overdue: true, owed: 17000,
+    name: 'Priya Ramanathan’s deposit is overdue',
+    meta: '<span class="money">£170</span> · <span class="late">4 days late</span> · 26 September',
+    action: { label: 'Chase', kind: 'primary', done: 'Message ready. Nothing has been sent.' },
+    second: { label: 'Snooze', kind: 'quiet', done: 'Chasers paused until 13 September. The balance is unchanged.' }
+  },
+  {
+    on: 'client_signature', party: 'client', needs: 'agreements',
+    name: 'Elspeth Rowntree has not signed',
+    meta: 'Sent 11 days ago · 12 June 2027',
+    action: { label: 'Chase', kind: 'plain', done: 'Message ready. Nothing has been sent.' }
+  },
+  {
+    on: 'client_form', party: 'client', needs: 'intake',
+    name: 'Imogen Slade’s form has not come back',
+    meta: 'Sent 3 weeks ago · 5 September 2027',
+    action: { label: 'Chase', kind: 'plain', done: 'Message ready. Nothing has been sent.' }
+  }
+]
+
+/* Past bookings with an outstanding balance. Decision 27: this is the single
+   most useful figure the software can report, and it is the sum of the
+   client_balance rows rather than a separate query. */
+const OWED = [
+  { name: 'Amelia Fenwick', date: '2026-08-22', minor: 34000 },
+  { name: 'Fran Odell', date: '2026-08-15', minor: 20000 },
+  { name: 'Wren Castellan', date: '2026-08-01', minor: 48000 }
+]
+
+const UPCOMING = [
+  {
+    date: '2026-09-12', kind: 'wedding', name: 'Nadia Kerrigan',
+    where: 'Penbury Manor, Hitchin', call: '06:30', travel: '42 min',
+    party: 'Bride and 4', early: true
+  },
+  {
+    date: '2026-09-17', kind: 'trial', name: 'Bea Ashworth',
+    where: 'Your studio', call: '18:00', travel: null, party: 'Bride', early: false
+  },
+  {
+    date: '2026-09-26', kind: 'wedding', name: 'Priya Ramanathan',
+    where: 'The Old Corn Exchange, Saffron Walden', call: '07:00', travel: '1 hr 5 min',
+    party: 'Bride and 6', early: true
+  }
+]
+
+const UPCOMING_QUIET = [UPCOMING[1], UPCOMING[2]]
+
+/* The money block. Only `received`, `count` and `average` take a period.
+   `outstanding`, `bookedAhead` and `provisional` are point in time and cannot,
+   which is section 7 of the notes. */
+const PERIODS = {
+  month: { label: 'This month', received: 145000, value: 168000, count: 3, average: 56000 },
+  three: { label: '3 months', received: 612000, value: 655000, count: 11, average: 59500 },
+  twelve: { label: '12 months', received: 2148000, value: 2214000, count: 38, average: 58200 },
+  year: { label: 'Tax year', received: 1094000, value: 1128000, count: 19, average: 59300 }
+}
+const POINT_IN_TIME = {
+  outstandingDue: 51000,
+  bookedAhead: 834000, bookedAheadCount: 14,
+  provisional: 210000, provisionalCount: 4
+}
+const POINT_IN_TIME_QUIET = {
+  outstandingDue: 51000,
+  bookedAhead: 834000, bookedAheadCount: 14,
+  provisional: 210000, provisionalCount: 4
+}
+
+/* The four weeks the control switches between. `features` is section 21's
+   toggles; a null attention row list means the block does not render at all. */
+const STATES = {
+  busy: {
+    features: { invoicing: true, payments: true, agreements: true, intake: true },
+    attention: ATTENTION.map(r => r.on),
+    upcoming: UPCOMING, owed: OWED, money: true
+  },
+  quiet: {
+    features: { invoicing: true, payments: true, agreements: true, intake: true },
+    attention: [],
+    upcoming: UPCOMING_QUIET, owed: [], money: true
+  },
+  off: {
+    features: { invoicing: false, payments: false, agreements: false, intake: false },
+    attention: ATTENTION.map(r => r.on),
+    upcoming: UPCOMING, owed: OWED, money: true
+  },
+  new: {
+    features: { invoicing: true, payments: true, agreements: true, intake: true },
+    attention: [], upcoming: [], owed: [], money: true, empty: true
+  }
+}
+
+/* ==========================================================================
+   Rendering
+   ========================================================================== */
+function rowsFor (stateKey) {
+  const s = STATES[stateKey]
+  return ATTENTION
+    .filter(r => s.attention.indexOf(r.on) !== -1)
+    .filter(r => r.needs === null || s.features[r.needs])
+    .sort((a, b) => PRECEDENCE.indexOf(a.on) - PRECEDENCE.indexOf(b.on))
+}
+
+function attentionHtml (stateKey, rowsMode, preview) {
+  const rows = rowsFor(stateKey)
+  if (STATES[stateKey].empty) return ''
+  if (!rows.length) {
+    return '<section class="block block--rail" data-block="attention">' +
+      '<div class="block__head"><h2>Attention</h2></div>' +
+      '<div class="allclear">' + I.tick + '<p>Nothing needs you today.</p></div>' +
+      '</section>'
+  }
+  const cap = preview === 'all' ? rows.length : Math.min(preview, rows.length)
+  const over = cap < rows.length
+  /* The preview is the top of decision 217's precedence order, then grouped by
+     party, so the two halves still read the way 18.1 asks. The headings count
+     what is drawn; See all in the heading is what announces the total. */
+  const shown = rows.slice(0, cap)
+  return '<section class="block block--attention" data-block="attention">' +
+    '<div class="block__head"><h2>Attention</h2>' +
+      (over
+        ? '<button class="seeall" type="button" data-seeall>See all ' + rows.length + I.chevright + '</button>'
+        : '') +
+    '</div>' +
+    '<div class="attpreview">' + fullList(shown, rowsMode) + '</div>' +
+    '<div class="attfull">' + fullList(rows, rowsMode) + '</div>' +
+    '</section>'
+}
+
+function fullList (rows, rowsMode) {
+  const mine = rows.filter(r => r.party === 'artist')
+  const theirs = rows.filter(r => r.party === 'client')
+  function group (list, label, cls) {
+    if (!list.length) return ''
+    return '<div class="attgroup">' +
+      '<h3 class="atthead ' + cls + '">' + list.length + ' ' + label + '</h3>' +
+      list.map(r => attRow(r, rowsMode)).join('') +
+      '</div>'
+  }
+  return group(mine, mine.length === 1 ? 'needs you' : 'need you', 'atthead--you') +
+    group(theirs, theirs.length === 1 ? 'waiting on a client' : 'waiting on clients', '')
+}
+
+function attRow (r, mode) {
+  const cls = 'attrow' + (r.party === 'client' ? ' attrow--client' : '') + (r.overdue ? ' attrow--overdue' : '')
+  let end = ''
+  if (mode === 'inline') {
+    const btns = []
+    if (r.second) btns.push('<button class="act act--' + r.second.kind + '" type="button" data-act="' + r.on + ':second">' + r.second.label + '</button>')
+    btns.push('<button class="act act--' + r.action.kind + '" type="button" data-act="' + r.on + ':first">' + r.action.label + '</button>')
+    end = '<span class="attrow__end">' + btns.join('') + '</span>'
+  } else {
+    end = '<span class="attrow__end"><span class="attrow__chev">' + I.chevright + '</span></span>'
+  }
+  return '<div class="' + cls + '" role="button" tabindex="0" data-row="' + r.on + '">' +
+    '<span class="attrow__body">' +
+      '<span class="attrow__name">' + r.name + '</span>' +
+      '<span class="attrow__meta">' + r.meta + '</span>' +
+    '</span>' + end +
+    '</div>'
+}
+
+function nextHtml (stateKey) {
+  const s = STATES[stateKey]
+  if (s.empty) return ''
+  if (!s.upcoming.length) return ''
+  return '<section class="block block--rail" data-block="next">' +
+    '<div class="block__head"><h2>Next up</h2>' +
+      '<button class="block__more" type="button">Bookings' + I.chevright + '</button></div>' +
+    s.upcoming.map(nextRow).join('') +
+    '</section>'
+}
+
+function nextRow (e) {
+  const x = d(e.date)
+  const soon = daysFromToday(e.date) <= 7
+  const extras = []
+  extras.push('<span' + (e.early ? ' class="early"' : '') + '>' + e.call + '</span>')
+  if (e.travel) extras.push('<span class="sep">·</span><span>' + e.travel + '</span>')
+  extras.push('<span class="sep">·</span><span>' + e.party + '</span>')
+  return '<div class="nextrow' + (soon ? ' nextrow--soon' : '') + '" role="button" tabindex="0">' +
+    '<span class="nextrow__when">' +
+      '<span class="dow">' + DAYS_SHORT[x.getDay()] + '</span>' +
+      '<span class="dom">' + x.getDate() + '</span>' +
+      '<span class="mon">' + MONTHS_SHORT[x.getMonth()] + '</span>' +
+    '</span>' +
+    '<span class="nextrow__body">' +
+      '<span class="nextrow__name">' + e.name +
+        (e.kind === 'trial' ? ' <span class="pill pill--trial">Trial</span>' : '') + '</span>' +
+      '<span class="nextrow__where">' + e.where + '</span>' +
+      '<span class="nextrow__extra">' + extras.join('') + '</span>' +
+    '</span>' +
+    '<span class="attrow__end"><span class="pill pill--countdown">' + countdown(e.date) + '</span></span>' +
+    '</div>'
+}
+
+function moneyHtml (stateKey, period) {
+  const s = STATES[stateKey]
+  if (s.empty) return ''
+  const p = PERIODS[period]
+  const f = s.features
+
+  /* Money is never switched off, and that is business logic 21.2 read
+     properly. Invoicing and payment tracking are two separate toggles, and
+     what they remove is named there as items from the ATTENTION block. A
+     booking carries a price whether or not an invoice was ever raised for it,
+     so what a diary is worth is knowable on every account. What the toggles
+     take away is the cash half, one figure at a time. */
+  const owedTotal = f.invoicing ? s.owed.reduce((a, b) => a + b.minor, 0) : 0
+  const owedLine = owedTotal
+    ? '<button class="moneyowed" type="button">' + I.alert +
+        '<span class="moneyowed__body">' +
+          '<span class="fig">' + money(owedTotal) + ' owed to you</span>' +
+          '<span class="cap">From ' + s.owed.length + ' weddings that have already happened</span>' +
+        '</span>' + I.chevright +
+      '</button>'
+    : ''
+
+  const boxes = []
+  if (f.payments) {
+    boxes.push('<div class="figbox"><dt>Received</dt><dd>' + money(p.received) +
+      '<span class="under">' + p.count + ' weddings, ' + money(p.average) + ' average</span></dd></div>')
+  } else {
+    boxes.push('<div class="figbox"><dt>Booked in this period</dt><dd>' + money(p.value) +
+      '<span class="under">' + p.count + ' weddings, ' + money(p.average) + ' average</span></dd></div>')
+  }
+  if (f.invoicing) {
+    boxes.push('<div class="figbox"><dt>Outstanding</dt><dd>' + money(owedTotal + POINT_IN_TIME.outstandingDue) +
+      '<span class="under">' + (owedTotal ? '<span class="bad">' + money(owedTotal) + ' overdue</span>, ' : '') +
+      money(POINT_IN_TIME.outstandingDue) + ' due</span></dd></div>')
+  }
+  boxes.push('<div class="figbox"><dt>Booked ahead</dt><dd>' + money(POINT_IN_TIME.bookedAhead) +
+    '<span class="under">' + POINT_IN_TIME.bookedAheadCount + ' confirmed</span></dd></div>')
+  boxes.push('<div class="figbox"><dt>Provisional</dt><dd>' + money(POINT_IN_TIME.provisional) +
+    '<span class="under">' + POINT_IN_TIME.provisionalCount + ' held, not confirmed</span></dd></div>')
+  /* An odd number of figures leaves a hole in a two column grid, so the last
+     one takes the whole row rather than half of an empty one. */
+  if (boxes.length % 2) boxes[boxes.length - 1] =
+    boxes[boxes.length - 1].replace('class="figbox"', 'class="figbox figbox--wide"')
+
+  const foot = f.payments
+    ? 'Received is for the period. Outstanding, booked ahead and provisional are as of today.'
+    : 'Booked in this period is for the period. Booked ahead and provisional are as of today. Turn on payment tracking in Settings to see what has actually come in.'
+
+  return '<section class="block block--rail" data-block="money">' +
+    '<div class="block__head"><h2>Money</h2>' +
+      '<button class="block__more" type="button">Export' + I.chevright + '</button></div>' +
+    owedLine +
+    '<div class="periodbar"><span class="seg" data-period>' +
+      Object.keys(PERIODS).map(k =>
+        '<button type="button" data-value="' + k + '" aria-pressed="' + (k === period) + '">' +
+        PERIODS[k].label + '</button>').join('') +
+    '</span></div>' +
+    '<dl class="figs">' + boxes.join('') + '</dl>' +
+    '<p class="moneyfoot">' + foot + '</p>' +
+    '</section>'
+}
+
+function firstRunHtml () {
+  return '<div class="firstrun">' +
+    '<p class="big">Nothing here yet</p>' +
+    '<p>Put in the weddings you already have, or start from an enquiry that is still a conversation.</p>' +
+    '<div class="btnrow">' +
+      '<button class="btn btn--primary" type="button">Add a booking</button>' +
+      '<button class="btn btn--ghost" type="button">Add an enquiry</button>' +
+    '</div>' +
+    '<div class="setup">' +
+      '<h3>One sit-down job, and it is worth it</h3>' +
+      '<p>Put your services and prices in once, and every quote after that is a few taps rather than typing. Settings, then Rate card.</p>' +
+    '</div>' +
+    '</div>'
+}
+
+/* ==========================================================================
+   The screen
+   ========================================================================== */
+function createScreen (el, opts) {
+  const state = {
+    order: ['next', 'attention', 'money'],
+    week: 'busy', rows: 'through', period: 'month',
+    preview: PREVIEW_DEFAULT
+  }
+
+  el.innerHTML =
+    '<div class="shell" data-view="home">' +
+    (opts.statusbar ? '<div class="statusbar" style="height:' + opts.statusbar + 'px"><span>09:41</span><span class="dots"><i></i><i></i><i></i></span></div>' : '') +
+    '<nav class="sidebar">' +
+      '<div class="brand">Klaroly</div>' +
+      '<a href="#" aria-current="page">' + I.home + 'Home</a>' +
+      '<a href="#">' + I.book + 'Bookings</a>' +
+      '<a href="#">' + I.enq + 'Enquiries</a>' +
+      '<a href="#">' + I.people + 'Contacts</a>' +
+      '<a href="#">' + I.cog + 'Settings</a>' +
+    '</nav>' +
+    '<div class="main">' +
+      '<header class="pagehead">' +
+        '<h1>Your summary</h1>' +
+        '<button class="adjustbtn" type="button" aria-haspopup="dialog" aria-expanded="false">' +
+          I.sliders + 'Adjust</button>' +
+      '</header>' +
+      '<div class="scroller"><div class="blocks"></div>' +
+        (opts.tabbar ? '<div class="tabspacer" style="height:' + (76 + (opts.homeIndicator || 0)) + 'px"></div>' : '') +
+      '</div>' +
+      '<div class="attview">' +
+        '<header class="pagehead pagehead--back">' +
+          '<button class="backbtn" type="button" aria-label="Back to home">' + I.left + '</button>' +
+          '<h1>Attention</h1></header>' +
+        '<div class="scroller"><div class="attlist"></div>' +
+          (opts.tabbar ? '<div class="tabspacer" style="height:' + (76 + (opts.homeIndicator || 0)) + 'px"></div>' : '') +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="sheet adjust" role="dialog" aria-modal="true" aria-label="Adjust your summary">' +
+      '<button class="sheet__scrim" type="button" aria-label="Close"></button>' +
+      '<div class="sheet__panel" tabindex="-1">' +
+        '<div class="sheet__grab"></div>' +
+        '<div class="vgroup"><span>Order</span>' +
+          '<ul class="draglist"></ul></div>' +
+        '<div class="vgroup"><span>Attention items</span>' +
+          '<div class="vseg" data-adjust="preview">' +
+            '<button type="button" data-value="3">3</button>' +
+            '<button type="button" data-value="4">4</button>' +
+            '<button type="button" data-value="6">6</button>' +
+            '<button type="button" data-value="all">All</button>' +
+          '</div></div>' +
+        '<p class="sheetnote">Drag a handle, or use the arrow keys on one. On a wide screen Attention keeps the main column, so the order moves the side column and the count is not applied.</p>' +
+      '</div>' +
+    '</div>' +
+    '<div class="fold"><span>fold</span></div>' +
+    '<div class="toast" role="status" aria-live="polite"><p></p><button class="toastx" type="button">OK</button></div>' +
+    (opts.tabbar ? '<nav class="tabbar" style="bottom:' + (12 + (opts.homeIndicator || 0)) + 'px">' +
+      '<button type="button" aria-current="page">' + I.home + 'Home</button>' +
+      '<button type="button">' + I.book + 'Bookings</button>' +
+      '<button type="button" class="plus" aria-label="Create">' + I.plus + '</button>' +
+      '<button type="button">' + I.enq + 'Enquiries</button>' +
+      '<button type="button">' + I.more + 'More</button>' +
+    '</nav>' : '') +
+    '</div>'
+
+  const shell = el.querySelector('.shell')
+  const blocks = el.querySelector('.blocks')
+  const attlist = el.querySelector('.attlist')
+  const fold = el.querySelector('.fold')
+  const toast = el.querySelector('.toast')
+  const toastText = toast.querySelector('p')
+  const toastBtn = toast.querySelector('.toastx')
+  let toastTimer = null
+
+  el.style.setProperty('--toast-bottom',
+    (opts.tabbar ? 12 + (opts.homeIndicator || 0) + 64 + 10 : 20) + 'px')
+
+  /* The fold is where the visible screen ends: the frame height less the
+     floating tab bar and the space it needs to clear. Nothing below it is on
+     the first screenful. */
+  if (opts.tabbar) {
+    fold.style.top = (el.clientHeight - (76 + (opts.homeIndicator || 0))) + 'px'
+  } else {
+    fold.style.display = 'none'
+  }
+
+  function showToast (msg) {
+    toastText.textContent = msg
+    toast.classList.add('is-in')
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => toast.classList.remove('is-in'), 4000)
+  }
+  toastBtn.addEventListener('click', () => {
+    clearTimeout(toastTimer)
+    toast.classList.remove('is-in')
+  })
+
+  function render () {
+    const cap = state.preview === 'all' ? Infinity : state.preview
+    if (rowsFor(state.week).length <= cap) shell.dataset.view = 'home'
+    if (STATES[state.week].empty) {
+      blocks.innerHTML = firstRunHtml()
+      blocks.style.display = 'block'
+      attlist.innerHTML = ''
+      return
+    }
+    blocks.style.display = ''
+    attlist.innerHTML = fullList(rowsFor(state.week), state.rows)
+    const parts = {
+      attention: attentionHtml(state.week, state.rows, state.preview),
+      next: nextHtml(state.week),
+      money: moneyHtml(state.week, state.period)
+    }
+    blocks.innerHTML = state.order.map(k => parts[k]).join('')
+  }
+
+  el.querySelector('.attview .backbtn').addEventListener('click', () => {
+    shell.dataset.view = 'home'
+  })
+
+  /* ---- Adjust -----------------------------------------------------------
+     A view setting on the device, in the enquiries prototype's three tiers:
+     it describes this browser, not the business, so it would live in
+     localStorage with no column and no request. Built on the same measured
+     sheet as the enquiries view menu rather than on ui/Sheet.vue.
+     ---------------------------------------------------------------------- */
+  const adjustBtn = el.querySelector('.adjustbtn')
+  const adjust = el.querySelector('.adjust')
+  const draglist = el.querySelector('.draglist')
+
+  function paintPreviewSeg () {
+    el.querySelectorAll('[data-adjust="preview"] button').forEach(b => {
+      b.setAttribute('aria-pressed', String(b.dataset.value === String(state.preview)))
+    })
+  }
+  function paintPositions () {
+    [...draglist.children].forEach((li, i) => { li.querySelector('.pos').textContent = i + 1 })
+  }
+  function paintAdjust () {
+    draglist.innerHTML = state.order.map((k, i) =>
+      '<li class="dragrow" data-key="' + k + '">' +
+        '<button class="handle" type="button" aria-label="Move ' + BLOCK_LABEL[k] +
+          '. Use the arrow keys, or drag.">' + I.grip + '</button>' +
+        '<span>' + BLOCK_LABEL[k] + '</span>' +
+        '<span class="pos">' + (i + 1) + '</span>' +
+      '</li>').join('')
+    paintPreviewSeg()
+  }
+
+  function openAdjust (open) {
+    adjust.classList.toggle('is-open', open)
+    adjustBtn.setAttribute('aria-expanded', String(open))
+    if (open) { paintAdjust(); adjust.querySelector('.sheet__panel').focus() }
+    else adjustBtn.focus()
+  }
+  adjustBtn.addEventListener('click', () => openAdjust(!adjust.classList.contains('is-open')))
+  adjust.querySelector('.sheet__scrim').addEventListener('click', () => openAdjust(false))
+  el.addEventListener('keydown', ev => {
+    if (ev.key === 'Escape' && adjust.classList.contains('is-open')) openAdjust(false)
+  })
+
+  adjust.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-adjust] button')
+    if (!b) return
+    /* The money period lives on the money block and nowhere else. It was in
+       here for a round: one value with two homes is two places to keep in
+       step, and a setting only earns a second home when it is hard to reach.
+       That one is on screen. */
+    state.preview = b.dataset.value === 'all' ? 'all' : Number(b.dataset.value)
+    paintPreviewSeg()
+    render()
+  })
+
+  /* Drag with pointer events, so one code path covers touch and mouse.
+     Arrow keys on the handle do the same job, because a reorder that only
+     works by dragging is a reorder half the people cannot do. */
+  function commitOrder () {
+    const next = [...draglist.children].map(li => li.dataset.key)
+    if (next.join() === state.order.join()) return
+    state.order = next
+    paintPositions()
+    render()
+  }
+  let dragging = null
+  draglist.addEventListener('pointerdown', ev => {
+    const handle = ev.target.closest('.handle')
+    if (!handle) return
+    /* preventDefault stops the browser turning the drag into a text selection,
+       and it also stops the button taking focus, so focus is given back by
+       hand. Without it the keyboard reorder is dead after any tap. */
+    ev.preventDefault()
+    handle.focus()
+    dragging = handle.closest('.dragrow')
+    dragging.classList.add('is-dragging')
+    handle.setPointerCapture(ev.pointerId)
+  })
+  draglist.addEventListener('pointermove', ev => {
+    if (!dragging) return
+    let ref = null
+    for (const li of draglist.children) {
+      if (li === dragging) continue
+      const r = li.getBoundingClientRect()
+      if (ev.clientY > r.top + r.height / 2) ref = li
+    }
+    if (ref) ref.after(dragging)
+    else draglist.prepend(dragging)
+  })
+  draglist.addEventListener('pointerup', () => {
+    if (!dragging) return
+    dragging.classList.remove('is-dragging')
+    dragging = null
+    commitOrder()
+  })
+  draglist.addEventListener('keydown', ev => {
+    const handle = ev.target.closest('.handle')
+    if (!handle) return
+    const li = handle.closest('.dragrow')
+    if (ev.key === 'ArrowUp' && li.previousElementSibling) {
+      ev.preventDefault(); li.previousElementSibling.before(li)
+    } else if (ev.key === 'ArrowDown' && li.nextElementSibling) {
+      ev.preventDefault(); li.nextElementSibling.after(li)
+    } else return
+    commitOrder()
+    handle.focus()
+  })
+
+  function rowClicks (root) {
+   root.addEventListener('click', ev => {
+    if (ev.target.closest('[data-seeall]')) { shell.dataset.view = 'attention'; return }
+    const period = ev.target.closest('[data-period] button')
+    if (period) {
+      state.period = period.dataset.value
+      render()
+      return
+    }
+    const act = ev.target.closest('[data-act]')
+    if (act) {
+      ev.stopPropagation()
+      const bits = act.dataset.act.split(':')
+      const row = ATTENTION.find(r => r.on === bits[0])
+      const which = bits[1] === 'second' ? row.second : row.action
+      showToast(which.done)
+      return
+    }
+    const row = ev.target.closest('[data-row]')
+    if (row) {
+      const r = ATTENTION.find(x => x.on === row.dataset.row)
+      showToast('Opens the booking. Waiting on: ' + r.on)
+    }
+   })
+   root.addEventListener('keydown', ev => {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return
+    const t = ev.target
+    if (t.getAttribute && t.getAttribute('role') === 'button') {
+      ev.preventDefault()
+      t.click()
+    }
+   })
+  }
+  rowClicks(blocks)
+  rowClicks(attlist)
+
+  render()
+
+  return {
+    set (key, value) {
+      if (key === 'fold') { el.classList.toggle('show-fold', value === 'on'); return }
+      state[key] = value
+      render()
+    }
+  }
+}
+
+const screens = []
+screens.push(createScreen(document.getElementById('screen-se'), { statusbar: 20, tabbar: true, homeIndicator: 0 }))
+screens.push(createScreen(document.getElementById('screen-16'), { statusbar: 54, tabbar: true, homeIndicator: 22 }))
+screens.push(createScreen(document.getElementById('screen-desk'), { statusbar: 0, tabbar: false }))
+
+document.querySelectorAll('.controls .seg').forEach(seg => {
+  const control = seg.dataset.control
+  seg.addEventListener('click', ev => {
+    const btn = ev.target.closest('button')
+    if (!btn) return
+    seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)))
+    const value = btn.dataset.value
+    if (control === 'theme') {
+      document.body.classList.toggle('theme-dark', value === 'dark')
+      document.body.classList.toggle('theme-light', value === 'light')
+      return
+    }
+    const key = { state: 'week', rows: 'rows', fold: 'fold' }[control]
+    screens.forEach(s => s.set(key, value))
+  })
+})
+</script>
+</body>
+</html>

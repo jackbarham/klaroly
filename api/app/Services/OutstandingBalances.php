@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Support\CurrentAccount;
 use App\Support\Money;
 use App\Support\OutstandingAmount;
+use App\Support\OutstandingSplit;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -92,6 +93,72 @@ class OutstandingBalances
         }
 
         return $amounts;
+    }
+
+    /**
+     * What a set of invoices comes to, split by whether it is late yet.
+     *
+     * The home screen's outstanding figure, business logic 18.3. **The same
+     * rule as for() above, at a different scope and in a different shape**, and
+     * that is why it is a second method here rather than a second class. The
+     * rule is "issued, not void, outstandingMinor(), isOverdue() in the
+     * artist's own day", and an OutstandingTotals sitting beside an
+     * OutstandingBalances would be two places to change it and one place to
+     * forget.
+     *
+     * The shapes stay two because they answer differently-shaped questions: a
+     * contact row shows one pill so App\Support\OutstandingAmount carries a
+     * boolean, and a headline shows two figures so App\Support\OutstandingSplit
+     * carries two amounts. See that class.
+     *
+     * The caller owns the query and this owns the rule, which is the contract
+     * for() already keeps: it issues nothing and reads what it is handed. Only
+     * invoices in one currency should be passed, because the two figures are a
+     * headline rather than a grouping; see App\Support\MoneySummary.
+     *
+     * @param  iterable<Invoice>  $invoices
+     */
+    public function total(iterable $invoices, CarbonImmutable $today): OutstandingSplit
+    {
+        $due = 0;
+        $overdue = 0;
+        $snoozed = 0;
+
+        foreach ($invoices as $invoice) {
+            if (! $invoice->isIssued()) {
+                continue;
+            }
+
+            $outstanding = $invoice->outstandingMinor();
+
+            if ($outstanding <= 0) {
+                continue;
+            }
+
+            // **isPastDue() rather than isOverdue(), and the difference is the
+            // snooze.** A snoozed invoice is still late, so counting it as
+            // merely "due" would report late money as if it were not. It goes
+            // in the overdue figure and is named again in $snoozed, which is a
+            // subset of it rather than a third bucket.
+            //
+            // The invoice still decides what late means. Asking the columns
+            // here would be the second opinion that had the contacts screen and
+            // the bookings screen disagreeing about a snoozed invoice until
+            // decision 2026-09-06.1436 was implemented.
+            if (! $invoice->isPastDue($today)) {
+                $due += $outstanding;
+
+                continue;
+            }
+
+            $overdue += $outstanding;
+
+            if ($invoice->isSnoozed($today)) {
+                $snoozed += $outstanding;
+            }
+        }
+
+        return new OutstandingSplit($due, $overdue, $snoozed);
     }
 
     /**

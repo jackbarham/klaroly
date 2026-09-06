@@ -92,6 +92,84 @@ const ENQUIRY_NOTE_KEYS = [
 ];
 
 /**
+ * The keys GET /api/home promises, mirroring app/src/types/home.ts.
+ *
+ * Same contract-and-twin arrangement as ENQUIRY_KEYS above, and here for the
+ * same reason: four test files need them, and a constant declared beside one of
+ * them only exists when Pest has collected that file.
+ */
+const HOME_KEYS = ['attention', 'upcoming', 'money'];
+
+const HOME_META_KEYS = ['features', 'attention', 'today', 'timezone'];
+
+/**
+ * One attention row. Flat, with every key always present and null where the
+ * value does not apply, so this list can be asserted at all: a shape nested
+ * under the waiting-on value would narrow more neatly in TypeScript and could
+ * not be pinned here.
+ */
+const HOME_ATTENTION_KEYS = [
+    'booking_id',
+    'waiting_on',
+    'party',
+    'client_name',
+    'contact_id',
+    'stage',
+    'currency',
+    'event_date',
+    'trial_date',
+    'last_touched_at',
+    'created_at',
+    'converted_at',
+    'hold_expires_at',
+    'sent_at',
+    'outstanding_minor',
+    'invoice_total_minor',
+    'due_on',
+];
+
+const HOME_UPCOMING_KEYS = [
+    'event_id',
+    'booking_id',
+    'type',
+    'label',
+    'date',
+    'start_time',
+    'location_type',
+    'venue_name',
+    'city',
+    'client_name',
+    'stage',
+    'party_size',
+    'travel_duration_s',
+    'travel_distance_m',
+];
+
+const HOME_MONEY_KEYS = [
+    'currency',
+    'basis',
+    'excludes_other_currencies',
+    'owed_minor',
+    'owed_count',
+    'snoozed_minor',
+    'outstanding',
+    'booked_ahead_minor',
+    'booked_ahead_count',
+    'provisional_minor',
+    'provisional_count',
+    'periods',
+];
+
+const HOME_OUTSTANDING_KEYS = ['due_minor', 'overdue_minor', 'snoozed_minor'];
+
+const HOME_PERIOD_KEYS = ['from', 'to', 'value_minor', 'booking_count', 'average_value_minor'];
+
+/**
+ * The four periods, in the order App\Services\BusinessPeriods returns them.
+ */
+const HOME_PERIODS = ['this_month', 'three_months', 'twelve_months', 'business_year'];
+
+/**
  * Create an account with a settings row and make it the current tenant.
  *
  * @param  array<string, mixed>  $settings

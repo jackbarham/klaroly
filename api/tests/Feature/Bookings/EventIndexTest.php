@@ -355,7 +355,13 @@ it('issues the same number of queries however many events there are', function (
         return $queries;
     };
 
-    expect($count(3))->toBe($count(30));
+    // Two assertions, not one. The first is the N+1 guard. **The literal is
+    // the guard against the other failure**, which is somebody adding a fifth
+    // constant-cost query per request: the flat-growth assertion stays green
+    // through that, because the new query does not grow with the diary either.
+    // A number that has to be edited deliberately is what makes the cost
+    // visible in a diff.
+    expect($count(3))->toBe($count(30))->toBe(13);
 });
 
 /**
@@ -424,7 +430,9 @@ it('issues the same number of queries however much money is on a booking', funct
         return $queries;
     };
 
-    expect($count(1))->toBe($count(8));
+    // One more than the test above, which is the payments load this test
+    // exists for. Same reason for the literal; see the comment there.
+    expect($count(1))->toBe($count(8))->toBe(14);
 });
 
 /**

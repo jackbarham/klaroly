@@ -137,15 +137,29 @@ class Invoice extends Model
      */
     public function isOverdue(?CarbonImmutable $today = null): bool
     {
+        return $this->isPastDue($today) && ! $this->isSnoozed($today);
+    }
+
+    /**
+     * Past a due date with money still on it, whatever the artist has told the
+     * app about chasing it.
+     *
+     * **The date question on its own, which is a different question from
+     * isOverdue().** A snooze suppresses the chasing and not the fact: an
+     * invoice a fortnight late is a fortnight late whether or not the artist
+     * has asked to stop being reminded. The home screen's outstanding figure
+     * needs this one, because counting snoozed money as merely "due" would
+     * report late money as if it were not.
+     *
+     * The deposit due date counts only while the deposit is not yet covered.
+     */
+    public function isPastDue(?CarbonImmutable $today = null): bool
+    {
         if (! $this->isIssued() || $this->outstandingMinor() <= 0) {
             return false;
         }
 
         $today ??= CarbonImmutable::today();
-
-        if ($this->reminders_snoozed_until !== null && $this->reminders_snoozed_until->greaterThan($today)) {
-            return false;
-        }
 
         if ($this->balance_due_on !== null && $this->balance_due_on->lessThan($today)) {
             return true;
@@ -154,5 +168,36 @@ class Invoice extends Model
         return ! $this->depositCovered()
             && $this->deposit_due_on !== null
             && $this->deposit_due_on->lessThan($today);
+    }
+
+    /**
+     * Whether the artist has asked to stop being reminded about this one, and
+     * the pause has not run out (decision 27).
+     */
+    public function isSnoozed(?CarbonImmutable $today = null): bool
+    {
+        $today ??= CarbonImmutable::today();
+
+        return $this->reminders_snoozed_until !== null
+            && $this->reminders_snoozed_until->greaterThan($today);
+    }
+
+    /**
+     * Past its BALANCE due date, which is the half of isPastDue() the owed
+     * headline is about.
+     *
+     * Decision 27's figure is money earned and not collected, and an unpaid
+     * deposit on a wedding next summer is neither. App\Services\WaitingOnResolver
+     * draws the same line between its balance and deposit branches.
+     */
+    public function balanceIsPastDue(?CarbonImmutable $today = null): bool
+    {
+        if (! $this->isIssued() || $this->outstandingMinor() <= 0) {
+            return false;
+        }
+
+        $today ??= CarbonImmutable::today();
+
+        return $this->balance_due_on !== null && $this->balance_due_on->lessThan($today);
     }
 }

@@ -74,6 +74,34 @@ return [
     'max_enquiries' => 500,
 
     /*
+     * The most attention rows GET /api/home will return, and how many upcoming
+     * events it sends with them.
+     *
+     * **The attention block is not naturally bounded, which is the thing to
+     * know here.** It reads as the artist's open workload, so forty-ish, and
+     * that intuition is wrong: artist_enquiry_cold fires on every live enquiry
+     * nobody has touched for cold_enquiry_days, so an artist who does not open
+     * the app for a month has every one of them on this list, and
+     * max_enquiries above is 500. The array is longest in exactly the
+     * situation the screen exists for.
+     *
+     * A hundred is comfortably past the honest working set, past what anybody
+     * reads behind a See all, and about 25KB of JSON. Truncation is survivable
+     * because decision 217's precedence is the sort order, so the tail dropped
+     * is client_signature and never an overdue balance. The owed headline is
+     * summed before the cap for the same reason; see HomeController.
+     *
+     * Six upcoming, where the screen draws three and business logic 18.2 says
+     * "the next two or three". Sending exactly three is how an endpoint becomes
+     * one screen's private API, and it leaves nothing behind when a same-day
+     * event passes. Six is a glance at the rest of the week and still cheap:
+     * each row carries a party count and a travel estimate, so it is a heavier
+     * object than a bookings-list row.
+     */
+    'max_attention' => 100,
+    'home_upcoming' => 6,
+
+    /*
      * Whether the intake form exists at all.
      *
      * Section 7.4 of the schema, intake_forms and intake_questions, is

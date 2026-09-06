@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\UpdatePasswordController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\EnquiryController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MarketingConsentController;
 use App\Http\Controllers\MeController;
 use App\Http\Controllers\ProfileInformationController;
@@ -81,6 +82,16 @@ Route::middleware(['auth:sanctum', 'account'])->group(function () {
     Route::patch('/account', [AccountController::class, 'update']);
 
     Route::put('/user/marketing-consent', [MarketingConsentController::class, 'update']);
+
+    // What the home screen reads: business logic section 18's three blocks in
+    // one payload. One route rather than three, because decision
+    // 2026-09-06.1954 makes the owed headline the sum of the attention block's
+    // client_balance rows: split them and either the money route recomputes
+    // every booking's waiting-on state to produce one number, or the client
+    // sums the rows itself and holds the definition of a money figure. That
+    // Home is the screen which most has to work with no signal (business logic
+    // 23.2) is the second reason and not the first.
+    Route::get('/home', [HomeController::class, 'index']);
 
     // What the bookings screen reads. The windowed one is the list and the
     // calendar; the months one is the jump sheet's dots and the bounds of its

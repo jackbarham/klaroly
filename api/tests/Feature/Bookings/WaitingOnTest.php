@@ -65,6 +65,77 @@ it('reports an overdue balance', function () {
     expect(waitingOnFor($booking))->toBe(WaitingOn::ClientBalance);
 });
 
+/*
+ * Snoozing wins (decision 2026-09-06.1436). Snoozing an invoice means "I know,
+ * stop telling me", and a waiting-on value that ignores it makes the snooze
+ * useless: the artist clears the reminder and the same row is on the home
+ * screen the next morning.
+ *
+ * These three are the behaviour change, and they are here rather than folded
+ * into the home endpoint's own tests because the change lands on
+ * GET /api/events and GET /api/enquiries as well.
+ */
+describe('a snoozed invoice', function () {
+    it('says nothing about an overdue balance while the snooze stands', function () {
+        accountWithFeatures();
+
+        $booking = Booking::factory()->confirmed()->create();
+
+        $invoice = Invoice::factory()->issued()->snoozedUntil(today()->addWeek()->toDateString())->create([
+            'booking_id' => $booking->id,
+            'balance_due_on' => today()->subDays(3),
+            'deposit_minor' => 0,
+        ]);
+
+        expect(waitingOnFor($booking))->toBeNull();
+
+        // The presence half, and it is what makes the absence above mean
+        // anything: the same booking and the same overdue balance with the
+        // snooze lifted. Without it this test would pass just as happily
+        // against a resolver that reported nothing for any invoice at all.
+        $invoice->forceFill(['reminders_snoozed_until' => null])->save();
+
+        expect(waitingOnFor($booking))->toBe(WaitingOn::ClientBalance);
+    });
+
+    it('reports the balance again once the snooze has run out', function () {
+        accountWithFeatures();
+
+        $booking = Booking::factory()->confirmed()->create();
+
+        // Yesterday. The invoice knows the difference between a snooze that
+        // still stands and one that has expired, and this is the boundary.
+        Invoice::factory()->issued()->snoozedUntil(today()->subDay()->toDateString())->create([
+            'booking_id' => $booking->id,
+            'balance_due_on' => today()->subDays(3),
+            'deposit_minor' => 0,
+        ]);
+
+        expect(waitingOnFor($booking))->toBe(WaitingOn::ClientBalance);
+    });
+
+    /*
+     * deposit() deliberately did not gain the same check, so this pins what
+     * that means rather than leaving it to be discovered. A snooze is about
+     * chasing money; the deposit branch is about the date not being secured,
+     * which is still true whether or not anybody is being chased. So the row
+     * does not disappear, it changes what it is about.
+     */
+    it('still reports an unpaid deposit, because that is about the date and not the chasing', function () {
+        accountWithFeatures();
+
+        $booking = Booking::factory()->confirmed()->create();
+
+        Invoice::factory()->issued()->snoozedUntil(today()->addWeek()->toDateString())->create([
+            'booking_id' => $booking->id,
+            'balance_due_on' => today()->subDays(3),
+            'deposit_minor' => 11250,
+        ]);
+
+        expect(waitingOnFor($booking))->toBe(WaitingOn::ClientDeposit);
+    });
+});
+
 it('reports an unpaid deposit', function () {
     accountWithFeatures();
 
