@@ -42,8 +42,11 @@ describe('the sidebar', () => {
 
     // Kitchen sink is a development-only entry (see navigation.ts) and this
     // test is about the navigation the app ships, so it is dropped here.
+    // Summary, not Home: one label serves both navigations, so the word the
+    // phone's tab bar needed is the word the sidebar says too. Two names for
+    // one destination is worse than a changed word on the desktop.
     expect(labels.filter((label) => label !== 'Kitchen sink'))
-      .toEqual(['Home', 'Bookings', 'Enquiries', 'Contacts', 'Settings', 'My account', 'Help'])
+      .toEqual(['Summary', 'Bookings', 'Enquiries', 'Contacts', 'Settings', 'My account', 'Help'])
     expect(labels).not.toContain('More')
   })
 

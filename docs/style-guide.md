@@ -255,7 +255,7 @@ controls stay put.
 | `--radius-control` | 8px | Buttons, inputs, selects, menus, pills, nav items |
 | `--radius-card` | **12px in Klaroly**, 8px at source | Cards, and a menu panel from lg up |
 | `--radius-pill` | 9999px | Avatars, toggles, round icon buttons |
-| `--radius-sheet` | 24px | **Klaroly only.** The tab bar, and a menu panel below lg, where it is a bottom sheet. No equivalent at source |
+| `--radius-sheet` | 24px | **Klaroly only.** A menu panel below lg, where it is a bottom sheet. No equivalent at source. The tab bar used this and is now `--radius-pill`: a bar of five round items wants its own corners to be the same shape as the pill sliding behind them |
 
 8px accounts for **76%** of every rounded corner in their application. Their
 `rounded-full` is `100%`, which turns any non-square box into an ellipse; this
@@ -341,7 +341,7 @@ and 3% would leave the panel with no edge at all.
 | `--container-split` | 760px | **Not a width.** The list-beside-detail breakpoint, for every screen that has one. Tailwind takes its container-query variant names from this namespace, so `@split:` is how a component asks whether its container is at least this wide; `@min-[760px]` would be an arbitrary value. Deliberately generic: a second screen inventing `--container-enquiries: 780px` gives the app two breakpoints that mean the same thing and disagree by 20px |
 | Page gutter | 40px desktop, 16px phone | |
 | Page header to content | 40px | |
-| Header bar | none | The sidebar is full height; there is no top bar |
+| Header bar | none from `lg` up, 52px below it | The sidebar is full height, so a wide screen has no top bar. A phone has one, and it is the only place this differs by width. See the phone chrome section |
 | Control heights | 32 / 40 / 48px | Small, default, large |
 | Minimum tap target | 44px | **Klaroly rule, not theirs** |
 
@@ -479,6 +479,51 @@ gutter.
 | Primary action | 36px circle, filled accent, 200ms transform on hover |
 
 Icon buttons butt against each other with no gap, in the same way nav rows do.
+
+### Phone chrome
+
+Below `lg` the sidebar is gone and two floating bars take its place. Both are
+`position: fixed`, both are `display: none` from `lg` up, and both are in the
+DOM at every width: which one shows is Tailwind's `lg` variant and nothing else.
+
+| Element | Value |
+| --- | --- |
+| Top bar | 52px row, full width, `top: 0` with the top inset as padding so the glass covers the status bar |
+| Top bar title | `--text-section` at 500, `text-strong`, truncates. The route's own name, and the business name on Summary alone |
+| Top bar actions | A pill at the right holding the bell and the accent New button, each 38px painted and 44px to hit |
+| Tab bar | 60px, `--radius-pill`, inset 16px from both edges, floating 16px above the bottom inset |
+| Tab item | 48px, 20px icon over a 12px label, with the sliding pill behind the current one |
+| Glass | `surface-raised` at 60%, `blur(24px) saturate(180%)` |
+
+**One material for both bars**, exported once from
+`app/src/components/layout/barGlass.ts`. Two floating bars with different glass
+read as two systems rather than one piece of chrome.
+
+**The top bar is transparent until the page moves under it**, then it takes the
+glass and a bottom hairline. The threshold is 4px. It is pinned and does not
+hide on scroll: a bar that comes and goes fights every sticky block underneath
+it, because a sticky heading cannot know whether to hold its offset.
+
+**Three rules read the bar's height** and all three break together if one stops
+agreeing, so it is one variable, `--bar-height`, at 52px below `lg` and **zero
+from `lg` up**: the bar draws a row that tall, `page-under-bar` keeps the page
+clear of it, and `stick-top` keeps every sticky block clear of it too. It is not
+a token, because nothing chooses it.
+
+**The page heading gives way below `lg`.** The bar already says which screen
+this is, so `PageHeader`'s `h1` is `sr-only` there: off the screen, still in the
+accessibility tree, so every route keeps exactly one `h1` and the bar can be an
+ordinary line of text rather than a second competing heading. The back link, the
+description and the actions slot are unaffected. Summary is the exception, and
+deliberately: its bar says the business name and its own header says what the
+screen is, so the two are not repeating each other.
+
+**Create is in the top bar, not the tab bar.** The centre of a tab bar is the
+easiest target on a phone and the top right is the hardest, so this costs
+something. The argument is that create is not frequent for an artist with forty
+weddings a year, and that five destinations with no interruption in the middle
+reads better and is easier to explain. The create sheet still comes up from the
+bottom, so only the first tap is a reach.
 
 ### Klaroly's deviations
 

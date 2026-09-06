@@ -123,7 +123,9 @@ export const routes: RouteRecordRaw[] = [
             path: '',
             name: 'contacts',
             component: () => import('@/views/contacts/ContactsIndexView.vue'),
-            meta: { titleKey: 'contacts.title', backTo: 'more' },
+            // No back link: Contacts is a tab of its own now, so on a phone
+            // there is nothing above it to go back to.
+            meta: { titleKey: 'contacts.title' },
           },
           {
             path: ':id',

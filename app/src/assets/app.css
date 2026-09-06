@@ -664,11 +664,35 @@ body {
 }
 
 /*
-  Safe areas. env() cannot live in the @theme block, so these five utilities
-  are the one place the insets are applied, and everything else composes them
-  with Tailwind variants. Each one adds a step from the spacing scale to the
-  inset so that a device with no inset still gets sensible spacing.
+  Safe areas. env() cannot live in the @theme block, so these utilities are the
+  one place the insets are applied, and everything else composes them with
+  Tailwind variants. Each one adds a step from the spacing scale to the inset so
+  that a device with no inset still gets sensible spacing.
 */
+
+/*
+  How tall the phone's floating top bar is, and nothing about where it sits.
+
+  It is a plain variable rather than a token because it is not a value anything
+  chooses: three rules need the same number and all three break together if one
+  of them stops agreeing. AppTopBar draws a row this tall, page-under-bar keeps
+  the page clear of it, and stick-top keeps every sticky block clear of it too.
+
+  It is zero from lg up, because at that width the bar is display:none and the
+  sidebar is the navigation. That is what makes stick-top identical to what it
+  was on a wide screen: a media query rather than a Tailwind variant, because a
+  variable read by a utility cannot be set by one.
+*/
+:root {
+  --bar-height: calc(var(--spacing) * 13);
+}
+
+@media (width >= 64rem) {
+  :root {
+    --bar-height: 0px;
+  }
+}
+
 @utility page-top {
   padding-top: calc(env(safe-area-inset-top) + var(--spacing) * 6);
 }
@@ -693,19 +717,47 @@ body {
   bottom: calc(env(safe-area-inset-bottom) + var(--spacing) * 20);
 }
 
+/* Clears the fixed top bar: its own inset, its height and the page's own top
+   spacing, so nothing about how a page begins changes and the bar is simply
+   added above it. It is a second utility rather than a change to page-top
+   because the sidebar reads page-top as well, and Sheet.vue positions the
+   create menu by arithmetic that starts from it. */
+@utility page-under-bar {
+  padding-top: calc(env(safe-area-inset-top) + var(--bar-height) + var(--spacing) * 6);
+}
+
+/* Where the floating top bar's row sits. The glass runs to the top edge behind
+   the status bar rather than starting below it, so this is padding and not a
+   position: with top set instead, content would scroll through a clear strip
+   above the bar. */
+@utility bar-top {
+  padding-top: env(safe-area-inset-top);
+}
+
 /* Where a sticky block comes to rest. Plain top-0 tucks under the status bar
    the moment a native shell asks for an edge-to-edge layout, which is what
    viewport-fit=cover in index.html already sets the app up for. No spacing
    step is added: a sticky block brings its own padding, and a gap here would
    show the page scrolling through it.
 
+   --bar-height is in here because the phone's top bar is fixed at exactly the
+   place this used to resolve to, so without it every sticky block in the app
+   comes to rest underneath the bar and shows through the glass blurred. Six
+   components stick: both filter bars, both list group headings, the bookings
+   calendar and the attention bands. The offset belongs here rather than in any
+   of them, because they are all answering the same question and the bar is not
+   theirs to know about. It is zero from lg up, so a wide screen is unchanged.
+
    --stick-offset is for a second sticky block that has to rest under the
    first rather than behind it: the bookings list's group headings sit under
    the calendar while it is a band above them, and level with it once it is a
-   column beside them. Whoever sets the offset owns measuring it; unset it is
-   zero and this is simply the inset. */
+   column beside them. It stacks on top of the bar rather than replacing it,
+   which is what keeps Enquiries right at 375px, where a filter bar and a group
+   heading pin one under the other and both are under the bar. Whoever sets the
+   offset owns measuring it; unset it is zero and this is the inset and the
+   bar. */
 @utility stick-top {
-  top: calc(env(safe-area-inset-top) + var(--stick-offset, 0px));
+  top: calc(env(safe-area-inset-top) + var(--bar-height) + var(--stick-offset, 0px));
 }
 
 /* The home screen's two columns above --container-split: a main column that

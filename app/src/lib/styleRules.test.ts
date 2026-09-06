@@ -5,13 +5,22 @@ import { describe, expect, it } from 'vitest'
 // view: no dark: variant, because the theme is two token layers and a
 // component only touches the second; no Tailwind arbitrary value and no hex
 // colour, because every value comes from a token.
+//
+// The .ts files under components are read as well as the .vue ones, because a
+// class string does not stop being markup by being written in a module. Several
+// already hold one: field.ts owns every control's edge classes, Sheet.vue
+// exports its row classes, and barGlass.ts is the two bars' material. Globbing
+// .vue alone left all of them outside the check while looking complete.
 
 const sources = import.meta.glob<string>([
   '../components/**/*.vue',
+  '../components/**/*.ts',
   '../views/**/*.vue',
 ], { query: '?raw', import: 'default', eager: true })
 
-const files = Object.entries(sources)
+// This file is under that glob and names the patterns it bans, so it would
+// report itself.
+const files = Object.entries(sources).filter(([path]) => !path.endsWith('.test.ts'))
 
 function offences(pattern: RegExp): string[] {
   const found: string[] = []

@@ -2,12 +2,19 @@
   <div class="space-y-8">
     <div class="space-y-4 text-sm text-text">
       <p>
-        AppSidebar and AppTabBar are on the screen right now, around this
-        page: the sidebar from the lg breakpoint up, the tab bar below it.
-        Neither is drawn again here. Both are fixed to the viewport, so a
-        second copy would escape any box put around it, and the sidebar's copy
-        would come with a second account row over the real one.
-        Narrow and widen the window to see them swap.
+        AppSidebar, AppTabBar and AppTopBar are on the screen right now, around
+        this page: the sidebar from the lg breakpoint up, the two phone bars
+        below it. None of the three is drawn again here. All three are fixed to
+        the viewport, so a second copy would escape any box put around it, and
+        the sidebar's copy would come with a second account row over the real
+        one. Narrow and widen the window to see them swap.
+      </p>
+      <p>
+        The top bar is worth narrowing for on this page in particular: it says
+        the route's own name, which here is Kitchen sink, it is transparent
+        until the page moves under it and then takes the same glass as the tab
+        bar, and its two buttons are the notifications sheet and the create
+        sheet. Both bars are one material, exported once from barGlass.ts.
       </p>
       <p>
         SectionNav is not fixed, so it is shown below as it really is. It is

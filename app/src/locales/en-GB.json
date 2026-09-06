@@ -15,7 +15,7 @@
   "nav": {
     "primary_label": "Main",
     "skip_to_content": "Skip to content",
-    "home": "Home",
+    "home": "Summary",
     "bookings": "Bookings",
     "enquiries": "Enquiries",
     "contacts": "Contacts",
@@ -24,6 +24,8 @@
     "account": "My account",
     "help": "Help",
     "create": "New",
+    "notifications": "Notifications",
+    "notifications_empty": "Nothing here yet.",
     "kitchen_sink": "Kitchen sink"
   },
   "create": {
@@ -119,7 +121,7 @@
     "marketing_failed": "That could not be saved. Try again."
   },
   "home": {
-    "title": "Home",
+    "title": "Summary",
     "summary_title": "Your summary",
     "adjust": "Adjust",
     "load_failed": "Your summary could not be loaded.",

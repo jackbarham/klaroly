@@ -5,8 +5,13 @@ import type { IconName } from '@/components/ui/Icon.vue'
 // section is a line here rather than an edit in three components.
 //
 // The order of the array is the order things appear in. The tab bar takes the
-// five entries flagged for it, in this order, which is why the create action
-// sits between Bookings and Enquiries: it is drawn in the middle of the bar.
+// five entries flagged for it, in this order, so moving a tab is moving a line
+// here rather than sorting anywhere else.
+//
+// The create action is in the array and in none of the lists. It is not a
+// destination and it is no longer a tab: the sidebar's New button and the
+// phone's top bar both take their label and icon from it, so it stays here as
+// the one place those two agree.
 
 export interface NavItem {
   key: string
@@ -25,10 +30,10 @@ export interface NavItem {
 export const navigation: NavItem[] = [
   { key: 'home', routeName: 'home', labelKey: 'nav.home', icon: 'home', inTabBar: true, sidebarGroup: 'main' },
   { key: 'bookings', routeName: 'bookings', labelKey: 'nav.bookings', icon: 'calendar', inTabBar: true, sidebarGroup: 'main' },
-  { key: 'create', routeName: null, labelKey: 'nav.create', icon: 'plus', inTabBar: true, sidebarGroup: null },
   { key: 'enquiries', routeName: 'enquiries', labelKey: 'nav.enquiries', icon: 'enquiries', inTabBar: true, sidebarGroup: 'main' },
-  { key: 'more', routeName: 'more', labelKey: 'nav.more', icon: 'more', inTabBar: true, sidebarGroup: null },
-  { key: 'contacts', routeName: 'contacts', labelKey: 'nav.contacts', icon: 'contacts', inTabBar: false, sidebarGroup: 'main' },
+  { key: 'contacts', routeName: 'contacts', labelKey: 'nav.contacts', icon: 'contacts', inTabBar: true, sidebarGroup: 'main' },
+  { key: 'more', routeName: 'more', labelKey: 'nav.more', icon: 'menu', inTabBar: true, sidebarGroup: null },
+  { key: 'create', routeName: null, labelKey: 'nav.create', icon: 'plus', inTabBar: false, sidebarGroup: null },
   { key: 'settings', routeName: 'settings', labelKey: 'nav.settings', icon: 'settings', inTabBar: false, sidebarGroup: 'secondary' },
   { key: 'account', routeName: 'account', labelKey: 'nav.account', icon: 'account', inTabBar: false, sidebarGroup: 'secondary' },
   { key: 'help', routeName: 'help', labelKey: 'nav.help', icon: 'help', inTabBar: false, sidebarGroup: 'secondary' },
@@ -63,20 +68,29 @@ function isDestination(item: NavItem): item is Destination {
   return item.routeName !== null
 }
 
-// Home, Bookings, the create button, Enquiries, More.
-export const tabBarItems: NavItem[] = navigation.filter((item) => item.inTabBar)
+// Summary, Bookings, Enquiries, Contacts, More.
+//
+// isDestination runs first, so this is Destination[] rather than NavItem[] and
+// the bar cannot contain anything that goes nowhere. That is the guarantee
+// rather than a convention: with the create action gone from the bar, a branch
+// in AppTabBar for an item with no route stops compiling.
+export const tabBarItems: Destination[] = navigation.filter(isDestination).filter((item) => item.inTabBar)
 
-// Home, Bookings, Enquiries, Contacts.
+// Summary, Bookings, Enquiries, Contacts.
 export const sidebarMain: Destination[] = navigation.filter(isDestination).filter((item) => item.sidebarGroup === 'main')
 
 // Settings, My account, Help, below the divider.
 export const sidebarSecondary: Destination[] = navigation.filter(isDestination).filter((item) => item.sidebarGroup === 'secondary')
 
-// What the phone's More page lists: everything the tab bar has no room for.
+// What the phone's More page lists: every destination the tab bar has no room
+// for. "Destination" is doing real work in that sentence now that the create
+// action is an entry the tab bar has no room for and must never be listed here:
+// isDestination drops it before inTabBar is looked at, so nothing in MoreView
+// has to know it exists.
 export const moreItems: Destination[] = navigation.filter(isDestination).filter((item) => !item.inTabBar)
 
-// The create action, so that the sidebar's New button takes its label and
-// icon from the same place the tab bar's plus button does.
+// The create action, so that the sidebar's New button and the phone's top bar
+// take their label and icon from the same place.
 export const createItem: NavItem = navigation.filter((item) => item.routeName === null)[0]
 
 // A section that is itself a list of pages: an index listing them, and a

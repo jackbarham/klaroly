@@ -3,7 +3,9 @@ import {
   accountGroups,
   activeTabIndex,
   activeTabKey,
+  createItem,
   moreItems,
+  navigation,
   sectionKey,
   settingsGroups,
   sidebarMain,
@@ -21,11 +23,30 @@ function shipped(items: { key: string }[]): string[] {
 
 describe('the tab bar list', () => {
   it('is five items in the documented order', () => {
-    expect(tabBarItems.map((item) => item.key)).toEqual(['home', 'bookings', 'create', 'enquiries', 'more'])
+    expect(tabBarItems.map((item) => item.key)).toEqual(['home', 'bookings', 'enquiries', 'contacts', 'more'])
   })
 
-  it('has the create action in the middle, going nowhere', () => {
-    expect(tabBarItems[2].routeName).toBeNull()
+  it('is five destinations, so the bar is five links and has no button in it', () => {
+    expect(tabBarItems.map((item) => item.routeName))
+      .toEqual(['home', 'bookings', 'enquiries', 'contacts', 'more'])
+  })
+
+  it('does not contain the create action, which is not a destination', () => {
+    expect(tabBarItems.map((item) => item.key)).not.toContain('create')
+  })
+})
+
+describe('the create action', () => {
+  it('is still in the navigation array, as the only entry going nowhere', () => {
+    expect(createItem.key).toBe('create')
+    expect(createItem.routeName).toBeNull()
+    expect(navigation.filter((item) => item.routeName === null)).toHaveLength(1)
+  })
+
+  it('is in no list at all: not the bar, not the sidebar, not More', () => {
+    const listed = [...tabBarItems, ...sidebarMain, ...sidebarSecondary, ...moreItems]
+
+    expect(listed.map((item) => item.key)).not.toContain('create')
   })
 })
 
@@ -36,7 +57,7 @@ describe('the sidebar lists', () => {
     expect(keys).not.toContain('more')
   })
 
-  it('are Home, Bookings, Enquiries and Contacts, then Settings, My account and Help', () => {
+  it('are Summary, Bookings, Enquiries and Contacts, then Settings, My account and Help', () => {
     expect(shipped(sidebarMain)).toEqual(['home', 'bookings', 'enquiries', 'contacts'])
     expect(shipped(sidebarSecondary)).toEqual(['settings', 'account', 'help'])
   })
@@ -53,8 +74,23 @@ describe('the sidebar lists', () => {
 })
 
 describe('the More list', () => {
-  it('is everything the tab bar has no room for', () => {
-    expect(shipped(moreItems)).toEqual(['contacts', 'settings', 'account', 'help'])
+  it('is every destination the tab bar has no room for', () => {
+    expect(shipped(moreItems)).toEqual(['settings', 'account', 'help'])
+  })
+
+  // Contacts is the change: it was reached through More and is a tab of its
+  // own now. Asserted both ways round, because an absence on its own passes
+  // just as happily against a list that lost the wrong thing.
+  it('has lost Contacts to the tab bar', () => {
+    expect(tabBarItems.map((item) => item.key)).toContain('contacts')
+    expect(moreItems.map((item) => item.key)).not.toContain('contacts')
+  })
+
+  // Every row in MoreView is a RouterLink, so an entry with no route would
+  // render a link to nowhere. isDestination is what stops it, and this is the
+  // assertion that says so rather than MoreView carrying a special case.
+  it('contains nothing that goes nowhere', () => {
+    expect(moreItems.map((item) => item.routeName)).not.toContain(null)
   })
 })
 
@@ -87,13 +123,19 @@ describe('sectionKey', () => {
 describe('the active tab', () => {
   it('resolves to the position of the item, including on a deep link', () => {
     expect(activeTabIndex('home')).toBe(0)
-    expect(activeTabIndex('enquiries')).toBe(3)
-    expect(activeTabIndex('enquiry')).toBe(3)
+    expect(activeTabIndex('enquiries')).toBe(2)
+    expect(activeTabIndex('enquiry')).toBe(2)
   })
 
   it('is More for a section the bar has no item for', () => {
     expect(activeTabKey('settings-travel')).toBe('more')
-    expect(activeTabKey('contacts')).toBe('more')
+    expect(activeTabKey('account-devices')).toBe('more')
+  })
+
+  it('is Contacts for Contacts, now that the bar has an item for it', () => {
+    expect(activeTabKey('contacts')).toBe('contacts')
+    expect(activeTabKey('contact')).toBe('contacts')
+    expect(activeTabIndex('contacts')).toBe(3)
   })
 
   it('is nothing at all when no item matches', () => {

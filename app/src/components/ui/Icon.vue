@@ -30,6 +30,8 @@ export type IconName =
   | 'enquiries'
   | 'contacts'
   | 'more'
+  | 'menu'
+  | 'bell'
   | 'plus'
   | 'settings'
   | 'account'
@@ -109,6 +111,23 @@ const paths: Record<IconName, string[]> = {
     'M6 12.875a.875.875 0 1 0 0-1.75.875.875 0 0 0 0 1.75Z',
     'M12 12.875a.875.875 0 1 0 0-1.75.875.875 0 0 0 0 1.75Z',
     'M18 12.875a.875.875 0 1 0 0-1.75.875.875 0 0 0 0 1.75Z',
+  ],
+  // The fifth tab on a phone. Three lines on the same grid the settings
+  // sliders sit on, so the two icons match in length and rhythm rather than
+  // one being a burger drawn to its own measurements. It sits beside 'more'
+  // rather than replacing it: three dots is still the right glyph for a row's
+  // overflow menu, which this app will want.
+  menu: [
+    'M4 7.5h16',
+    'M4 12h16',
+    'M4 16.5h16',
+  ],
+  // Notifications, in the phone's top bar. A shoulder and a clapper as two
+  // paths rather than one closed outline, because a single outline loses the
+  // gap under the shoulder at the size the bar draws it.
+  bell: [
+    'M6.5 10.5a5.5 5.5 0 0 1 11 0c0 3.2.8 4.6 1.4 5.4.3.4 0 1-.5 1H5.6c-.5 0-.8-.6-.5-1 .6-.8 1.4-2.2 1.4-5.4Z',
+    'M10 19a2.2 2.2 0 0 0 4 0',
   ],
   plus: [
     'M12 5.5v13',

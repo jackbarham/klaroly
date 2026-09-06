@@ -3,14 +3,24 @@
     The phone navigation: a bar that floats clear of the bottom edge rather
     than sitting on it, above the safe-area inset, with a translucent
     background so the content behind it shows through.
+
+    Five destinations and nothing else. The create action used to be a raised
+    accent circle in the middle of this bar and is now the accent button in
+    AppTopBar, so the bar is five equal items with no interruption: it is a
+    list of places you can go, which is the one thing it is for.
   -->
   <nav
     class="fixed inset-x-4 z-10 bar-bottom lg:hidden"
     :aria-label="t('nav.primary_label')"
   >
+    <!--
+      Fully rounded rather than the sheet radius, which is what a bar of five
+      round items wants: the pill behind the current one and the bar's own
+      corners are then the same shape.
+    -->
     <div
       ref="bar"
-      class="relative flex h-16 items-center rounded-sheet border border-border bg-surface-raised/75 px-2 shadow-raised backdrop-blur"
+      :class="[barGlassClasses, 'relative flex h-16 items-center rounded-full border border-border px-2 shadow-raised']"
     >
       <!--
         The active indicator. It is one element that moves, rather than a
@@ -32,27 +42,11 @@
         class="flex flex-1 justify-center"
       >
         <!--
-          The create button is not a destination: it never takes the pill and
-          it never marks itself as the current page. It is larger than the
-          other items, it lifts above the top edge of the bar, and it carries
-          the accent, because it is the primary action on a phone in the same
-          way the sidebar's New button is on a wide screen.
+          The icon is 20px rather than 24. The item is still h-12 inside an
+          h-16 bar, so the tap target has not moved: what the smaller icon
+          buys is room for a five-item bar to keep its labels at 375px.
         -->
-        <button
-          v-if="item.routeName === null"
-          class="-translate-y-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent text-text-on-accent shadow-raised focus-visible:focus-ring"
-          type="button"
-          :aria-label="t(item.labelKey)"
-          @click="emit('create')"
-        >
-          <Icon
-            :name="item.icon"
-            class="h-6 w-6"
-          />
-        </button>
-
         <RouterLink
-          v-else
           class="relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-full text-xs transition-colors focus-visible:focus-ring"
           :class="isCurrent(item) ? 'font-medium text-accent-text' : 'text-text-muted'"
           :to="{ name: item.routeName }"
@@ -60,7 +54,7 @@
         >
           <Icon
             :name="item.icon"
-            class="h-6 w-6"
+            class="h-5 w-5"
           />
           {{ t(item.labelKey) }}
         </RouterLink>
@@ -71,21 +65,25 @@
 
 <script setup lang="ts">
 // The tab bar builds itself from the navigation config, in the order the
-// config lists: Home, Bookings, the create button, Enquiries, More.
+// config lists: Summary, Bookings, Enquiries, Contacts, More.
+//
+// It holds no list of its own and it has no branch for an item that goes
+// nowhere: tabBarItems is Destination[], so every entry has a route and the
+// bar is five links. That is a type guarantee rather than a convention.
 //
 // The pill behind the current item is measured rather than laid out, because
 // animating a flex layout is expensive and animating left and right cannot
 // be done on the compositor. The measurement runs on the first render, so a
 // deep link such as /enquiries lands with the pill in the right place, and
-// again whenever the route changes or the bar changes size.
+// again whenever the route changes or the bar changes size. Five equal items
+// with nothing raised in the middle needs no arithmetic the four-and-a-button
+// version did not already have: offsetLeft and offsetWidth are read off
+// whichever item is current, whatever it is.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch, type ComponentPublicInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
-import { activeTabIndex, activeTabKey, tabBarItems, type NavItem } from '@/lib/navigation'
-
-const emit = defineEmits<{
-  create: []
-}>()
+import { barGlassClasses } from '@/components/layout/barGlass'
+import { activeTabIndex, activeTabKey, tabBarItems, type Destination } from '@/lib/navigation'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -103,7 +101,7 @@ const pillStyle = computed(() => ({
   '--pill-w': `${pillWidth.value}px`,
 }))
 
-function isCurrent(item: NavItem): boolean {
+function isCurrent(item: Destination): boolean {
   return activeTabKey(route.name) === item.key
 }
 

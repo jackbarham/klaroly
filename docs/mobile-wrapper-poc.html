@@ -1,0 +1,1148 @@
+<!-- CURRENT as of 6 September 2026, revised the same evening after review. The floating top bar and the bottom tab bar only. Decisions 2026-09-06.2046 to .2110. The icons are the paths from app/src/components/ui/Icon.vue rather than drawn here, and prompts/21-mobile-wrapper.md is written against it. Kept as history, not a source of truth: where it disagrees with the codebase, design/style-guide.md or decision-log.md, it is wrong. -->
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klaroly mobile wrapper UI, proof of concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================================
+   LAYER 1  PRIMITIVES
+   Lifted verbatim from tokens.css by way of enquiries-poc.html, so the colours
+   here are the app's colours rather than an approximation.
+   ========================================================================== */
+:root {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --color-white: oklch(100% 0 0);
+  --color-neutral-50: oklch(97.6% 0.0013 286.4);
+  --color-neutral-100: oklch(93.2% 0.0067 286.3);
+  --color-neutral-200: oklch(86.4% 0.0137 286.1);
+  --color-neutral-300: oklch(74.1% 0.0271 285.7);
+  --color-neutral-400: oklch(64.2% 0.0371 285.3);
+  --color-neutral-500: oklch(54.2% 0.0450 284.8);
+  --color-neutral-600: oklch(46.0% 0.0400 285.0);
+  --color-neutral-700: oklch(37.5% 0.0289 284.9);
+  --color-neutral-800: oklch(28.2% 0.0201 285.0);
+  --color-neutral-850: oklch(26.8% 0.0148 285.4);
+  --color-neutral-900: oklch(18.5% 0.0101 285.4);
+
+  --color-ink-base: oklch(24.8% 0.0132 292.0);
+  --color-ink-raised: oklch(28.1% 0.0128 292.1);
+  --color-ink-overlay: oklch(30.1% 0.0126 292.2);
+  --color-ink-muted: oklch(33.0% 0.0158 290.6);
+  --color-ink-text: oklch(96.1% 0.0013 286.4);
+
+  --color-white-a05: oklch(100% 0 0 / 0.05);
+  --color-white-a08: oklch(100% 0 0 / 0.08);
+  --color-white-a10: oklch(100% 0 0 / 0.10);
+  --color-white-a12: oklch(100% 0 0 / 0.12);
+  --color-white-a16: oklch(100% 0 0 / 0.16);
+  --color-white-a24: oklch(100% 0 0 / 0.24);
+  --color-white-a50: oklch(100% 0 0 / 0.50);
+  --color-white-a65: oklch(100% 0 0 / 0.65);
+  --color-white-a80: oklch(100% 0 0 / 0.80);
+
+  --color-accent-50: oklch(95.9% 0.0191 299.1);
+  --color-accent-300: oklch(68.0% 0.1700 287.5);
+  --color-accent-400: oklch(58.3% 0.2119 289.7);
+  --color-accent-500: oklch(54.3% 0.2313 287.5);
+  --color-accent-600: oklch(47.7% 0.2606 281.5);
+
+  --color-danger-50: oklch(96.7% 0.0159 358.0);
+  --color-danger-500: oklch(64.8% 0.2188 11.7);
+  --color-danger-600: oklch(61.7% 0.2396 17.0);
+  --color-danger-700: oklch(55.6% 0.2190 18.3);
+
+  --color-success-50: oklch(97.6% 0.0165 162.8);
+  --color-success-500: oklch(74.1% 0.1781 152.9);
+  --color-success-700: oklch(55.1% 0.1297 153.2);
+  --color-success-800: oklch(45.1% 0.1232 153.2);
+
+  --color-warning-50: oklch(97.0% 0.0151 37.9);
+  --color-warning-500: oklch(73.2% 0.1690 38.7);
+  --color-warning-700: oklch(61.6% 0.2190 34.5);
+  --color-warning-800: oklch(51.6% 0.2081 34.5);
+
+  --color-info-50: oklch(97.9% 0.0125 228.9);
+  --color-info-500: oklch(71.2% 0.1663 241.1);
+  --color-info-700: oklch(53.6% 0.1229 240.0);
+  --color-info-800: oklch(45.5% 0.1130 240.0);
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 9999px;
+
+  --text-caption: 12px;
+  --text-meta: 13px;
+  --text-body: 14px;
+  --text-control: 15px;
+  --text-lead: 16px;
+  --text-section: 20px;
+  --text-title: 24px;
+
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --duration-fast: 100ms;
+  --duration-base: 200ms;
+
+  --shadow-popover: 0 0 0 1px rgb(18 18 23 / 0.10), 0 24px 48px rgb(18 18 23 / 0.03),
+    0 10px 18px rgb(18 18 23 / 0.03), 0 5px 8px rgb(18 18 23 / 0.04),
+    0 2px 4px rgb(18 18 23 / 0.04);
+  --shadow-popover-dark: 0 0 0 1px rgb(255 255 255 / 0.12),
+    0 24px 48px rgb(0 0 0 / 0.40), 0 5px 8px rgb(0 0 0 / 0.30);
+
+  --tap-target-min: 44px;
+  --layout-content-max: 1096px;
+  --layout-sidebar: 264px;
+  --container-split: 760px;
+  --border-width-strong: 2px;
+}
+
+/* ============================================================================
+   LAYER 2  SEMANTICS
+   ========================================================================== */
+:root, .theme-light {
+  --surface: var(--color-white);
+  --surface-sunken: var(--color-neutral-50);
+  --surface-hover: var(--color-neutral-100);
+  --surface-raised: var(--color-white);
+  --surface-overlay: var(--color-white);
+
+  --text: var(--color-neutral-850);
+  --text-strong: var(--color-neutral-900);
+  --text-muted: var(--color-neutral-600);
+  --text-subtle: var(--color-neutral-500);
+  --text-placeholder: var(--color-neutral-400);
+  --text-on-accent: var(--color-white);
+
+  --border: var(--color-neutral-100);
+  --border-strong: var(--color-neutral-200);
+
+  --accent: var(--color-accent-500);
+  --accent-hover: var(--color-accent-600);
+  --accent-text: var(--color-accent-600);
+  --accent-subtle: var(--color-accent-50);
+  --danger: var(--color-danger-500);
+  --danger-text: var(--color-danger-700);
+  --danger-subtle: var(--color-danger-50);
+  --success: var(--color-success-500);
+  --success-solid: var(--color-success-700);
+  --success-subtle: var(--color-success-50);
+  --success-text: var(--color-success-800);
+  --warning: var(--color-warning-500);
+  --warning-solid: var(--color-warning-700);
+  --warning-subtle: var(--color-warning-50);
+  --warning-text: var(--color-warning-800);
+  --info: var(--color-info-500);
+  --info-subtle: var(--color-info-50);
+  --info-text: var(--color-info-800);
+
+  --shadow-menu-value: var(--shadow-popover);
+  --tabbar-glass: oklch(100% 0 0 / 0.60);
+  --scrim: oklch(0% 0 0 / 0.10);
+  --row-hover: color-mix(in oklab, var(--surface-sunken) 50%, transparent);
+}
+
+.theme-dark {
+  --surface: var(--color-ink-base);
+  --surface-sunken: var(--color-white-a05);
+  --surface-hover: var(--color-white-a08);
+  --surface-raised: var(--color-ink-raised);
+  --surface-overlay: var(--color-ink-overlay);
+
+  --text: var(--color-white-a80);
+  --text-strong: var(--color-ink-text);
+  --text-muted: var(--color-white-a65);
+  --text-subtle: var(--color-white-a50);
+  --text-placeholder: var(--color-white-a50);
+  --text-on-accent: var(--color-white);
+
+  --border: var(--color-white-a12);
+  --border-strong: var(--color-white-a24);
+
+  --accent: var(--color-accent-500);
+  --accent-hover: var(--color-accent-400);
+  --accent-text: var(--color-accent-300);
+  --accent-subtle: var(--color-white-a10);
+  --danger: var(--color-danger-500);
+  --danger-text: var(--color-danger-500);
+  --danger-subtle: var(--color-white-a10);
+  --success: var(--color-success-500);
+  --success-solid: var(--color-success-500);
+  --success-subtle: var(--color-white-a10);
+  --success-text: var(--color-success-500);
+  --warning: var(--color-warning-500);
+  --warning-solid: var(--color-warning-500);
+  --warning-subtle: var(--color-white-a10);
+  --warning-text: var(--color-warning-500);
+  --info: var(--color-info-500);
+  --info-subtle: var(--color-white-a10);
+  --info-text: var(--color-info-500);
+
+  --shadow-menu-value: var(--shadow-popover-dark);
+  --tabbar-glass: oklch(28.1% 0.0128 292.1 / 0.62);
+  --scrim: oklch(0% 0 0 / 0.50);
+  --row-hover: color-mix(in oklab, var(--surface-sunken) 50%, transparent);
+}
+
+/* ============================================================================
+   THE HARNESS
+   Chrome around the demo. Nothing here is a proposal.
+   ========================================================================== */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 24px;
+  color: var(--text);
+  background: var(--surface-sunken);
+  -webkit-font-smoothing: antialiased;
+}
+body.theme-dark { background: var(--color-neutral-900); }
+
+.wrap { max-width: 1240px; margin: 0 auto; padding: 32px 20px 96px; }
+
+.masthead { margin-bottom: 28px; }
+.masthead h1 {
+  font-size: var(--text-title); line-height: 32px; letter-spacing: -0.01em;
+  font-weight: 500; color: var(--text-strong); margin: 0 0 8px;
+}
+.masthead p { margin: 0 0 6px; color: var(--text-muted); max-width: 68ch; }
+.masthead .stamp { font-size: var(--text-caption); color: var(--text-subtle); }
+
+.controls {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; flex-wrap: wrap; gap: 20px 28px; align-items: flex-end;
+  padding: 14px 16px; margin: 0 0 28px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-menu-value);
+}
+.ctl { display: flex; flex-direction: column; gap: 6px; }
+.ctl > span {
+  font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.04em;
+}
+.seg { display: flex; background: var(--surface-sunken); border-radius: var(--radius-sm); padding: 2px; gap: 2px; }
+.seg button {
+  font: inherit; font-size: var(--text-meta); line-height: 20px;
+  border: 0; background: transparent; color: var(--text-muted);
+  padding: 6px 12px; border-radius: 6px; cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+  white-space: nowrap;
+}
+.seg button:hover { color: var(--text-strong); }
+.seg button[aria-pressed="true"] {
+  background: var(--surface); color: var(--text-strong); font-weight: 500;
+  box-shadow: 0 1px 1px rgb(10 10 46 / 0.06);
+}
+.theme-dark .seg button[aria-pressed="true"] { background: var(--color-white-a12); box-shadow: none; }
+
+.band { margin: 0 0 40px; }
+.band > h2 {
+  font-size: var(--text-section); line-height: 28px; font-weight: 500;
+  color: var(--text-strong); margin: 0 0 4px;
+}
+.band > .hint { margin: 0 0 16px; color: var(--text-muted); font-size: var(--text-meta); max-width: 76ch; }
+.phones { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
+figure.frame { margin: 0; }
+figure.frame figcaption {
+  font-size: var(--text-caption); line-height: 16px; color: var(--text-subtle);
+  margin-top: 10px; text-align: center;
+}
+.device {
+  border-radius: 34px; padding: 10px; background: var(--color-neutral-800);
+  box-shadow: 0 18px 40px rgb(18 18 23 / 0.18);
+}
+.theme-dark .device { background: #000; box-shadow: 0 18px 40px rgb(0 0 0 / 0.5); }
+.device .screen { border-radius: 26px; overflow: hidden; }
+.deskframe {
+  border: 1px solid var(--border-strong); border-radius: var(--radius-md);
+  overflow: hidden; background: var(--surface);
+}
+
+.notes {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 24px;
+}
+.notes h2 { font-size: var(--text-section); line-height: 28px; font-weight: 500; color: var(--text-strong); margin: 0 0 12px; }
+.notes h3 { font-size: var(--text-body); font-weight: 500; color: var(--text-strong); margin: 20px 0 6px; }
+.notes p, .notes li { color: var(--text-muted); }
+.notes p { margin: 0 0 10px; max-width: 76ch; }
+.notes ul { margin: 0 0 10px; padding-left: 20px; }
+.notes li { margin-bottom: 6px; max-width: 74ch; }
+.notes code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+  background: var(--surface-sunken); padding: 1px 5px; border-radius: var(--radius-xs);
+  color: var(--text-strong);
+}
+.notes table { border-collapse: collapse; margin: 0 0 14px; font-size: var(--text-meta); }
+.notes th, .notes td { text-align: left; padding: 6px 14px 6px 0; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+.notes th { color: var(--text-strong); font-weight: 500; }
+.warnbox {
+  border-left: 3px solid var(--warning); background: var(--warning-subtle);
+  padding: 12px 16px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin: 12px 0;
+}
+.warnbox p { margin: 0; color: var(--text); }
+
+/* ============================================================================
+   THE COMPONENT  the wrapper
+   Everything the four tabs share: a floating top bar, a floating tab bar, and
+   the two sheets they open. The content underneath is deliberately thin. It is
+   here so the bars have something to float over and something to scroll, not
+   because any of it is a proposal. Fixtures are home-poc.html's and
+   enquiries-poc.html's, so this is the same invented business.
+   ========================================================================== */
+.screen {
+  container-type: inline-size; container-name: screen;
+  background: var(--surface); color: var(--text);
+  position: relative; overflow: hidden; font-size: var(--text-body);
+  --bar-h: 52px;
+}
+.shell { display: flex; flex-direction: column; height: 100%; min-height: 0; position: relative; background: var(--surface); }
+.screen[data-bg="sunken"] .shell { background: var(--surface-sunken); }
+
+.statusbar {
+  flex: none; display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 0 22px 4px; font-size: 12px; font-weight: 500; color: var(--text-strong);
+}
+.statusbar .dots { display: flex; gap: 4px; align-items: center; opacity: 0.75; }
+.statusbar .dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; display: block; }
+
+.main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; position: relative; }
+.scroller { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.topspacer, .tabspacer { flex: none; }
+
+/* --- the top bar -------------------------------------------------------- */
+.topbar {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 20;
+  height: var(--bar-h); display: flex; align-items: center; gap: 10px;
+  padding: 0 10px 0 16px;
+  transition: transform var(--duration-base) var(--ease-out),
+    background var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
+}
+.topbar.is-stuck {
+  background: var(--tabbar-glass);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 1px 0 var(--border);
+}
+.topbar.is-away { transform: translateY(calc(-100% - 2px)); }
+.topbar__title {
+  margin: 0; flex: 1; min-width: 0;
+  font-size: var(--text-section); line-height: 24px; font-weight: 500;
+  letter-spacing: -0.012em; color: var(--text-strong);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar__over {
+  display: block; font-size: var(--text-caption); line-height: 15px; font-weight: 400;
+  letter-spacing: 0; color: var(--text-subtle);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.screen[data-title="stacked"] .topbar__title { line-height: 22px; }
+.topbar__actions {
+  flex: none; display: flex; align-items: center; gap: 2px; padding: 3px;
+  border-radius: var(--radius-pill); background: var(--surface);
+  border: 1px solid var(--border); box-shadow: 0 1px 2px rgb(18 18 23 / 0.05);
+  transition: background var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out);
+}
+.theme-dark .topbar__actions { box-shadow: none; }
+.topbar.is-stuck .topbar__actions { background: transparent; border-color: transparent; box-shadow: none; }
+.tbtn {
+  position: relative; width: 38px; height: 38px; flex: none;
+  border: 0; border-radius: var(--radius-pill); background: transparent;
+  color: var(--text-muted); display: grid; place-items: center; cursor: pointer;
+}
+/* The button looks 38px and is hit at 44px, which is the style guide's
+   minimum. Shrinking the icons cannot shrink the target. */
+.tbtn::after { content: ''; position: absolute; inset: -3px; border-radius: inherit; }
+.tbtn:hover { background: var(--surface-hover); color: var(--text-strong); }
+.tbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tbtn svg { width: 19px; height: 19px; }
+.tbtn--new { background: var(--accent); color: var(--text-on-accent); }
+.tbtn--new:hover { background: var(--accent-hover); color: var(--text-on-accent); }
+.tbtn .badge {
+  position: absolute; top: 4px; right: 5px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--danger); box-shadow: 0 0 0 2px var(--surface);
+}
+.topbar.is-stuck .tbtn .badge { box-shadow: none; }
+.screen[data-search="off"] .tbtn--search { display: none; }
+
+/* --- the tab bar -------------------------------------------------------- */
+.tabbar {
+  position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 10;
+  height: 60px; border-radius: var(--radius-pill);
+  background: var(--tabbar-glass);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgb(18 18 23 / 0.10);
+  display: grid; grid-template-columns: repeat(5, 1fr); align-items: center;
+  padding: 0 5px;
+}
+.tabbar button {
+  border: 0; background: transparent; cursor: pointer; padding: 0; height: 48px;
+  border-radius: var(--radius-pill);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  color: var(--text-subtle); font: inherit; font-size: 10px; line-height: 12px;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.tabbar button:hover { color: var(--text); }
+.tabbar button[aria-current="page"] { color: var(--accent-text); font-weight: 500; background: var(--accent-subtle); }
+.tabbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tabbar svg { width: 20px; height: 20px; }
+
+/* --- sheets, the menu and create both use one ---------------------------- */
+.sheet { position: absolute; inset: 0; z-index: 30; display: none; }
+.sheet.is-open { display: block; }
+.sheet__scrim { position: absolute; inset: 0; border: 0; padding: 0; cursor: default; background: var(--scrim); }
+.sheet__panel {
+  position: absolute; left: 12px; right: 12px; bottom: 12px;
+  background: var(--surface-overlay); color: var(--text);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-menu-value);
+  padding: 8px 0 14px; max-height: calc(100cqh - 80px); overflow-y: auto;
+  transform: translateY(10px);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+.sheet.is-open .sheet__panel { transform: translateY(0); }
+.sheet__panel:focus-visible { outline: none; }
+.sheet__grab { width: 36px; height: 4px; border-radius: var(--radius-pill); background: var(--border-strong); margin: 0 auto 8px; }
+.sheet__head { padding: 2px 20px 10px; }
+.sheet__head b { display: block; font-size: var(--text-lead); font-weight: 500; color: var(--text-strong); }
+.sheet__head span { font-size: var(--text-meta); color: var(--text-subtle); }
+.mitem {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  border: 0; background: transparent; font: inherit; color: var(--text);
+  padding: 0 20px; min-height: var(--tap-target-min); cursor: pointer;
+  font-size: var(--text-control);
+}
+.mitem:hover { background: var(--row-hover); color: var(--accent-text); }
+.mitem:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.mitem svg { width: 19px; height: 19px; color: var(--text-subtle); flex: none; }
+.mitem:hover svg { color: var(--accent-text); }
+.mitem em { font-style: normal; margin-left: auto; font-size: var(--text-meta); color: var(--text-subtle); }
+.mrule { height: 1px; background: var(--border); margin: 8px 20px; }
+
+/* --- toast --------------------------------------------------------------- */
+.toast {
+  position: absolute; left: 16px; right: 16px; bottom: var(--toast-bottom, 20px);
+  z-index: 50; display: flex; align-items: center; gap: 12px;
+  background: var(--color-neutral-850); color: var(--color-neutral-50);
+  border-radius: var(--radius-md); padding: 12px 12px 12px 16px;
+  box-shadow: 0 10px 30px rgb(18 18 23 / 0.28);
+  opacity: 0; transform: translateY(8px); pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-out);
+}
+.theme-dark .toast { background: var(--color-ink-overlay); border: 1px solid var(--border); }
+.toast.is-in { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.toast p { margin: 0; flex: 1; font-size: var(--text-meta); line-height: 18px; }
+.toastx {
+  border: 0; background: transparent; color: var(--color-accent-300);
+  font: inherit; font-size: var(--text-meta); font-weight: 500; cursor: pointer;
+  padding: 6px 8px; border-radius: var(--radius-xs); flex: none;
+}
+.toastx:hover { background: var(--color-white-a10); }
+
+/* ============================================================================
+   THE CONTENT UNDERNEATH
+   Thin on purpose. One row treatment does bookings, enquiries, contacts and
+   the two summary lists, which is not what the real screens do: it is what
+   lets the bars be judged without four screens' worth of argument in the way.
+   ========================================================================== */
+.pagetitle {
+  margin: 0; padding: 4px 16px 8px;
+  font-size: var(--text-title); line-height: 30px; font-weight: 500;
+  letter-spacing: -0.015em; color: var(--text-strong);
+}
+.pagetitle .count { font-size: var(--text-meta); color: var(--text-subtle); font-weight: 400; margin-left: 8px; letter-spacing: 0; }
+.screen[data-title="screen"] .pagetitle,
+.screen[data-title="stacked"] .pagetitle { display: none; }
+
+/* overflow is clip rather than hidden on purpose. hidden makes the card its
+   own scroll container, which quietly re-parents the sticky group heading to
+   the card and pins it 52px below the card's own top, over the first row.
+   clip crops to the radius without creating a scrollport, so the heading
+   still pins to the floating bar and releases when its group ends. */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); margin: 0 12px 12px; overflow: clip;
+}
+.screen[data-bg="white"] .card {
+  background: transparent; border: 0; border-radius: 0;
+  margin: 0 0 2px; border-bottom: 1px solid var(--border);
+}
+.screen[data-bg="white"] .card:last-child { border-bottom: 0; }
+
+.sechead { display: flex; align-items: baseline; gap: 8px; padding: 12px 16px 4px; }
+.sechead h2 { margin: 0; flex: 1; font-size: var(--text-lead); line-height: 22px; font-weight: 500; color: var(--text-strong); }
+.sechead button {
+  border: 0; background: transparent; padding: 0; cursor: pointer; font: inherit;
+  font-size: var(--text-meta); font-weight: 500; color: var(--accent-text);
+}
+.sechead button:hover { text-decoration: underline; }
+
+.owed { padding: 14px 16px 16px; }
+.owed b { display: block; font-size: var(--text-title); line-height: 30px; font-weight: 500; color: var(--text-strong); letter-spacing: -0.015em; }
+.owed span { display: block; font-size: var(--text-meta); line-height: 18px; color: var(--text-muted); margin-top: 2px; }
+
+.row {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 10px 16px; min-height: 64px;
+  border: 0; border-bottom: 1px solid var(--border);
+  background: transparent; font: inherit; color: inherit; cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-base) var(--ease-out);
+}
+.card > .row:last-child, .group .row:last-child { border-bottom: 0; }
+.row:hover { background: var(--row-hover); border-bottom-color: var(--accent); }
+.row:hover .row__name { color: var(--accent-text); }
+.row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.row--top { align-items: flex-start; }
+.row__body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.row__name {
+  font-size: var(--text-control); line-height: 22px; font-weight: 500; color: var(--text-strong);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.row__meta {
+  font-size: var(--text-meta); line-height: 19px; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.row__sub { font-size: var(--text-meta); line-height: 19px; color: var(--text-subtle); }
+.row__end { flex: none; display: flex; align-items: center; gap: 8px; }
+
+.avatar {
+  width: 38px; height: 38px; border-radius: 50%; flex: none;
+  background: var(--surface-sunken); color: var(--text-muted);
+  display: grid; place-items: center; font-size: var(--text-meta); font-weight: 500;
+}
+.screen[data-bg="sunken"] .avatar { background: var(--surface-hover); }
+.rowicon { flex: none; display: grid; place-items: center; color: var(--text-muted); }
+.rowicon svg { width: 20px; height: 20px; }
+.row:hover .rowicon { color: var(--accent-text); }
+.datechip {
+  flex: none; width: 46px; text-align: center; padding: 2px 0;
+  border-radius: var(--radius-sm); background: var(--surface-sunken);
+}
+.screen[data-bg="sunken"] .datechip { background: var(--surface-hover); }
+.datechip i { display: block; font-style: normal; font-size: 10px; line-height: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-subtle); }
+.datechip b { display: block; font-size: var(--text-lead); line-height: 20px; font-weight: 500; color: var(--text-strong); }
+.datechip u { display: block; text-decoration: none; font-size: 10px; line-height: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-subtle); }
+
+.pill {
+  display: inline-block; padding: 2px 8px; border-radius: var(--radius-pill);
+  font-size: var(--text-caption); line-height: 16px; font-weight: 500; white-space: nowrap;
+  background: var(--surface-sunken); color: var(--text-muted);
+}
+.screen[data-bg="sunken"] .pill { background: var(--surface-hover); }
+.pill--confirmed { background: var(--success-subtle); color: var(--success-text); }
+.pill--provisional { background: var(--warning-subtle); color: var(--warning-text); }
+.pill--trial { background: var(--info-subtle); color: var(--info-text); }
+.pill--overdue { background: var(--danger-subtle); color: var(--danger-text); }
+.pill--quoted { background: var(--accent-subtle); color: var(--accent-text); }
+.chev { width: 16px; height: 16px; color: var(--text-placeholder); flex: none; }
+
+.group { display: block; }
+.grouphead {
+  position: sticky; top: var(--bar-h); z-index: 2;
+  padding: 8px 16px; background: var(--surface-sunken);
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  font-size: var(--text-caption); line-height: 16px; font-weight: 500;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;
+}
+.screen[data-bg="sunken"] .grouphead { background: var(--surface-sunken); }
+.screen[data-bg="sunken"] .card .grouphead { background: var(--surface-hover); border-color: transparent; }
+.grouphead .n { font-weight: 400; color: var(--text-subtle); letter-spacing: 0; }
+
+.tabpanel { display: none; }
+.tabpanel.is-on { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}
+</style>
+</head>
+<body class="theme-light">
+
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>Klaroly mobile wrapper UI, proof of concept</h1>
+    <p>The chrome only: what sits at the top of every phone screen and what sits at the bottom of every phone screen. The tab bar loses its centre plus and gains Contacts, Home becomes Summary, and a floating bar carries the business name or the screen name on the left with notifications and new on the right. The content underneath is thin on purpose and is not a proposal; it is there so the bars have something to float over and something to scroll.</p>
+    <p class="stamp">Standalone page, not in the codebase. 6 September 2026, revised the same evening. Decisions <code>2026-09-06.2046</code> to <code>.2110</code>, and <code>prompts/21-mobile-wrapper.md</code> is written against it. The icons are the path data from <code>app/src/components/ui/Icon.vue</code>, not drawn here, so what you are looking at is the set the app already has. Fixtures carried over from <code>home-poc.html</code> and <code>enquiries-poc.html</code>, and the business name is the one the repository's own tests use. Proportions referenced against the FreeAgent iOS app, which is native and uses system materials: the pill shape, the smaller icons and the active tab fill come from it, the glass does not.</p>
+  </div>
+
+  <div class="controls">
+    <label class="ctl"><span>Theme</span>
+      <span class="seg" data-ctl="theme">
+        <button type="button" data-value="light" aria-pressed="true">Light</button>
+        <button type="button" data-value="dark" aria-pressed="false">Dark</button>
+      </span></label>
+    <label class="ctl"><span>Top bar</span>
+      <span class="seg" data-ctl="topbar">
+        <button type="button" data-value="pinned" aria-pressed="true">Pinned</button>
+        <button type="button" data-value="hide" aria-pressed="false">Hides on scroll</button>
+      </span></label>
+    <label class="ctl"><span>Title</span>
+      <span class="seg" data-ctl="title">
+        <button type="button" data-value="screen" aria-pressed="true">Screen in the bar</button>
+        <button type="button" data-value="business" aria-pressed="false">Business, screen below</button>
+        <button type="button" data-value="stacked" aria-pressed="false">Both, stacked</button>
+      </span></label>
+    <label class="ctl"><span>Background</span>
+      <span class="seg" data-ctl="bg">
+        <button type="button" data-value="white" aria-pressed="true">White, dividers</button>
+        <button type="button" data-value="sunken" aria-pressed="false">Sunken, cards</button>
+      </span></label>
+    <label class="ctl"><span>Search</span>
+      <span class="seg" data-ctl="search">
+        <button type="button" data-value="off" aria-pressed="true">Not in the bar</button>
+        <button type="button" data-value="on" aria-pressed="false">Third icon</button>
+      </span></label>
+  </div>
+
+  <div class="band">
+    <h2>The wrapper</h2>
+    <p class="hint">Both frames are live and independent. Tap the tabs, the bell, the plus and More. The left frame is a small phone with a longer business name, which is where the top left runs out of room; the right frame is a current phone with a home indicator. Only Summary shows the business name, because the other four say which list you are in instead.</p>
+    <div class="phones">
+      <figure class="frame">
+        <div class="device"><div class="screen" id="screen-se" style="width:375px;height:667px"></div></div>
+        <figcaption>375 &times; 667, long business name</figcaption>
+      </figure>
+      <figure class="frame">
+        <div class="device"><div class="screen" id="screen-16" style="width:393px;height:852px"></div></div>
+        <figcaption>393 &times; 852, home indicator</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <section class="notes">
+    <h2>What is settled, and what is left</h2>
+
+    <h3>1. What changed</h3>
+    <table>
+      <tr><th>Before</th><th>Here</th></tr>
+      <tr><td>Home, Bookings, plus, Enquiries, More</td><td>Summary, Bookings, Enquiries, Contacts, More</td></tr>
+      <tr><td>A 64px accent circle in the middle of the tab bar</td><td>No plus in the bar. New is the accent button in the top right</td></tr>
+      <tr><td><code>rounded-sheet</code> on the bar, 24px</td><td>Fully rounded</td></tr>
+      <tr><td>24px tab icons</td><td>20px, and the sliding pill stays</td></tr>
+      <tr><td><code>bg-surface-raised/75</code> and a plain <code>backdrop-blur</code></td><td>More transparent and a stronger blur, nearer the iOS material</td></tr>
+      <tr><td>Contacts reachable only through More</td><td>Contacts is a tab. More keeps Settings, My account and Help</td></tr>
+      <tr><td>No top bar on a phone at all</td><td>A floating 52px bar on every phone screen</td></tr>
+      <tr><td>Three dots on the fifth tab</td><td>A burger, added to <code>Icon.vue</code> as <code>menu</code></td></tr>
+    </table>
+
+    <h3>2. The title in the bar, and what it costs</h3>
+    <p>The bar says the screen name on Bookings, Enquiries, Contacts and More, and the business name only on Summary. The reasoning: the business name is identity and identity is worth one screen rather than five, while what an artist needs at the top of a list is which list they are in. The cost is that <code>PageHeader</code>'s <code>h1</code> would say it a second time, so on a phone that heading gives way to the bar. The Title control keeps the two alternatives so the choice can still be reversed by looking rather than by memory.</p>
+
+    <h3>3. The plus moved, and it costs something</h3>
+    <p>The centre of the tab bar is the easiest target on a phone and the top right is the hardest. FreeAgent, the reference, keeps a green circle at the bottom right and puts search and the bell at the top, so the screenshots are two create affordances rather than one. The argument for moving it anyway is that create is not frequent for an artist with forty weddings a year, and a bar of five destinations with no interruption in the middle reads better and is easier to explain. The mitigation is already in the app: the create sheet comes up from the bottom, so the reach is the first tap and everything after it is back in the thumb zone.</p>
+
+    <h3>4. Smaller icons, same target</h3>
+    <p>The style guide's fifth signed-off deviation puts a 44px minimum on controls at phone width. The top right buttons look 38px and are hit at 44px through a negative inset on a pseudo element, so the FreeAgent proportions do not quietly cost the tap target. The tab items are 48px tall inside a 60px bar and were never in danger.</p>
+
+    <h3>5. Summary rather than Home</h3>
+    <p>The screen's own heading has said "Your summary" since <code>home-poc.html</code>, so Home was the odd word out. Summary is the longest of the five labels at 10px and it fits at 375px, which was the only hard question. One label serves both navigations, so the sidebar says Summary too: two names for one destination is worse than a changed word on the desktop.</p>
+
+    <h3>6. Two things still open</h3>
+    <ul>
+      <li><strong>Search has nowhere to go.</strong> The plus took its place in the pill. Three icons do fit at 375px, which the Search control shows, but the pill then squeezes a long business name. The alternative is a search field at the top of each list, which is what the enquiries and contacts prototypes already assume.</li>
+      <li><strong>Cards on a tinted background.</strong> FreeAgent's chrome reads as floating because the page behind it is tinted and the content is in white cards. The style guide has no card component, on purpose, having taken Lemon Squeezy's divider rows on white. The Background control switches between them. This is the decision that would ripple furthest and it is deliberately not part of the build.</li>
+    </ul>
+
+    <h3>7. What this does not settle</h3>
+    <ul>
+      <li>Notifications. The bell is a container. Decisions 101 to 107 are the real answer, and the badge here is a placeholder: nothing counts it yet.</li>
+      <li>Whether the tab bar hides on scroll. It does not, and the content clears it with a spacer.</li>
+      <li>Anything about the content of the five tabs. The rows here are one shared treatment, deliberately, and the real screens each disagree with it.</li>
+      <li>The desktop, which keeps its sidebar, its own New button and its own page headings, and never sees this wrapper.</li>
+    </ul>
+
+    <div class="warnbox">
+      <p>Sticky group headings pin to the bottom of the floating bar, which is right while the bar is pinned and slightly wrong while it is hiding on scroll: the heading holds its 52px offset and a gap opens above it. That is a real conflict between the two behaviours rather than a bug in this file, and it is one more argument for the bar staying put.</p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+'use strict'
+
+/* The icons are the path data in app/src/components/ui/Icon.vue, not drawn
+   here: same 24 by 24 grid, same 1.75 stroke, same paths. Two are additions
+   that Prompt 21 makes to that file, menu and bell, and they are written in
+   the same idiom so they sit with the rest of the set. */
+const PATHS = {
+  home: ['M4 11.5 12 5l8 6.5', 'M6.5 10.5V19h11v-8.5'],
+  calendar: [
+    'M4 8a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 8v10.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5Z',
+    'M4 10.5h16', 'M8.5 4v4', 'M15.5 4v4'
+  ],
+  enquiries: [
+    'M4 13.5h4l1.5 2.5h5l1.5-2.5h4',
+    'M4 13.5 6.5 5.5h11L20 13.5v5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5Z'
+  ],
+  contacts: [
+    'M9.5 11.5a3.25 3.25 0 1 0 0-6.5 3.25 3.25 0 0 0 0 6.5Z',
+    'M3.5 19.5c0-3 2.7-5 6-5s6 2 6 5',
+    'M16 5.6a3 3 0 0 1 0 5.8',
+    'M17.5 15.1c1.8.7 3 2.3 3 4.4'
+  ],
+  /* New. Three lines on the same grid the settings sliders use, so the burger
+     is the same length and the same rhythm as the rest of the set. */
+  menu: ['M4 7.5h16', 'M4 12h16', 'M4 16.5h16'],
+  /* New. A shoulder and a clapper, drawn as two paths rather than one closed
+     bell, because a single outline at 19px loses the gap under the shoulder. */
+  bell: [
+    'M6.5 10.5a5.5 5.5 0 0 1 11 0c0 3.2.8 4.6 1.4 5.4.3.4 0 1-.5 1H5.6c-.5 0-.8-.6-.5-1 .6-.8 1.4-2.2 1.4-5.4Z',
+    'M10 19a2.2 2.2 0 0 0 4 0'
+  ],
+  plus: ['M12 5.5v13', 'M5.5 12h13'],
+  settings: [
+    'M4 8.5h3', 'M11 8.5h9', 'M4 15.5h9', 'M17 15.5h3',
+    'M9 6.5a2 2 0 1 0 0 4 2 2 0 1 0 0-4', 'M15 13.5a2 2 0 1 0 0 4 2 2 0 1 0 0-4'
+  ],
+  account: ['M12 12.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M4.5 20c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6'],
+  help: [
+    'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
+    'M9.6 9.4a2.5 2.5 0 0 1 4.9.7c0 1.7-2.5 2.1-2.5 3.9',
+    'M12 16.95v.1'
+  ],
+  'chevron-right': ['M9.5 6l6 6-6 6'],
+  'sign-out': [
+    'M14 7.5v-2A1.5 1.5 0 0 0 12.5 4h-6A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20h6a1.5 1.5 0 0 0 1.5-1.5v-2',
+    'M10 12h10', 'M17 9l3 3-3 3'
+  ],
+  page: ['M5.5 6.5A1.5 1.5 0 0 1 7 5h10a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 17 19H7a1.5 1.5 0 0 1-1.5-1.5Z', 'M9 10h6', 'M9 14h4'],
+  search: ['M10.75 17a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5Z', 'M15.4 15.4 20 20']
+}
+
+function icon (name, cls) {
+  return '<svg' + (cls ? ' class="' + cls + '"' : '') +
+    ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"' +
+    ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    PATHS[name].map(function (d) { return '<path d="' + d + '"/>' }).join('') +
+    '</svg>'
+}
+
+const I = {
+  home: icon('home'),
+  book: icon('calendar'),
+  enq: icon('enquiries'),
+  people: icon('contacts'),
+  burger: icon('menu'),
+  bell: icon('bell'),
+  plus: icon('plus'),
+  search: icon('search'),
+  cog: icon('settings'),
+  account: icon('account'),
+  help: icon('help'),
+  doc: icon('page'),
+  signout: icon('sign-out'),
+  chev: icon('chevron-right', 'chev')
+}
+
+/* ==========================================================================
+   Fixtures. Today is Sunday 6 September 2026, and every person and venue is
+   carried over from home-poc.html and enquiries-poc.html so the four tabs
+   describe one business. The artist's own name is invented here because the
+   other prototypes never needed one.
+   ========================================================================== */
+const TABS = [
+  { id: 'summary', label: 'Summary', title: 'Your summary', icon: I.home },
+  { id: 'bookings', label: 'Bookings', title: 'Bookings', icon: I.book },
+  { id: 'enquiries', label: 'Enquiries', title: 'Enquiries', icon: I.enq },
+  { id: 'contacts', label: 'Contacts', title: 'Contacts', icon: I.people },
+  { id: 'more', label: 'More', title: 'More', icon: I.burger }
+]
+
+const NEXTUP = [
+  { dow: 'Sat', dd: '12', mon: 'Sep', name: 'Nadia Kerrigan', meta: 'Penbury Manor · call 06:30 · Bride and 4', pill: ['In 6 days', ''] },
+  { dow: 'Thu', dd: '17', mon: 'Sep', name: 'Bea Ashworth', meta: 'Your studio · call 18:00 · Bride', pill: ['Trial', 'trial'] },
+  { dow: 'Sat', dd: '26', mon: 'Sep', name: 'Priya Ramanathan', meta: 'The Old Corn Exchange · call 07:00', pill: ['In 3 weeks', ''] }
+]
+
+const ATTENTION = [
+  { name: 'Georgia Bramwell’s date is not held', meta: 'Provisional, 16 days · 17 October' },
+  { name: 'Rosie Duthie needs a price', meta: 'Enquiry · 15 May 2027' },
+  { name: 'Amelia Fenwick’s balance is overdue', meta: '£340 · 22 August' },
+  { name: 'Kit Ardern has heard nothing for 6 weeks', meta: 'In conversation · 17 October' }
+]
+
+const BOOKINGS = [
+  { head: 'September 2026', rows: [
+    { dow: 'Sat', dd: '12', mon: 'Sep', name: 'Nadia Kerrigan', meta: 'Penbury Manor, Hitchin', pill: ['Confirmed', 'confirmed'] },
+    { dow: 'Thu', dd: '17', mon: 'Sep', name: 'Bea Ashworth', meta: 'Your studio', pill: ['Trial', 'trial'] },
+    { dow: 'Sat', dd: '26', mon: 'Sep', name: 'Priya Ramanathan', meta: 'The Old Corn Exchange, Saffron Walden', pill: ['Confirmed', 'confirmed'] }
+  ] },
+  { head: 'October 2026', rows: [
+    { dow: 'Sat', dd: '17', mon: 'Oct', name: 'Georgia Bramwell', meta: 'Whitmoor Court, Nettlebed', pill: ['Provisional', 'provisional'] }
+  ] },
+  { head: 'November 2026', rows: [
+    { dow: 'Sat', dd: '14', mon: 'Nov', name: 'Elin Vaughan', meta: 'The Old Corn Exchange, Thurlby', pill: ['Confirmed', 'confirmed'] }
+  ] },
+  { head: '2027', rows: [
+    { dow: 'Sat', dd: '20', mon: 'Mar', name: 'Wren Castellan', meta: 'Ferndale Barn, Ombersleigh', pill: ['Confirmed', 'confirmed'] },
+    { dow: 'Sat', dd: '12', mon: 'Jun', name: 'Elspeth Rowntree', meta: 'Marlbrook Hall, Ludworth', pill: ['Confirmed', 'confirmed'] }
+  ] }
+]
+
+const ENQUIRIES = [
+  { head: 'New', n: 3, rows: [
+    { name: 'Rosie Duthie', meta: 'Ferndale Barn · 5 people', sub: 'From the website · today', pill: ['15 May 2027', ''] },
+    { name: 'Tomasz Nowicki', meta: 'No date yet', sub: 'Met at Elspeth Rowntree’s wedding · 1d', pill: ['', ''] },
+    { name: 'Bea Ashworth', meta: 'Penbury Manor · 3 people', sub: 'Forwarded email · 5d', pill: ['4 Sep 2027', ''] }
+  ] },
+  { head: 'In conversation', n: 2, rows: [
+    { name: 'Imogen Slade', meta: 'Whitmoor Court · 6 people', sub: 'Added by you · 2d', pill: ['3 Jul 2027', ''] },
+    { name: 'Marta Kowalczyk', meta: 'Marlbrook Hall · 4 people', sub: 'From the website · 19d', pill: ['12 Jun 2027', ''] }
+  ] },
+  { head: 'Possible', n: 3, rows: [
+    { name: 'Amelia Fenwick', meta: 'The Glasshouse at Ravensmere · 7 people', sub: 'From the website · 11d', pill: ['12 Jun 2027', ''] },
+    { name: 'Cerys Llewellyn', meta: 'Alderwick Lodge · 3 people', sub: 'Voice note · 2d', pill: ['12 Jun 2027', ''] },
+    { name: 'Priya Ramanathan', meta: 'Thackston House · 9 people', sub: 'Added by you · 34d', pill: ['21 Aug 2027', ''] }
+  ] },
+  { head: 'Quoted', n: 2, rows: [
+    { name: 'Elin Vaughan', meta: 'The Old Corn Exchange · 4 people', sub: 'From the website · 6d', pill: ['£1,240', 'quoted'] },
+    { name: 'Saoirse Gallagher', meta: 'The Yard at Hollingfen · 5 people', sub: 'Forwarded email · 23d', pill: ['£860', 'quoted'] }
+  ] }
+]
+
+const CONTACTS = [
+  { head: 'A', rows: [
+    { name: 'Kit Ardern', meta: 'Enquiry, no booking', pill: ['', ''] },
+    { name: 'Bea Ashworth', meta: 'Trial, 17 Sep · Your studio', pill: ['Upcoming', ''] }
+  ] },
+  { head: 'B', rows: [
+    { name: 'Georgia Bramwell', meta: 'Wedding, 17 Oct · Whitmoor Court', pill: ['Provisional', 'provisional'] }
+  ] },
+  { head: 'C', rows: [
+    { name: 'Wren Castellan', meta: 'Wedding, 20 Mar 2027 · Ferndale Barn', pill: ['Owes £480', 'overdue'] }
+  ] },
+  { head: 'D', rows: [
+    { name: 'Rosie Duthie', meta: 'Enquiry, no booking', pill: ['', ''] }
+  ] },
+  { head: 'F', rows: [
+    { name: 'Amelia Fenwick', meta: 'Wedding, 22 Aug · The Glasshouse', pill: ['Overdue £340', 'overdue'] }
+  ] },
+  { head: 'G', rows: [
+    { name: 'Saoirse Gallagher', meta: 'Enquiry, quoted · 10 Apr 2027', pill: ['', ''] }
+  ] },
+  { head: 'K', rows: [
+    { name: 'Nadia Kerrigan', meta: 'Wedding, 12 Sep · Penbury Manor', pill: ['Upcoming', ''] },
+    { name: 'Marta Kowalczyk', meta: 'Enquiry, in conversation', pill: ['', ''] }
+  ] },
+  { head: 'L', rows: [
+    { name: 'Cerys Llewellyn', meta: 'Enquiry, possible · 12 Jun 2027', pill: ['', ''] }
+  ] },
+  { head: 'M', rows: [
+    { name: 'Delphine Marchetti', meta: 'Trial, 14 Mar 2027 · Your studio', pill: ['', ''] }
+  ] },
+  { head: 'O', rows: [
+    { name: 'Fran Odell', meta: 'Wedding, 15 Aug · Ferndale Barn', pill: ['Owes £200', 'overdue'] }
+  ] },
+  { head: 'R', rows: [
+    { name: 'Priya Ramanathan', meta: 'Wedding, 26 Sep · The Old Corn Exchange', pill: ['Upcoming', ''] },
+    { name: 'Elspeth Rowntree', meta: 'Wedding, 12 Jun 2027 · Marlbrook Hall', pill: ['Confirmed', 'confirmed'] }
+  ] },
+  { head: 'S', rows: [
+    { name: 'Imogen Slade', meta: 'Enquiry, in conversation', pill: ['', ''] }
+  ] },
+  { head: 'V', rows: [
+    { name: 'Elin Vaughan', meta: 'Wedding, 14 Nov · The Old Corn Exchange', pill: ['Confirmed', 'confirmed'] }
+  ] }
+]
+
+const MORE = [
+  [I.cog, 'Settings'],
+  [I.account, 'My account'],
+  [I.help, 'Help']
+]
+
+const CREATE = [
+  [I.book, 'New booking'],
+  [I.enq, 'New enquiry'],
+  [I.people, 'New contact'],
+  [I.doc, 'New invoice']
+]
+
+/* ==========================================================================
+   Builders. One row treatment does all four tabs, which the real screens do
+   not do and should not do. It is here so the bars can be judged.
+   ========================================================================== */
+function pill (p) {
+  if (!p || !p[0]) return ''
+  return '<span class="pill' + (p[1] ? ' pill--' + p[1] : '') + '">' + p[0] + '</span>'
+}
+function initials (name) {
+  const parts = name.split(' ')
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase()
+}
+function dateRow (b) {
+  return '<button class="row" type="button">' +
+    '<span class="datechip"><i>' + b.dow + '</i><b>' + b.dd + '</b><u>' + b.mon + '</u></span>' +
+    '<span class="row__body"><span class="row__name">' + b.name + '</span>' +
+    '<span class="row__meta">' + b.meta + '</span></span>' +
+    '<span class="row__end">' + pill(b.pill) + I.chev + '</span></button>'
+}
+function plainRow (r) {
+  return '<button class="row' + (r.sub ? ' row--top' : '') + '" type="button">' +
+    '<span class="row__body"><span class="row__name">' + r.name + '</span>' +
+    '<span class="row__meta">' + r.meta + '</span>' +
+    (r.sub ? '<span class="row__sub">' + r.sub + '</span>' : '') + '</span>' +
+    '<span class="row__end">' + pill(r.pill) + I.chev + '</span></button>'
+}
+function avatarRow (r) {
+  return '<button class="row" type="button">' +
+    '<span class="avatar" aria-hidden="true">' + initials(r.name) + '</span>' +
+    '<span class="row__body"><span class="row__name">' + r.name + '</span>' +
+    '<span class="row__meta">' + r.meta + '</span></span>' +
+    '<span class="row__end">' + pill(r.pill) + I.chev + '</span></button>'
+}
+function groups (list, rowFn, showCount) {
+  return list.map(function (g) {
+    return '<div class="card group">' +
+      '<div class="grouphead"><span>' + g.head + '</span>' +
+      (showCount ? '<span class="n">' + (g.n || g.rows.length) + '</span>' : '') + '</div>' +
+      g.rows.map(rowFn).join('') +
+      '</div>'
+  }).join('')
+}
+
+function summaryHtml () {
+  return '<h1 class="pagetitle">Your summary</h1>' +
+    '<div class="card"><div class="owed"><b>£1,020 owed to you</b>' +
+      '<span>From 3 weddings that have already happened</span></div></div>' +
+    '<div class="card">' +
+      '<div class="sechead"><h2>Next up</h2><button type="button">See all</button></div>' +
+      NEXTUP.map(dateRow).join('') +
+    '</div>' +
+    '<div class="card">' +
+      '<div class="sechead"><h2>Attention</h2><button type="button">See all</button></div>' +
+      ATTENTION.map(plainRow).join('') +
+    '</div>'
+}
+function bookingsHtml () {
+  return '<h1 class="pagetitle">Bookings<span class="count">7 ahead</span></h1>' +
+    groups(BOOKINGS, dateRow, false)
+}
+function enquiriesHtml () {
+  return '<h1 class="pagetitle">Enquiries<span class="count">10 open</span></h1>' +
+    groups(ENQUIRIES, plainRow, true)
+}
+function contactsHtml () {
+  return '<h1 class="pagetitle">Contacts<span class="count">17</span></h1>' +
+    groups(CONTACTS, avatarRow, false)
+}
+function moreRow (m) {
+  return '<button class="row" type="button">' +
+    '<span class="rowicon">' + m[0] + '</span>' +
+    '<span class="row__body"><span class="row__name">' + m[1] + '</span></span>' +
+    '<span class="row__end">' + I.chev + '</span></button>'
+}
+function moreHtml () {
+  return '<h1 class="pagetitle">More</h1>' +
+    '<div class="card">' + MORE.map(moreRow).join('') + '</div>' +
+    '<div class="card">' + moreRow([I.signout, 'Sign out']).replace(I.chev, '') + '</div>'
+}
+const PANELS = {
+  summary: summaryHtml, bookings: bookingsHtml,
+  enquiries: enquiriesHtml, contacts: contactsHtml, more: moreHtml
+}
+
+/* ==========================================================================
+   The screen
+   ========================================================================== */
+function createScreen (el, opts) {
+  const hi = opts.homeIndicator || 0
+  const tabH = 60 + 12 + hi + 10
+
+  el.innerHTML =
+    '<div class="shell">' +
+    (opts.statusbar ? '<div class="statusbar" style="height:' + opts.statusbar + 'px"><span>09:41</span><span class="dots"><i></i><i></i><i></i></span></div>' : '') +
+    '<div class="main">' +
+      '<div class="scroller">' +
+        '<div class="topspacer" style="height:52px"></div>' +
+        TABS.map(function (t) {
+          return '<div class="tabpanel" data-tab="' + t.id + '"></div>' }).join('') +
+        '<div class="tabspacer" style="height:' + tabH + 'px"></div>' +
+      '</div>' +
+      '<header class="topbar">' +
+        '<h1 class="topbar__title"></h1>' +
+        '<div class="topbar__actions">' +
+          '<button class="tbtn tbtn--search" type="button" aria-label="Search">' + I.search + '</button>' +
+          '<button class="tbtn tbtn--bell" type="button" aria-label="Notifications">' + I.bell + '<span class="badge"></span></button>' +
+          '<button class="tbtn tbtn--new" type="button" aria-label="New">' + I.plus + '</button>' +
+        '</div>' +
+      '</header>' +
+    '</div>' +
+    '<nav class="tabbar" style="bottom:' + (12 + hi) + 'px">' +
+      TABS.map(function (t) {
+        return '<button type="button" data-tab="' + t.id + '">' + t.icon +
+          '<span>' + t.label + '</span></button>' }).join('') +
+    '</nav>' +
+    '<div class="sheet create" role="dialog" aria-modal="true" aria-label="New">' +
+      '<button class="sheet__scrim" type="button" aria-label="Close"></button>' +
+      '<div class="sheet__panel" tabindex="-1"><div class="sheet__grab"></div>' +
+        '<div class="sheet__head"><b>New</b><span>The button is at the top, the choices arrive at the bottom</span></div>' +
+        CREATE.map(function (m) {
+          return '<button class="mitem" type="button">' + m[0] + m[1] + '</button>' }).join('') +
+      '</div>' +
+    '</div>' +
+    '<div class="toast" role="status" aria-live="polite"><p></p><button class="toastx" type="button">OK</button></div>' +
+    '</div>'
+
+  const scroller = el.querySelector('.scroller')
+  const topbar = el.querySelector('.topbar')
+  const title = el.querySelector('.topbar__title')
+  const toast = el.querySelector('.toast')
+  const toastText = toast.querySelector('p')
+  let current = 'summary'
+  let lastY = 0
+  let toastTimer = null
+
+  el.style.setProperty('--toast-bottom', (12 + hi + 60 + 10) + 'px')
+
+  TABS.forEach(function (t) {
+    el.querySelector('.tabpanel[data-tab="' + t.id + '"]').innerHTML = PANELS[t.id]()
+  })
+
+  function updateBar () {
+    const tab = TABS.filter(function (t) { return t.id === current })[0]
+    const mode = el.dataset.title
+    if (mode === 'screen') {
+      title.textContent = current === 'summary' ? opts.business : tab.title
+    } else if (mode === 'stacked') {
+      title.innerHTML = '<span class="topbar__over">' + opts.business + '</span>' + tab.title
+    } else {
+      title.textContent = opts.business
+    }
+  }
+
+  function showToast (msg) {
+    toastText.textContent = msg
+    toast.classList.add('is-in')
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(function () { toast.classList.remove('is-in') }, 3500)
+  }
+  toast.querySelector('.toastx').addEventListener('click', function () {
+    clearTimeout(toastTimer)
+    toast.classList.remove('is-in')
+  })
+
+  function openSheet (which) {
+    const sheet = el.querySelector('.sheet.' + which)
+    sheet.classList.add('is-open')
+    sheet.querySelector('.sheet__panel').focus()
+  }
+  el.querySelectorAll('.sheet').forEach(function (sheet) {
+    sheet.querySelector('.sheet__scrim').addEventListener('click', function () {
+      sheet.classList.remove('is-open')
+    })
+    sheet.querySelectorAll('.mitem').forEach(function (b) {
+      b.addEventListener('click', function () {
+        sheet.classList.remove('is-open')
+        showToast(b.textContent.replace(/\s+/g, ' ').trim() + ' is not built in this prototype.')
+      })
+    })
+  })
+
+  function go (id) {
+    current = id
+    el.querySelectorAll('.tabpanel').forEach(function (p) {
+      p.classList.toggle('is-on', p.dataset.tab === id)
+    })
+    el.querySelectorAll('.tabbar button').forEach(function (b) {
+      if (b.dataset.tab === id) b.setAttribute('aria-current', 'page')
+      else b.removeAttribute('aria-current')
+    })
+    scroller.scrollTop = 0
+    topbar.classList.remove('is-stuck', 'is-away')
+    lastY = 0
+    updateBar()
+  }
+  el.querySelectorAll('.tabbar button').forEach(function (b) {
+    b.addEventListener('click', function () { go(b.dataset.tab) })
+  })
+
+  el.querySelector('.tbtn--bell').addEventListener('click', function () {
+    showToast('Notifications are not built yet. Decisions 101 to 107 settle what goes in here.')
+  })
+  el.querySelector('.tbtn--search').addEventListener('click', function () {
+    showToast('Search is not built in this prototype.')
+  })
+  el.querySelector('.tbtn--new').addEventListener('click', function () { openSheet('create') })
+
+  scroller.addEventListener('scroll', function () {
+    const y = scroller.scrollTop
+    topbar.classList.toggle('is-stuck', y > 4)
+    if (el.dataset.topbar === 'hide') {
+      if (y > lastY + 2 && y > 60) topbar.classList.add('is-away')
+      else if (y < lastY - 2) topbar.classList.remove('is-away')
+    } else {
+      topbar.classList.remove('is-away')
+    }
+    lastY = y
+  })
+
+  go('summary')
+  return {
+    el: el,
+    updateBar: updateBar,
+    reset: function () { topbar.classList.remove('is-away') }
+  }
+}
+
+/* ==========================================================================
+   Wiring. The controls set data attributes on each screen and the CSS does
+   the rest, so nothing here re-renders a tab to change a variant.
+   ========================================================================== */
+const DEFAULTS = {
+  topbar: 'pinned', title: 'screen', bg: 'white', search: 'off'
+}
+const screens = [
+  createScreen(document.getElementById('screen-se'),
+    { statusbar: 20, homeIndicator: 0, business: 'Ellie Marsh Makeup & Hair' }),
+  createScreen(document.getElementById('screen-16'),
+    { statusbar: 54, homeIndicator: 22, business: 'Ellie Marsh Makeup' })
+]
+
+Object.keys(DEFAULTS).forEach(function (k) {
+  screens.forEach(function (s) { s.el.dataset[k] = DEFAULTS[k] })
+})
+screens.forEach(function (s) { s.updateBar() })
+
+document.querySelectorAll('.seg[data-ctl]').forEach(function (seg) {
+  seg.addEventListener('click', function (e) {
+    const btn = e.target.closest('button')
+    if (!btn) return
+    seg.querySelectorAll('button').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b === btn))
+    })
+    const ctl = seg.dataset.ctl
+    const value = btn.dataset.value
+    if (ctl === 'theme') {
+      document.body.classList.toggle('theme-dark', value === 'dark')
+      document.body.classList.toggle('theme-light', value !== 'dark')
+      return
+    }
+    screens.forEach(function (s) {
+      s.el.dataset[ctl] = value
+      s.updateBar()
+      s.reset()
+    })
+  })
+})
+</script>
+</body>
+</html>
