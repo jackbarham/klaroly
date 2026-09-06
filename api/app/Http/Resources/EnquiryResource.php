@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\EventType;
 use App\Models\Booking;
 use App\Models\Event;
 use App\Services\BookingPricing;
@@ -77,6 +78,18 @@ class EnquiryResource extends JsonResource
             'total_minor' => $this->totalMinor($booking),
             'currency' => $booking->currency,
             'event' => $this->event($event),
+            // Whether there is a trial as well as the day above.
+            //
+            // **One boolean rather than the events array**, because that is the
+            // sentence the row says: "29 May 2027 · Marlbrook Hall · and a
+            // trial". Sending the array would put the choice of which date a
+            // row means back in the client, where it would drift from
+            // ContactActivity::mainEvent(), and a list payload has no business
+            // carrying up to eight events per booking (schema 5.9) so that a
+            // row can add three words. If a second event type ever has to be
+            // named it becomes a count or a list; it is has_trial today because
+            // that is the only one the row speaks about.
+            'has_trial' => $this->hasTrial($booking),
             'lost_reason' => $reason?->value,
             // Sent rather than left for the client to map. The side is a fact
             // about the record and the label beside it is wording, and facts
@@ -98,6 +111,24 @@ class EnquiryResource extends JsonResource
         $pricing = app(BookingPricing::class);
 
         return $pricing->isPriced($booking) ? $pricing->total($booking)->minor : null;
+    }
+
+    /**
+     * Whether this booking carries a trial, whichever event the row is shown
+     * by.
+     *
+     * It reads the loaded relation rather than asking the database, so it costs
+     * nothing: the controller eager-loads `events` for mainEvent() already.
+     *
+     * True on a booking whose only event IS the trial, which looks redundant
+     * beside an `event` of type trial and is not: the row draws the date from
+     * `event` and this from here, so a rule that read "there is a trial and it
+     * is not the one being shown" would make the two fields answer one question
+     * between them.
+     */
+    private function hasTrial(Booking $booking): bool
+    {
+        return $booking->events->contains(fn (Event $event) => $event->type === EventType::Trial);
     }
 
     /**

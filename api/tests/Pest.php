@@ -46,6 +46,7 @@ const ENQUIRY_KEYS = [
     'total_minor',
     'currency',
     'event',
+    'has_trial',
     'lost_reason',
     'lost_side',
     'clash',

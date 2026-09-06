@@ -87,6 +87,90 @@ it('sends the booking id, and one row for a booking with two events', function (
         ->assertJsonPath('data.0.event.date', today()->addDays(265)->toDateString());
 });
 
+/**
+ * Whether there is a trial as well as the day the row is shown by.
+ *
+ * The row says "29 May 2027 · Marlbrook Hall · and a trial", and it cannot say
+ * it from `event` alone: that field carries the main day, so a booking with a
+ * trial in March and the wedding in May looks exactly like one with no trial
+ * at all. This is the field that tells them apart.
+ */
+describe('a trial as well as the main day', function () {
+    it('says so on a booking that has both', function () {
+        $user = bookingsOwner();
+        currentAccount()->set($user->accounts()->first());
+
+        $booking = enquiry(BookingStage::Possible, today()->addDays(265)->toDateString(), [], ['type' => 'main']);
+        Event::factory()->create([
+            'booking_id' => $booking->id,
+            'type' => 'trial',
+            'event_date' => today()->addDays(189)->toDateString(),
+        ]);
+
+        currentAccount()->clear();
+
+        $this->actingAs($user)
+            ->getJson('/api/enquiries')
+            ->assertOk()
+            // One row, showing the wedding, and saying there is a trial too.
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.event.type', 'main')
+            ->assertJsonPath('data.0.has_trial', true);
+    });
+
+    // Paired, so "true" cannot pass by being true for everything.
+    it('says no on a booking with only a main day', function () {
+        $user = bookingsOwner();
+        currentAccount()->set($user->accounts()->first());
+
+        enquiry(BookingStage::Possible, today()->addDays(265)->toDateString(), [], ['type' => 'main']);
+
+        currentAccount()->clear();
+
+        $this->actingAs($user)
+            ->getJson('/api/enquiries')
+            ->assertOk()
+            ->assertJsonPath('data.0.has_trial', false);
+    });
+
+    /**
+     * True on a booking whose only event is the trial, which looks redundant
+     * beside an `event` of type trial and is not: the row draws its date from
+     * `event` and this from here, so a rule reading "there is a trial and it is
+     * not the one being shown" would make the two fields answer one question
+     * between them.
+     */
+    it('says yes on a standalone trial, whose shown event is that trial', function () {
+        $user = bookingsOwner();
+        currentAccount()->set($user->accounts()->first());
+
+        enquiry(BookingStage::Possible, today()->addDays(190)->toDateString(), [], ['type' => 'trial']);
+
+        currentAccount()->clear();
+
+        $this->actingAs($user)
+            ->getJson('/api/enquiries')
+            ->assertOk()
+            ->assertJsonPath('data.0.event.type', 'trial')
+            ->assertJsonPath('data.0.has_trial', true);
+    });
+
+    it('says no on an enquiry with no dates at all', function () {
+        $user = bookingsOwner();
+        currentAccount()->set($user->accounts()->first());
+
+        enquiry(BookingStage::InConversation, null);
+
+        currentAccount()->clear();
+
+        $this->actingAs($user)
+            ->getJson('/api/enquiries')
+            ->assertOk()
+            ->assertJsonPath('data.0.event', null)
+            ->assertJsonPath('data.0.has_trial', false);
+    });
+});
+
 // A standalone trial or a shoot is an enquiry with no main day. Showing it with
 // no date at all would be worse than showing the date it does have, which is
 // the fallback ContactActivity::mainEvent() already makes for the contacts
