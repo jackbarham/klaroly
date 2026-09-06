@@ -134,14 +134,17 @@ only), because the brand work has not landed yet.
 the result, and components read the store. There are no fixtures left.
 `CLAUDE.md` covers how the two halves fit together.
 
-**The contacts screen does not, yet.** There is no contacts endpoint, so
-`src/lib/contactFixtures.ts` stands in for one behind the same seam:
-`loadContacts()` is what `src/stores/contacts.ts` calls, and components read
-the store exactly as they would afterwards. When the endpoint arrives,
-`src/lib/contacts.ts` is written the way `src/lib/bookings.ts` is, the store
-calls that instead, and the fixtures file is deleted; nothing else in the
-feature changes. `src/lib/contacts.guards.test.ts` fails if a component reaches
-past the store to those fixtures.
+**The contacts screen is not on its endpoint yet.** `GET /api/contacts` now
+exists and returns the whole list in one payload, but the screen still reads
+`src/lib/contactFixtures.ts` behind the same seam: `loadContacts()` is what
+`src/stores/contacts.ts` calls, and components read the store exactly as they
+will afterwards. Swapping it over means writing `src/lib/contacts.ts` the way
+`src/lib/bookings.ts` is written, pointing the store at it, deleting the
+fixtures, and three small changes to `src/types/contacts.ts`: the outstanding
+entry becomes `amount_minor` / `is_overdue` / `is_account_currency`, a booking's
+`event_type` and `date` become nullable, and the payload gains a `meta` block.
+`src/lib/contacts.guards.test.ts` fails if a component reaches past the store to
+those fixtures.
 
 **Signing in locally.** With the API seeded (`php artisan db:seed`), open
 http://app.klaroly.test/login and sign in as `ellie@example.com` with the

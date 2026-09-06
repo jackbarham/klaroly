@@ -5,6 +5,8 @@ use App\Models\Booking;
 use App\Models\BookingLine;
 use App\Models\Contact;
 use App\Models\Event;
+use App\Models\Invoice;
+use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -354,6 +356,111 @@ it('issues the same number of queries however many events there are', function (
     };
 
     expect($count(3))->toBe($count(30));
+});
+
+/**
+ * The second half of the same rule, and the one that was broken until the
+ * contacts endpoint was built.
+ *
+ * Eager loading booking.invoices.payments bought nothing, because
+ * Invoice::paidMinor() ran its own sum() query every time it was asked, and
+ * WaitingOnResolver asks it two or three times per invoice through
+ * outstandingMinor() and depositCovered(). So the cost of this endpoint grew
+ * with the money on a booking rather than with the request, silently, on a
+ * relation the controller had already paid to load.
+ *
+ * The count is asserted against invoices and payments rather than against
+ * events, because that is the axis that was wrong: the test above already
+ * holds the number flat as the diary grows.
+ *
+ * **The invoices are settled on purpose, and the first version of this test was
+ * wrong because they were not.** WaitingOnResolver returns on the first invoice
+ * that is waiting on something, so with unpaid invoices it looks at exactly one
+ * however many there are, the count never grew, and the test passed against the
+ * unfixed model while proving nothing. Fully paid invoices past their due date
+ * are the case where both the balance loop and the deposit loop run to the end,
+ * which is the case that was costing two queries an invoice.
+ */
+it('issues the same number of queries however much money is on a booking', function () {
+    $user = bookingsOwner();
+    $account = $user->accounts()->first();
+
+    $count = function (int $invoices) use ($user, $account) {
+        currentAccount()->set($account);
+
+        Payment::query()->delete();
+        Invoice::query()->delete();
+        Event::query()->delete();
+        Booking::query()->forceDelete();
+
+        $booking = Booking::factory()->confirmed()->create();
+        Event::factory()->create(['booking_id' => $booking->id, 'event_date' => today()->addDay()]);
+
+        for ($i = 0; $i < $invoices; $i++) {
+            $invoice = Invoice::factory()->issued($i + 1)->create([
+                'booking_id' => $booking->id,
+                'total_minor' => 45000,
+                'balance_due_on' => today()->subDays(3),
+            ]);
+
+            Payment::factory()->count(2)->create([
+                'invoice_id' => $invoice->id,
+                'booking_id' => $booking->id,
+                'amount_minor' => 22500,
+            ]);
+        }
+
+        currentAccount()->clear();
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $this->actingAs($user)->getJson('/api/events')->assertOk();
+
+        $queries = count(DB::getQueryLog());
+
+        DB::disableQueryLog();
+
+        return $queries;
+    };
+
+    expect($count(1))->toBe($count(8));
+});
+
+/**
+ * Paired with the query-count test above, because making an endpoint cheaper
+ * is only an improvement if it still answers the same.
+ *
+ * An issued invoice past its balance date with money still on it is
+ * client_balance, and it has to stay client_balance now that the balance is
+ * summed from a loaded relation rather than fetched per invoice, and now that
+ * the date is compared in the artist's own timezone rather than in UTC.
+ */
+it('still reports what a booking is waiting on after the money loads changed', function () {
+    $user = bookingsOwner();
+    currentAccount()->set($user->accounts()->first());
+
+    $booking = Booking::factory()->confirmed()->create();
+    Event::factory()->create(['booking_id' => $booking->id, 'event_date' => today()->addDays(5)]);
+
+    $invoice = Invoice::factory()->issued()->create([
+        'booking_id' => $booking->id,
+        'total_minor' => 45000,
+        'deposit_minor' => 0,
+        'balance_due_on' => today()->subDays(3),
+    ]);
+    Payment::factory()->create([
+        'invoice_id' => $invoice->id,
+        'booking_id' => $booking->id,
+        'amount_minor' => 10000,
+    ]);
+
+    currentAccount()->clear();
+
+    $this->actingAs($user)
+        ->getJson('/api/events')
+        ->assertOk()
+        ->assertJsonPath('data.0.waiting_on', 'client_balance');
 });
 
 // Section 9 says this query is served by events (account_id, event_date).

@@ -132,6 +132,7 @@ Hand-written routes live in `routes/api.php` under `/api`:
 | PUT | `/api/user/marketing-consent` | auth:sanctum, account | `consented`. 200 with the `/api/me` payload |
 | GET | `/api/events` | auth:sanctum, account | `from` (defaults to today) and `to` (unbounded when omitted). The events in the range, each carrying its booking's stage, client, total and waiting-on state |
 | GET | `/api/events/months` | auth:sanctum, account | No parameters. Every month the account holds an event in, for all time, as `["2026-09", ...]` |
+| GET | `/api/contacts` | auth:sanctum, account | No parameters. Every contact, each with its bookings and its computed fields, ordered by what is coming up. `meta` carries `total`, `returned` and `truncated` |
 
 ### The rules
 
@@ -784,6 +785,10 @@ What sits on top of the tables:
   before it asks the scope anything, so a missing tenant is a loud failure
   naming itself and null means one thing only.
 - `App\Services\BookingPricing` (the only place totals are computed),
+  `App\Services\OutstandingBalances` (the only place a contact's debt is
+  grouped by currency; it calls `Invoice` rather than re-deriving a balance),
+  `App\Services\ContactActivity` (the only place that decides which event a
+  booking is shown by),
   `App\Services\InvoiceNumbering` (the only place an invoice gets a number),
   `App\Services\Features` (the only reader of feature toggles),
   `App\Services\PasswordAuthenticator` (the only credential check),
@@ -806,8 +811,8 @@ What sits on top of the tables:
   which would need an alias in its own file.
 - Config that is not the framework's: `config/billing.php` (trial length),
   `config/features.php` (the default feature map), `config/demo.php` (the
-  demo password), `config/reserved_usernames.php`. Nothing outside
-  `config/` reads `env()`.
+  demo password), `config/contacts.php` (the contacts ceiling),
+  `config/reserved_usernames.php`. Nothing outside `config/` reads `env()`.
 - Factories for every model, `SystemDefaultsSeeder` (system message and
   contract templates) and `DemoAccountSeeder` (the "Ellie Marsh Makeup"
   account, which doubles as the App Store review account; owner login
@@ -1005,6 +1010,97 @@ reads. `App\Http\Controllers\EventController` serves both.
   looks redundant and is not: `booking.lines.booking` is there because
   `booking_lines` has no currency column, so `MoneyCast` resolves a line's
   currency through its booking, and without it that is a query per line.
+
+### The contacts endpoint
+
+`GET /api/contacts` is what the contacts screen reads.
+`App\Http\Controllers\ContactController` serves it.
+
+- **No parameters, no pagination and no filter, and that is the design.** The
+  screen holds the whole list in memory and does its own sorting, grouping and
+  filtering with no round trip, which is what makes the filter box instant and
+  what makes the screen work with no signal. A page size or a search parameter
+  would buy nothing and would take that away.
+- **The ceiling is a flag, not a 422.** `config/contacts.php` caps the response
+  at 1000 and the meta block carries `total`, `returned` and `truncated`. This
+  is the opposite call from the events row cap, and deliberately: a caller that
+  sends no parameters cannot ask for less, so refusing would leave the one
+  account with five thousand contacts looking at a dead screen. Measured against
+  the demo seeder a contact costs about 750 bytes uncompressed and 134
+  compressed, so the cap is roughly 750KB on the wire before gzip and 130KB
+  after.
+- **Ordering is work ahead of you first and soonest first, then history newest
+  first, then everybody with neither.** It is not the arbitrary "activity
+  descending" it could have been: because a contact with a future date sorts
+  above every contact without one, a truncated response is the useful end of the
+  list rather than a slice, and the server's order matches the screen's default
+  so a future consumer gets it free. Ties break on id, so two identical requests
+  render identically.
+- **The event a booking carries depends on why it is being shown**, and
+  `App\Services\ContactActivity` is the one place that decides. `bookings[]`
+  shows the main day, because a list of somebody's work is a list of the jobs
+  and a trial is part of one of them; `next_booking` shows the soonest future
+  event of **any type**, because that field answers when the artist next sees
+  this person, so on 1 August a contact with a trial on the 15th reads "15 Aug,
+  trial"; `last_booking` is the most recent past event of any type. A booking
+  with no main day, a standalone trial or a shoot, falls back to its earliest
+  event. All three render through one `ContactBookingResource` taking a
+  `BookingOccasion`, so the three cannot drift.
+- **`outstanding` is an array and nothing depends on its order.** One entry per
+  currency, because schema section 8 forbids summing across them, and each entry
+  carries `is_account_currency` so the client selects rather than trusting a
+  position. "The account's currency is first" would be a correctness contract
+  carried by array position with nothing asserting it, and it would break the
+  first time somebody added an ORDER BY for an unrelated reason. Sorted by
+  currency code anyway, so two identical requests render identically. Empty when
+  nothing is owed: not null, and not a zero entry.
+- **`App\Services\OutstandingBalances` groups, it does not calculate.**
+  `App\Models\Invoice` already owns an invoice's balance in `outstandingMinor()`
+  and `isOverdue()`, so re-deriving it here would be a second answer to a
+  question that already has one, the same way summing booking lines would be a
+  second answer to `BookingPricing`.
+- **The ordering is the one rule written twice**, in SQL in the controller
+  because ordering must happen before the limit, and in PHP in `ContactActivity`
+  because that is what fills the fields. A test asserts the server's order is
+  the order you get by sorting the payload's own `next_booking` and
+  `last_booking`, which is what holds the two together.
+- **Nothing indexes the sort key and the test says so.** It is a correlated
+  subquery, so Postgres computes it per contact and sorts the results; what is
+  indexed is the lookup inside it, `bookings (account_id, contact_id)` then
+  `events (booking_id)`, both already in schema section 9. The plan test asserts
+  those two by name **and** asserts the sort is a sort, so nobody reads it as a
+  promise the ordering is cheap. It only means anything against realistic row
+  counts: an earlier version passed while proving nothing, because with one
+  booking in the table Postgres had sequentially scanned that too.
+
+### What the contacts work found in the bookings endpoint
+
+Two defects, both fixed here rather than left for later, because both are about
+the same question being answered twice.
+
+- **`Invoice::paidMinor()` ignored an eager-loaded relation.** It ran its own
+  `sum()` query every time it was asked, and `WaitingOnResolver` asks it two or
+  three times per invoice through `outstandingMinor()` and `depositCovered()`.
+  So `GET /api/events` had been paying a query per invoice since it was written,
+  on a relation it had already paid to load. It now reads the loaded relation
+  when there is one.
+- **Fixing that moved the N+1 rather than removing it**, which is the same trap
+  a third time: summing `Money` touches `MoneyCast`, `payments` has no currency
+  column, so each payment resolved its currency through its booking.
+  `EventController` now loads `booking.invoices.payments.booking` beside the
+  `booking.lines.booking` that was already there for the identical reason.
+  `EventIndexTest` holds the query count flat against the money on a booking,
+  and **that test's first version passed against the unfixed model**: the
+  resolver returns on the first invoice waiting on something, so with unpaid
+  invoices it looked at one however many there were. It takes settled invoices
+  past their due date to make both loops run to the end.
+- **`isOverdue()` compared against a UTC day.** `APP_TIMEZONE` is UTC, so for
+  the last hour of a British summer evening an invoice due today read as
+  overdue while the artist was still on the day it was due. It now takes the day
+  to judge against, and `WaitingOnResolver` was moved to the account's timezone
+  in the same change. Fixing only one would have left the app with two answers
+  to "is this overdue", and for that hour the bookings screen would have said no
+  while the contacts screen said yes.
 
 ### The bookings screen
 

@@ -6,6 +6,7 @@ use App\Casts\MoneyCast;
 use App\Enums\InvoiceStatus;
 use App\Models\Concerns\BelongsToAccount;
 use App\Support\Money;
+use Carbon\CarbonImmutable;
 use Database\Factories\InvoiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -79,9 +80,22 @@ class Invoice extends Model
 
     /**
      * The sum of every payment, refunds included, in minor units.
+     *
+     * It reads the loaded relation when there is one, and only falls back to
+     * asking the database when there is not. That is not an optimisation, it
+     * is the difference between a list endpoint working and not: this method is
+     * called two or three times per invoice by outstandingMinor(),
+     * depositCovered() and isOverdue(), and the query form ran every one of
+     * those separately even when the caller had eager loaded payments
+     * specifically to avoid it. GET /api/events has been paying that cost since
+     * it was written.
      */
     public function paidMinor(): int
     {
+        if ($this->relationLoaded('payments')) {
+            return (int) $this->payments->sum(fn (Payment $payment) => $payment->amount_minor->minor);
+        }
+
         return (int) $this->payments()->sum('amount_minor');
     }
 
@@ -113,18 +127,25 @@ class Invoice extends Model
     /**
      * Overdue when issued, still owing, past a due date, and not snoozed.
      * The deposit due date counts only while the deposit is not yet covered.
+     *
+     * `$today` is the day to judge against, and callers that know whose day it
+     * is should pass it. Left out it is the application's day, which is UTC
+     * (APP_TIMEZONE), and for the last hour of a British summer evening that is
+     * already tomorrow: an invoice due today would read as overdue while the
+     * artist looking at it is still on the day it is due. A date comparison
+     * belongs in the timezone the date was written in, and accounts carry one.
      */
-    public function isOverdue(): bool
+    public function isOverdue(?CarbonImmutable $today = null): bool
     {
         if (! $this->isIssued() || $this->outstandingMinor() <= 0) {
             return false;
         }
 
-        if ($this->reminders_snoozed_until !== null && $this->reminders_snoozed_until->isFuture()) {
+        $today ??= CarbonImmutable::today();
+
+        if ($this->reminders_snoozed_until !== null && $this->reminders_snoozed_until->greaterThan($today)) {
             return false;
         }
-
-        $today = today();
 
         if ($this->balance_due_on !== null && $this->balance_due_on->lessThan($today)) {
             return true;

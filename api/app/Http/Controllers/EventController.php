@@ -55,6 +55,16 @@ class EventController extends Controller
                 'booking.quotes',
                 'booking.agreements',
                 'booking.invoices.payments',
+                // The same trap as the line above, one level deeper. payments
+                // has no currency column either, so summing what an invoice has
+                // been paid resolves each payment's currency through its
+                // booking. It only started costing anything when
+                // Invoice::paidMinor() was taught to use the loaded relation:
+                // before that it summed in the database and never touched the
+                // cast, so the endpoint paid for a query per invoice instead
+                // and this load would have bought nothing. One trap replaced
+                // the other, and the eager load is what closes both.
+                'booking.invoices.payments.booking',
                 'booking.account.settings',
             ])
             ->orderBy('event_date')

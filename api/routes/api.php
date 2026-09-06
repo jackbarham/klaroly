@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\TokenController;
 use App\Http\Controllers\Auth\UpdatePasswordController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\MarketingConsentController;
 use App\Http\Controllers\MeController;
@@ -86,4 +87,12 @@ Route::middleware(['auth:sanctum', 'account'])->group(function () {
     // either no dots or fetching the whole diary to draw twelve of them.
     Route::get('/events', [EventController::class, 'index']);
     Route::get('/events/months', [EventController::class, 'months']);
+
+    // What the contacts screen reads. One payload, no parameters: the screen
+    // holds the whole list and does its own sorting, grouping and filtering
+    // with no round trip, which is what makes it instant and what makes it
+    // work with no signal. A ceiling in config/contacts.php keeps the cost
+    // bounded, and it is a flag in the meta block rather than a refusal,
+    // because a caller that sends no parameters cannot ask for less.
+    Route::get('/contacts', [ContactController::class, 'index']);
 });

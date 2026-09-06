@@ -4,6 +4,7 @@ use App\Enums\BookingStage;
 use App\Models\Account;
 use App\Models\AccountUser;
 use App\Models\Booking;
+use App\Models\Contact;
 use App\Models\Event;
 use App\Models\User;
 use App\Support\CurrentAccount;
@@ -183,6 +184,39 @@ function eventOn(string $date, array $bookingAttributes = [], array $eventAttrib
         'booking_id' => $booking->id,
         'event_date' => $date,
     ]);
+}
+
+/**
+ * A contact with one booking, one main event on the given date, and nothing
+ * else. The shape almost every contacts test starts from.
+ *
+ * The current account must already be bound: it is the tenant every row is
+ * created under, and binding it here would hide the thing several of these
+ * tests are about.
+ *
+ * @param  array<string, mixed>  $contactAttributes
+ * @param  array<string, mixed>  $bookingAttributes
+ * @param  array<string, mixed>  $eventAttributes
+ */
+function contactWithBooking(
+    string $date,
+    array $contactAttributes = [],
+    array $bookingAttributes = [],
+    array $eventAttributes = [],
+): Contact {
+    $contact = Contact::factory()->create($contactAttributes);
+
+    $booking = Booking::factory()->create($bookingAttributes + [
+        'contact_id' => $contact->id,
+        'stage' => BookingStage::Confirmed,
+    ]);
+
+    Event::factory()->create($eventAttributes + [
+        'booking_id' => $booking->id,
+        'event_date' => $date,
+    ]);
+
+    return $contact;
 }
 
 /**
