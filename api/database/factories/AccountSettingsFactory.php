@@ -27,6 +27,7 @@ class AccountSettingsFactory extends Factory
             'next_invoice_number' => 1,
             'travel_charging' => TravelCharging::Included,
             'travel_rate_per_mile_minor' => 45,
+            'hold_days' => 14,
             'business_year_start_month' => 4,
             'business_year_start_day' => 6,
         ];

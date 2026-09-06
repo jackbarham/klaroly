@@ -9,6 +9,7 @@ use App\Http\Resources\EnquiryResource;
 use App\Models\Booking;
 use App\Services\ContactActivity;
 use App\Services\EnquiryClashes;
+use App\Services\SoftHold;
 use App\Support\BookingOccasion;
 use App\Support\ClashCounts;
 use App\Support\EnquiryRow;
@@ -187,6 +188,19 @@ class EnquiryController extends Controller
                 ? ($booking->lost_at ?? now())
                 : null,
             'lost_reason' => $stage === BookingStage::Lost ? $request->lostReason() : null,
+            // **The one thing that makes artist_not_held reachable at all.**
+            // Business logic 5.1 starts the soft hold at Possible and 5.3 turns
+            // it into a real one on converting, and until this line existed
+            // nothing in the application wrote the column, so the first value
+            // in the waiting-on precedence could only fire for rows a seeder
+            // set by hand. App\Services\SoftHold owns the rule, including what
+            // happens when a conversion is undone; this is a write path calling
+            // it, the way every write path calls touchActivity() below.
+            'hold_expires_at' => app(SoftHold::class)->forTransition(
+                from: $booking->stage,
+                to: $stage,
+                existing: $booking->hold_expires_at,
+            ),
         ]);
 
         // The one save, and the one place last_touched_at is written. See the

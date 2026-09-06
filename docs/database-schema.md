@@ -124,6 +124,7 @@ deposit_amount_minor        bigint   nullable                  when fixed
 deposit_percent             smallint nullable default 25       when percent, whole number; default from decision 90
 deposit_due_days            smallint not null default 7        days after the invoice is issued, decision 79
 balance_due_days_before     smallint not null default 28       days before the main event
+hold_days                   smallint not null default 14       how long a date is held once pencilled in
 payment_instructions        text     nullable                  bank details, a link, a sentence
 invoice_prefix              varchar(10) not null default 'INV'
 next_invoice_number         int      not null default 1        incremented under row lock at issue
@@ -144,7 +145,7 @@ business_year_start_day     smallint not null default 6
 created_at, updated_at
 ```
 
-Notes. `features` is read only through `App\Services\Features::enabled()`, decision 74. The keys are the nine in `App\Enums\FeatureKey`: `enquiries`, `intake_forms`, `agreements`, `invoicing`, `payment_tracking`, `automation`, `travel_estimates`, `photos`, `feedback_requests`. A key that is absent from the map is **off** (decision 78), so `{}` is a bare account; registration writes the default map from `config/features.php` rather than relying on absence. The entitlement check inside `enabled()` returns true until the billing prompt. Check constraint: `deposit_type = 'fixed'` requires `deposit_amount_minor`, `'percent'` requires `deposit_percent`. Because `percent` is the default type, `deposit_percent` carries a default of 25 so that a bare insert passes the check (decision 90; the default migration landed in Prompt 5 and registration no longer writes the value). Default working hours from business logic section 24 are deferred; they need a shape decision first.
+Notes. `features` is read only through `App\Services\Features::enabled()`, decision 74. The keys are the nine in `App\Enums\FeatureKey`: `enquiries`, `intake_forms`, `agreements`, `invoicing`, `payment_tracking`, `automation`, `travel_estimates`, `photos`, `feedback_requests`. A key that is absent from the map is **off** (decision 78), so `{}` is a bare account; registration writes the default map from `config/features.php` rather than relying on absence. The entitlement check inside `enabled()` returns true until the billing prompt. Check constraint: `deposit_type = 'fixed'` requires `deposit_amount_minor`, `'percent'` requires `deposit_percent`. Because `percent` is the default type, `deposit_percent` carries a default of 25 so that a bare insert passes the check (decision 90; the default migration landed in Prompt 5 and registration no longer writes the value). `hold_days` is business logic 5.1's soft hold and 5.3's real one, written by `App\Services\SoftHold` on a stage change and read by the waiting-on axis. It is a column rather than a config entry because its shape is settled even though its number is not: it describes the business, more than one screen reads it, and it is structurally identical to the two day counts above it. Fourteen days is the courtesy hold this trade runs on, and it is deliberately not `cold_enquiry_days`, which is 21 and asks a different question. Default working hours from business logic section 24 are deferred; they need a shape decision first.
 
 ### 5.3 `users`
 
@@ -783,11 +784,11 @@ Storing any of these creates a second source of truth that drifts.
 | Booking subtotal, discount, total | `booking_lines` plus `pricing_mode`, `fixed_price_minor`, `discount_*`, in one PHP service |
 | Deposit amount for a booking | account rule, overridden by the booking's `deposit_override_*` |
 | Invoice paid, deposit received, balance outstanding | `sum(payments.amount_minor)` against `deposit_minor` and `total_minor` |
-| Reminders due | outstanding balance past `balance_due_on` or `deposit_due_on`, unless `reminders_snoozed_until` is in the future, unless invoicing is toggled off |
+| Reminders due | outstanding balance past `balance_due_on` or `deposit_due_on`, unless `reminders_snoozed_until` is in the future, unless invoicing is toggled off. `Invoice` now says the halves separately, because a figure split on the conflated question reported a snoozed late balance as not yet late: `isPastDue()` is the date, `isSnoozed()` is the pause, `isOverdue()` is both, `balanceIsPastDue()` is the half the owed figure is about. Decision `2026-09-06.2210` |
 | Waiting on | stage, latest agreement status, invoice state, `hold_expires_at`, `last_touched_at`, and the enabled features, per business logic section 6 |
 | Calendar mark strength | `confirmed` solid, `provisional` outlined, `possible` or `quoted` a count |
 | Agreement in force | highest-version `agreements` row with `status = 'signed'` |
-| Owed to you | past-date `main` events on bookings with an outstanding balance, grouped by currency |
+| Owed to you | the sum of the `client_balance` attention rows: per booking, every invoice whose balance is past `balance_due_on` and not snoozed, filtered to the account currency. **Not** past-date `main` events, which is what this row said until 6 September 2026 and is a different set: a wedding last month whose balance is not due until next month is in that definition and not in this one. Decisions `2026-09-06.1954` and `2026-09-06.2114` |
 | Money tiles | always grouped by `currency` or filtered to the account currency, never a bare `SUM` |
 
 ---

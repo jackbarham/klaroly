@@ -11,6 +11,7 @@ use App\Enums\DepositType;
 use App\Enums\DiscountType;
 use App\Enums\EventType;
 use App\Enums\FeatureKey;
+use App\Enums\HoldClass;
 use App\Enums\InvoiceStatus;
 use App\Enums\LineKind;
 use App\Enums\LocationType;
@@ -43,6 +44,7 @@ use App\Models\Service;
 use App\Models\User;
 use App\Services\BookingPricing;
 use App\Services\InvoiceNumbering;
+use App\Services\SoftHold;
 use App\Support\CurrentAccount;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
@@ -327,7 +329,6 @@ class DemoAccountSeeder extends Seeder
             'stage' => BookingStage::Provisional,
             'source' => BookingSource::WebForm,
             'converted_at' => now()->subDays(4),
-            'hold_expires_at' => $today->addDays(10),
             'last_touched_at' => now()->subDays(2),
         ], [
             'date' => $today->addMonths(6)->addDays(18),
@@ -346,7 +347,6 @@ class DemoAccountSeeder extends Seeder
             'stage' => BookingStage::Provisional,
             'source' => BookingSource::ForwardedEmail,
             'converted_at' => now()->subDays(20),
-            'hold_expires_at' => $today->subDays(5),
             'last_touched_at' => now()->subDays(19),
         ], [
             'date' => $today->addMonths(5)->addDays(11),
@@ -805,6 +805,51 @@ class DemoAccountSeeder extends Seeder
      * @param  array<int, string>  $notes
      * @param  array<int, array{0: BookingContactRole, 1: string, 2: string|null, 3: string|null}>  $extraContacts
      */
+    /**
+     * Compute hold_expires_at the way a real stage change would, rather than
+     * writing the column out by hand.
+     *
+     * **A seeder that hand-sets a column the application computes is the same
+     * failure as decisions 220 and 227**, arriving a third time: 220 found the
+     * seeder had drifted from what registration produces, 227 found it could
+     * not demonstrate the case the bookings screen exists for. It matters most
+     * here, because this whole change exists to stop artist_not_held being
+     * fiction, and a demo account still faking it would leave the thing
+     * unfinished.
+     *
+     * The day passed to App\Services\SoftHold is the day this record reached
+     * its current stage, which for a provisional booking is converted_at and is
+     * already in the fixture. That is what lets a lapsed hold be seeded
+     * honestly: computed from today it could only ever be live, and a seeder
+     * wanting the lapsed case would be straight back to setting the column by
+     * hand.
+     *
+     * The fixtures corroborate the fourteen-day default rather than being bent
+     * to fit it. The two rows that used to carry a literal were converted_at
+     * plus ten and minus five against conversions four and twenty days old,
+     * which is a fourteen-day hold written out longhand.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    private function withHold(array $attributes): array
+    {
+        $stage = $attributes['stage'] ?? BookingStage::New;
+        $hold = app(SoftHold::class);
+
+        if ($hold->classOf($stage) === HoldClass::None) {
+            return $attributes;
+        }
+
+        return $attributes + [
+            'hold_expires_at' => $hold->forTransition(
+                from: null,
+                to: $stage,
+                on: $attributes['converted_at'] ?? $attributes['last_touched_at'] ?? null,
+            ),
+        ];
+    }
+
     private function booking(
         string $contactKey,
         array $attributes,
@@ -815,6 +860,8 @@ class DemoAccountSeeder extends Seeder
         array $notes,
         array $extraContacts = [],
     ): Booking {
+        $attributes = $this->withHold($attributes);
+
         $booking = Booking::create(array_merge([
             'contact_id' => $this->contacts[$contactKey]->id,
             'currency' => 'GBP',

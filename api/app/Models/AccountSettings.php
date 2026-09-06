@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 #[Fillable([
     'account_id', 'features', 'deposit_type', 'deposit_amount_minor', 'deposit_percent', 'deposit_due_days',
-    'balance_due_days_before', 'payment_instructions', 'invoice_prefix', 'next_invoice_number', 'legal_name',
+    'balance_due_days_before', 'hold_days', 'payment_instructions', 'invoice_prefix', 'next_invoice_number', 'legal_name',
     'address_line_1', 'address_line_2', 'city', 'postcode', 'tax_number', 'base_postcode', 'travel_charging',
     'travel_free_radius_miles', 'travel_rate_per_mile_minor', 'travel_flat_fee_minor', 'early_start_before',
     'business_year_start_month', 'business_year_start_day',

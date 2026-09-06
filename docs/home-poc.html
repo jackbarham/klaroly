@@ -846,7 +846,7 @@ button.block__more:hover { text-decoration: underline; }
     <p>18.3 left the order open and framed it as useful against pleasant. Two rounds of measuring turned it into something simpler: <strong>with a cap on Attention, the order stops costing anything, and the calmer arrangement wins on tone alone.</strong></p>
     <table>
       <tr><th>First block</th><th>On the first 375px screenful</th></tr>
-      <tr><td><strong>Next up</strong> (default)</td><td>All three weddings, the Attention heading, its first group band and two rows</td></tr>
+      <tr><td><strong>Next up</strong> (default)</td><td>All three weddings, the Attention heading and its first group band</td></tr>
       <tr><td>Attention</td><td>Both group bands, all four preview rows, and the first wedding</td></tr>
       <tr><td>Money</td><td>The owed figure and all four figures. Not one attention row</td></tr>
     </table>
@@ -858,15 +858,16 @@ button.block__more:hover { text-decoration: underline; }
     <p>Adjust opens a sheet holding two things: the order of the three blocks, dragged or moved with the arrow keys, and how many attention rows show before See all.</p>
     <p><strong>The money period was in here for a round and came out.</strong> It is one value, so the sheet and the block's own selector had to stay in step forever, and a &ldquo;default&rdquo; that differs from the current view is an artist who cannot work out why the block keeps changing back. The block's selector is on screen and persists like every other view setting. A setting earns a second home when it is hard to reach, and that one is not.</p>
     <p><strong>This is a view setting on the device</strong>, in the three tiers the enquiries prototype named: it describes this browser rather than the business, so it is <code>localStorage</code>, no column, no migration and no request. Same measured sheet as the enquiries view menu rather than <code>ui/Sheet.vue</code>, which is the fourth caller for the <code>AnchoredSheet</code> extraction in decision 231.</p>
-    <p><strong>Two things it must not become.</strong> It must not grow switches that turn a block off, because a control that hides an unheld Saturday is the amounts-owed switch problem again and Home is where that would hurt most. And the count must never hide the total: the heading says <em>See all 8</em> whatever the cap is set to, so the four that are not drawn are still announced.</p>
+    <p><strong>Two things it must not become.</strong> It must not grow switches that turn a block off, because a control that hides an unheld Saturday is the amounts-owed switch problem again and Home is where that would hurt most. And the count must never hide the total: the heading says <em>See all 9</em> whatever the cap is set to, so the five that are not drawn are still announced.</p>
     <p><strong>The label says Attention items rather than naming the phone</strong>, because this is a phone product and saying so on every control is noise. The sheet's one footnote still says what happens on a wide screen, because that is a genuine difference and an artist on a laptop deserves to know the count is not being ignored by accident.</p>
     <p><strong>The honest reservation, said once.</strong> A settings screen for the order of three blocks is a lot of machinery for a decision most artists will never touch, and every default that is adjustable is a default nobody has to get right. It is two controls and a drag handle, which is cheap, and it is your product. Worth having said.</p>
     <p>One thing the build found. <code>preventDefault</code> on <code>pointerdown</code>, which is what stops a drag turning into a text selection, also stops the handle taking focus, so the keyboard reorder was dead after any tap. Focus is given back by hand. That belongs in the prompt rather than being discovered during it.</p>
 
     <h3>1b. Four rows, and what the cut does to the grouping</h3>
     <p>Four is the default and 3, 6 and All are in Adjust. Four leaves the first wedding visible with Attention on top, and one group band and one row visible with Next up on top, which is the right amount of overlap: enough to say there is more, not enough to be a list.</p>
-    <p><strong>The cut is made on decision 217's precedence order and then grouped, and that ordering is load bearing.</strong> The fixtures are written grouped by party because that is how they read, and slicing them in that order gave four artist rows and no client group at all, so an overdue balance could never reach the preview. Sorting by precedence first fixes it: the four shown are <em>not held</em>, <em>balance</em>, <em>deposit</em> and <em>enquiry cold</em>, which is exactly the four the resolver considers most urgent, and they group into two and two.</p>
-    <p><strong>What that costs is that the headings count what is drawn.</strong> The preview says <em>2 need you</em> and <em>2 waiting on clients</em> while the real figures are four and four. The heading's <em>See all 8</em> carries the total, and the full list says four and four properly. It is honest and it is slightly odd, and it is the one thing here I would want a second opinion on.</p>
+    <p><strong>The cut is made on decision 217's precedence order and then grouped, and that ordering is load bearing.</strong> The fixtures are written grouped by party because that is how they read, and slicing them in that order gave four artist rows and no client group at all, so an overdue balance could never reach the preview. Sorting by precedence first fixes it.</p>
+    <p><strong>And it has a consequence worth seeing rather than reading about.</strong> This account has two overdue balances and an overdue deposit, so the four shown are <em>not held</em>, both balances and the deposit: <strong>one artist row and three client ones</strong>. Decision 213 states the principle that anything the artist can act on alone beats waiting on a client, but 217's order puts balance and deposit above cold and price, so a bad money week pushes the artist's own work off the preview entirely. That is correct on 217's own terms, because money already overdue is more urgent, and it is worth knowing that the preview's character changes with the week rather than being a fixed mix.</p>
+    <p><strong>What the cut costs is that the headings count what is drawn.</strong> The preview says <em>1 needs you</em> and <em>3 waiting on clients</em> while the real figures are four and five. The heading's <em>See all 9</em> carries the total, and the full list says four and five properly. It is honest and it is slightly odd, and it is the one thing here I would want a second opinion on.</p>
 
     <h3>1c. The group headings, with the list band</h3>
     <p>They were plain uppercase type sitting between rows, and they read as lost. They now carry the enquiries list's <code>grouphead</code> treatment exactly: <code>--surface-sunken</code>, a hairline top and bottom, and sticky inside their own group so the band pins while its rows scroll and releases when the group ends.</p>
@@ -915,8 +916,9 @@ button.block__more:hover { text-decoration: underline; }
     <p>Snooze earns its place for a reason worth restating. Decision 27 says that if the only way to stop the chasers is to mark the invoice paid, artists will mark it paid, and the earnings figures then quietly become wrong. Snooze on the Home row is the honest escape hatch put exactly where the temptation is.</p>
 
     <h3>6. The money owed figure appears twice, and it should be deliberate</h3>
-    <p>On <strong>Busy</strong>, Amelia Fenwick&rsquo;s overdue balance is an attention row, and the same &pound;340 is inside the &pound;1,020 headline in the money block. Decision 27 asks for that headline explicitly and says it must not be something reached by filtering. 18.1 asks for the row. Both are right, and together they are a duplication.</p>
-    <p><strong>I think the duplication is correct.</strong> They answer different questions: the row is a task with a name on it, and the figure is the size of the problem. An artist owed &pound;1,020 across three weddings needs the total to decide whether to spend an evening on it, and the names to spend it. What would be wrong is the two disagreeing, so <strong>they have to come from one computation</strong>: the headline is the sum of the <code>client_balance</code> rows, not a second query. Otherwise the day arrives when Home shows two rows and a total that does not match them.</p>
+    <p>On <strong>Busy</strong>, Amelia Fenwick&rsquo;s overdue balance is an attention row, and the same &pound;340 is inside the &pound;540 headline in the money block. Decision 27 asks for that headline explicitly and says it must not be something reached by filtering. 18.1 asks for the row. Both are right, and together they are a duplication.</p>
+    <p><strong>I think the duplication is correct.</strong> They answer different questions: the row is a task with a name on it, and the figure is the size of the problem. An artist owed &pound;540 across three weddings needs the total to decide whether to spend an evening on it, and the names to spend it. What would be wrong is the two disagreeing, so <strong>they have to come from one computation</strong>: the headline is the sum of the <code>client_balance</code> rows, not a second query. Otherwise the day arrives when Home shows two rows and a total that does not match them.</p>
+    <p><strong>Which this prototype got wrong first, and the API build caught it.</strong> The money fixture held three past bookings owing &pound;540 while the attention list carried one balance row of &pound;340, and section 6 of these notes asserted the two were the same number. They were not. The fixture now holds exactly the two rows it claims. An inconsistent fixture inside a document the next prompt is told to treat as evidence is worse than no fixture at all.</p>
 
     <h3>7. Three of the four money figures do not take a period, and 18.3 puts them under one selector</h3>
     <p>Move the period selector. <strong>Received</strong> changes, and so do the booking count and the average. <strong>Outstanding</strong>, <strong>Booked ahead</strong> and <strong>Provisional</strong> do not move, because they cannot: outstanding is what is unpaid right now, and booked ahead is money in the future. A selector sitting above all four implies it governs all four.</p>
@@ -950,7 +952,8 @@ button.block__more:hover { text-decoration: underline; }
 
     <h3>12. The numbers this prototype exists to report</h3>
     <ul>
-      <li><strong>Four rows is the number that leaves room for something else.</strong> With Next up leading, three weddings plus the Attention heading, its group band and two rows fit one 375px screen. With Attention leading, both bands, all four rows and the first wedding fit. Eight rows fitted neither.</li>
+      <li><strong>Nine attention rows is more than one screenful and it is not an unusual week.</strong> Six fitted at 375px before the cap, and nothing else did.</li>
+      <li><strong>Four rows is the number that leaves room for something else.</strong> With Next up leading, three weddings plus the Attention heading and its group band fit one 375px screen. With Attention leading, both bands, all four rows and the first wedding fit. Eight rows fitted neither.</li>
       <li><strong>Dropping the date bought a row.</strong> The header went from a two-line 56px block to a 44px bar, and the second attention row came above the fold with it. Twelve pixels, one whole row, which is the ratio worth remembering on this screen.</li>
       <li><strong>Nothing truncates in the preview.</strong> Zero of four names and zero of four detail lines at 375px, once the venue is dropped from the money rows. It was in them at first and it is what pushed five rows over: an overdue balance is found by the name and the amount, and the venue there was decoration.</li>
       <li><strong>Tap-through truncates nothing on the See all screen either</strong>, and seven of the eight rows are on its first screenful.</li>
@@ -1007,6 +1010,10 @@ const PRECEDENCE = [
   'artist_not_held', 'client_balance', 'client_deposit', 'artist_enquiry_cold',
   'artist_price', 'artist_review', 'client_signature', 'client_form'
 ]
+
+/* Two rows share client_balance, so the sort has to be stable within a value.
+   Array.prototype.sort is stable in every engine this ships to, and the array
+   order above is oldest first, which is the tie-break the endpoint uses. */
 const BLOCK_LABEL = { attention: 'Attention', next: 'Next up', money: 'Money' }
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
@@ -1082,6 +1089,13 @@ const ATTENTION = [
     second: { label: 'Snooze', kind: 'quiet', done: 'Chasers paused until 20 September. The balance is unchanged.' }
   },
   {
+    on: 'client_balance', party: 'client', needs: 'invoicing', overdue: true, owed: 20000,
+    name: 'Fran Odell’s balance is overdue',
+    meta: '<span class="money">£200</span> of £520 · <span class="late">16 days late</span>',
+    action: { label: 'Chase', kind: 'plain', done: 'Message ready. Nothing has been sent.' },
+    second: { label: 'Snooze', kind: 'quiet', done: 'Chasers paused until 20 September. The balance is unchanged.' }
+  },
+  {
     on: 'client_deposit', party: 'client', needs: 'invoicing', overdue: true, owed: 17000,
     name: 'Priya Ramanathan’s deposit is overdue',
     meta: '<span class="money">£170</span> · <span class="late">4 days late</span> · 26 September',
@@ -1105,10 +1119,14 @@ const ATTENTION = [
 /* Past bookings with an outstanding balance. Decision 27: this is the single
    most useful figure the software can report, and it is the sum of the
    client_balance rows rather than a separate query. */
+/* Exactly the client_balance rows above, and it has to stay that way: decision
+   2026-09-06.1954 makes the headline the sum of those rows rather than a second
+   query, so a fixture where they disagree is a fixture that teaches the wrong
+   thing. The first version had three entries here and one row, which the API
+   build caught. */
 const OWED = [
   { name: 'Amelia Fenwick', date: '2026-08-22', minor: 34000 },
-  { name: 'Fran Odell', date: '2026-08-15', minor: 20000 },
-  { name: 'Wren Castellan', date: '2026-08-01', minor: 48000 }
+  { name: 'Fran Odell', date: '2026-08-15', minor: 20000 }
 ]
 
 const UPCOMING = [

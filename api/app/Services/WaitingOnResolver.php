@@ -124,7 +124,9 @@ class WaitingOnResolver
             return null;
         }
 
-        return $booking->holdHasExpired() ? WaitingOn::ArtistNotHeld : null;
+        // The artist's own day, not the application's UTC one, and the same
+        // day every other date comparison in this class uses.
+        return $booking->holdHasExpired($this->today($booking)) ? WaitingOn::ArtistNotHeld : null;
     }
 
     /**

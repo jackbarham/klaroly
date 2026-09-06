@@ -1,13 +1,16 @@
 <?php
 
 use App\Enums\AgreementStatus;
+use App\Enums\BookingStage;
 use App\Enums\FeatureKey;
 use App\Enums\WaitingOn;
 use App\Models\Agreement;
 use App\Models\Booking;
 use App\Models\Invoice;
 use App\Models\Quote;
+use App\Services\SoftHold;
 use App\Services\WaitingOnResolver;
+use Carbon\CarbonImmutable;
 
 // Axis two of the booking lifecycle, business logic section 6.
 
@@ -39,6 +42,62 @@ it('reports a provisional booking whose hold has lapsed', function () {
     ]);
 
     expect(waitingOnFor($booking))->toBe(WaitingOn::ArtistNotHeld);
+});
+
+/*
+ * **The last day of a hold is still a hold**, and this is the assertion that
+ * could not have existed before there were real values to hold it against.
+ *
+ * The column is a date and the cast is immutable_date, so the old isPast() was
+ * true from one second after midnight on the expiry day itself: a fourteen-day
+ * hold was dead on day fourteen rather than after it. Every wording around the
+ * feature is inclusive, and "held until 4 October" covers the fourth.
+ *
+ * No existing test could have caught it, because every fixture set the hold a
+ * day or more either side of today and none of them touched the boundary. That
+ * is decision 197's lesson again: a test that never touches the edge is
+ * documentation rather than a guard.
+ */
+it('leaves a provisional booking alone on the last day of its hold', function () {
+    accountWithFeatures();
+
+    $booking = Booking::factory()->provisional()->create([
+        'hold_expires_at' => today(),
+    ]);
+
+    expect(waitingOnFor($booking))->toBeNull();
+
+    // The presence half, one day further on, which is what makes the absence
+    // above about the boundary rather than about holds in general.
+    $booking->forceFill(['hold_expires_at' => today()->subDay()])->save();
+
+    expect(waitingOnFor($booking))->toBe(WaitingOn::ArtistNotHeld);
+});
+
+/*
+ * And judged in the artist's own day rather than the application's. This was
+ * the last comparison of a stored date against the present still asking UTC,
+ * after Invoice::isOverdue(), OutstandingBalances and BusinessPeriods all moved
+ * off it.
+ */
+it('judges a hold in the account\'s own day', function () {
+    // **Frozen at an instant where the two days genuinely differ**, or this
+    // test proves nothing: for most of the day UTC and Auckland agree on the
+    // date and every implementation gives the same answer. Ten in the evening
+    // UTC is eleven the next morning in Auckland.
+    $this->travelTo(CarbonImmutable::parse('2027-03-10 22:00:00', 'UTC'));
+
+    $account = accountWithFeatures();
+    $account->update(['timezone' => 'Pacific/Auckland']);
+
+    // The tenth is the application's today and the artist's yesterday, which is
+    // the one date the two disagree about. In her day the hold ran out
+    // yesterday; in the application's it runs out at the end of today.
+    $booking = Booking::factory()->provisional()->create([
+        'hold_expires_at' => '2027-03-10',
+    ]);
+
+    expect(waitingOnFor($booking->fresh()))->toBe(WaitingOn::ArtistNotHeld);
 });
 
 it('leaves a provisional booking alone while its hold still stands', function () {
@@ -391,6 +450,39 @@ describe('an archived booking', function () {
 
         expect(waitingOnFor($booking))->toBe(WaitingOn::ClientBalance);
     });
+});
+
+/*
+ * Decision 217's first line, and it had never been tested against a hold the
+ * application itself wrote: losing a date beats being owed money.
+ */
+it('puts a lapsed hold above an overdue balance on a hold the app wrote itself', function () {
+    $account = accountWithFeatures();
+
+    $booking = Booking::factory()->create([
+        'stage' => BookingStage::Possible,
+        'hold_expires_at' => null,
+    ]);
+
+    // Written the way the stage route writes it, from a conversion three weeks
+    // ago, rather than set to a date chosen to make the test pass.
+    $booking->forceFill([
+        'stage' => BookingStage::Provisional,
+        'hold_expires_at' => app(SoftHold::class)->forTransition(
+            from: BookingStage::Possible,
+            to: BookingStage::Provisional,
+            on: today()->subDays(21),
+        ),
+    ])->save();
+
+    Invoice::factory()->issued()->create([
+        'booking_id' => $booking->id,
+        'balance_due_on' => today()->subDays(9),
+        'deposit_minor' => 0,
+    ]);
+
+    expect($booking->hold_expires_at->toDateString())->toBe(today()->subDays(7)->toDateString())
+        ->and(waitingOnFor($booking))->toBe(WaitingOn::ArtistNotHeld);
 });
 
 it('puts a lapsed hold above an overdue balance when both are true', function () {

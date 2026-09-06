@@ -13,6 +13,7 @@ use App\Enums\PhotoConsent;
 use App\Enums\PricingMode;
 use App\Models\Concerns\BelongsToAccount;
 use App\Support\CurrentAccount;
+use Carbon\CarbonImmutable;
 use Database\Factories\BookingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -265,11 +266,33 @@ class Booking extends Model
     }
 
     /**
-     * Whether the provisional hold has lapsed. Only meaningful while the
-     * booking is provisional.
+     * Whether the hold on this date has lapsed. Only meaningful while the
+     * booking is at a stage that holds one.
+     *
+     * **The last day of a hold is still a hold.** The column is a date and the
+     * cast is immutable_date, so isPast() was true from one second after
+     * midnight on the expiry day itself, making a fourteen-day hold dead on day
+     * fourteen rather than after it. Every wording around this feature is
+     * inclusive: "held until 4 October" means the fourth is covered.
+     *
+     * `$today` is the day to judge against, and callers that know whose day it
+     * is should pass it, exactly as App\Models\Invoice::isOverdue() takes one.
+     * Left out it is the application's day, which is UTC (APP_TIMEZONE), and a
+     * date comparison belongs in the timezone the date was written in. This was
+     * the last comparison of a stored date against the present still asking
+     * UTC.
+     *
+     * Neither defect could be reached by any existing test, because every
+     * fixture set the hold a day or more either side of today and none of them
+     * touched the boundary. That is decision 197's lesson again: a test that
+     * never touches the edge is documentation rather than a guard.
      */
-    public function holdHasExpired(): bool
+    public function holdHasExpired(?CarbonImmutable $today = null): bool
     {
-        return $this->hold_expires_at !== null && $this->hold_expires_at->isPast();
+        if ($this->hold_expires_at === null) {
+            return false;
+        }
+
+        return $this->hold_expires_at->lessThan($today ?? CarbonImmutable::today());
     }
 }
