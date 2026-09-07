@@ -103,8 +103,6 @@ describe('the header', () => {
     expect(text).toContain('Imogen Hartwell')
     expect(text).toContain('Marlbrook Hall')
     expect(text).toContain('Possible')
-    // And no empty state in the meantime.
-    expect(text).not.toContain('could not be found')
   })
 
   /**

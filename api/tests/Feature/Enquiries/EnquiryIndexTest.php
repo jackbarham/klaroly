@@ -953,7 +953,10 @@ it('issues the same number of queries however many enquiries there are', functio
         return $queries;
     };
 
-    expect($count(3))->toBe($count(30));
+    // The literal is the other half of the guard, for the reason
+    // HomeQueryCountTest gives: flat growth catches an N+1 and stays green
+    // through a fifth constant-cost query, which only the number catches.
+    expect($count(3))->toBe($count(30))->toBe(16);
 });
 
 /**
@@ -997,5 +1000,5 @@ it('issues the same number of queries however many distinct dates there are', fu
         return $queries;
     };
 
-    expect($count(2))->toBe($count(30));
+    expect($count(2))->toBe($count(30))->toBe(13);
 });

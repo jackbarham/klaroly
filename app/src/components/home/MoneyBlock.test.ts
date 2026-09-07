@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { defineComponent, h } from 'vue'
 import MoneyBlock from '@/components/home/MoneyBlock.vue'
+import { sampleMe } from '@/lib/auth.sample'
 import { element } from '@/lib/testHelpers'
 import { mountWithCleanup } from '@/lib/testMount'
+import { useAuthStore } from '@/stores/auth'
 import type { HomeMoney, PeriodTotals } from '@/types/home'
 
 // Business logic 18.3, and the two figures that must never be added together.
@@ -98,17 +101,32 @@ describe('the three toggle states', () => {
   })
 
   /**
-   * The block reads the payload and never the auth store: with an auth store
-   * that has never been populated, what is drawn still follows the response's
-   * own nulls, which the server set from meta.features.
+   * The block reads the payload and never the auth store. The store here says
+   * invoicing is ON while the payload carries the nulls the server sends with
+   * it OFF, and what is drawn follows the payload: a block that consulted the
+   * store would draw an Outstanding figure the server never computed. With an
+   * empty store the two agree and the assertion could not tell them apart.
    */
-  it('follows the payload rather than any store opinion about the features', async () => {
-    const { host } = await mount(MoneyBlock, '/', {
-      money: money({ owed_minor: null, owed_count: null, snoozed_minor: null, outstanding: null }),
-      period: 'this_month',
+  it('follows the payload rather than the store when the two disagree about a feature', async () => {
+    const Host = defineComponent({
+      setup() {
+        const auth = useAuthStore()
+
+        auth.me = { ...sampleMe, features: { ...sampleMe.features, invoicing: true } }
+
+        return () => h(MoneyBlock, {
+          money: money({ owed_minor: null, owed_count: null, snoozed_minor: null, outstanding: null }),
+          period: 'this_month',
+        })
+      },
     })
 
+    const { host } = await mount(Host, '/')
+
     expect(labels(host)).not.toContain('Outstanding')
+    // Paired: the block is drawn, and the first test in this file is the same
+    // payload with the figure present.
+    expect(labels(host)).toContain('Booked ahead')
   })
 })
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { describeOffences, linesMatching, withoutTests } from '@/lib/sourceRules'
 
 // The rule this file exists to keep: a component and a view display things
 // and collect input. They do not talk to the API. Anything that needs the API
@@ -10,18 +11,17 @@ import { describe, expect, it } from 'vitest'
 //
 // This reads the source of every component and every view rather than
 // trusting a convention, because the point of the rule is what happens when
-// nobody is looking.
+// nobody is looking. Comments are read too: a screen's comment that mentions
+// the module is not an import, and none does.
 
-const sources = import.meta.glob<string>([
+// Test files are left out: they may reach for anything, and this file itself
+// mentions the module it is banning.
+const files = withoutTests(import.meta.glob<string>([
   '../components/**/*.vue',
   '../components/**/*.ts',
   '../views/**/*.vue',
   '../views/**/*.ts',
-], { query: '?raw', import: 'default', eager: true })
-
-// Test files are left out: they may reach for anything, and this file itself
-// mentions the module it is banning.
-const files = Object.entries(sources).filter(([path]) => !path.endsWith('.test.ts'))
+], { query: '?raw', import: 'default', eager: true }))
 
 const allowedImport = /^import \{ ApiError \} from '@\/lib\/api'$/
 
@@ -45,37 +45,11 @@ const libSources = import.meta.glob<string>('../lib/*.ts', { query: '?raw', impo
 // api itself is seeded rather than derived: it cannot import itself, and it is
 // the layer by definition. Everything else earns its place by using api's
 // verbs.
-const dataModules = ['api', ...Object.entries(libSources)
-  .filter(([path]) => !path.endsWith('.test.ts'))
+const dataModules = ['api', ...withoutTests(libSources)
   .filter(([, source]) => source
     .split('\n')
     .some((line) => /from '@\/lib\/api'/.test(line) && !allowedImport.test(line.trim())))
   .map(([path]) => path.replace('./', '').replace('.ts', ''))]
-
-interface Offence {
-  path: string
-  line: string
-}
-
-function linesMatching(pattern: RegExp): Offence[] {
-  const matches: Offence[] = []
-
-  for (const [path, source] of files) {
-    for (const line of source.split('\n')) {
-      if (pattern.test(line)) {
-        matches.push({ path, line: line.trim() })
-      }
-    }
-  }
-
-  return matches
-}
-
-// What a failure prints, so that it names the file rather than a count. The
-// glob keys are relative to this file, so they are put back to project paths.
-function describeOffences(offences: Offence[]): string[] {
-  return offences.map((offence) => `${offence.path.replace('../', 'src/')}: ${offence.line}`)
-}
 
 describe('components and views', () => {
   it('are files this test can actually see', () => {
@@ -83,7 +57,8 @@ describe('components and views', () => {
   })
 
   it('never import the API wrapper, except for the error type they catch', () => {
-    const offending = linesMatching(/@\/lib\/api/).filter((offence) => !allowedImport.test(offence.line))
+    const offending = linesMatching(/@\/lib\/api/, files, { skipComments: false })
+      .filter((offence) => !allowedImport.test(offence.line))
 
     expect(describeOffences(offending)).toEqual([])
   })
@@ -102,12 +77,14 @@ describe('components and views', () => {
   it('never import a data module directly, going round the store', () => {
     const offending = dataModules.flatMap((module) => linesMatching(
       new RegExp(`from '@/lib/${module}'`),
+      files,
+      { skipComments: false },
     )).filter((offence) => !allowedImport.test(offence.line))
 
     expect(describeOffences(offending)).toEqual([])
   })
 
   it('never call fetch themselves', () => {
-    expect(describeOffences(linesMatching(/\bfetch\s*\(/))).toEqual([])
+    expect(describeOffences(linesMatching(/\bfetch\s*\(/, files, { skipComments: false }))).toEqual([])
   })
 })

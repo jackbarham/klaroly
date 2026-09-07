@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { offences, withoutTests } from '@/lib/sourceRules'
 
 // Two rules about the contacts feature that nothing else can keep, checked by
 // reading the source rather than by trusting a convention, the way
 // boundary.test.ts, styleRules.test.ts and bookings.guards.test.ts already do.
 
-const featureSources = import.meta.glob<string>([
+const feature = withoutTests(import.meta.glob<string>([
   '../components/contacts/**/*.vue',
   '../components/contacts/**/*.ts',
   '../views/contacts/**/*.vue',
@@ -14,54 +15,22 @@ const featureSources = import.meta.glob<string>([
   '../lib/contactFixtures.ts',
   '../stores/contacts.ts',
   '../types/contacts.ts',
-], { query: '?raw', import: 'default', eager: true })
+], { query: '?raw', import: 'default', eager: true }))
 
 // Every component and view in the app, for the fixtures rule, which is not
 // about this feature's files but about all of them: the fixtures would be just
 // as wrong imported from HomeView.
-const componentSources = import.meta.glob<string>([
-  '../components/**/*.vue',
-  '../components/**/*.ts',
-], { query: '?raw', import: 'default', eager: true })
-
+//
 // Test files are left out of both, for the reason boundary.test.ts leaves them
 // out: a test may reach for anything, and this file itself names the module it
 // is banning. No live test uses that exit. ContactList.test.ts needs contacts
 // to mount a list with, and it builds its own two rather than importing
 // twenty-two, because a test asserting that a query matches nobody should say
 // which people it is filtering.
-const feature = Object.entries(featureSources).filter(([path]) => !path.endsWith('.test.ts'))
-const components = Object.entries(componentSources).filter(([path]) => !path.endsWith('.test.ts'))
-
-function name(path: string): string {
-  return path.replace('../', 'src/')
-}
-
-// These files explain the rules below in their own comments, and a guard that
-// counts its own explanation is a guard that fails for the wrong reason. Only
-// lines that are actually code are read.
-function isComment(line: string): boolean {
-  const trimmed = line.trim()
-
-  return trimmed.startsWith('//')
-    || trimmed.startsWith('*')
-    || trimmed.startsWith('/*')
-    || trimmed.startsWith('<!--')
-}
-
-function offences(pattern: RegExp, paths: [string, string][]): string[] {
-  const found: string[] = []
-
-  for (const [path, source] of paths) {
-    for (const line of source.split('\n')) {
-      if (!isComment(line) && pattern.test(line)) {
-        found.push(`${name(path)}: ${line.trim()}`)
-      }
-    }
-  }
-
-  return found
-}
+const components = withoutTests(import.meta.glob<string>([
+  '../components/**/*.vue',
+  '../components/**/*.ts',
+], { query: '?raw', import: 'default', eager: true }))
 
 describe('the contacts feature', () => {
   it('is a set of files this test can actually see', () => {

@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -52,4 +53,43 @@ it('runs the same password action from Fortify own route, and keeps that session
     expect(Hash::check('correct-horse-battery', $user->fresh()->password))->toBeTrue()
         ->and(DB::table('sessions')->pluck('id')->all())->toBe([$keep])
         ->and(DB::table('sessions')->where('id', $other)->exists())->toBeFalse();
+});
+
+/**
+ * The third Fortify route the web app calls, and the one twin that shares no
+ * action with it: both controllers ask the user whether the address is
+ * verified and send the notification if not, so nothing but these two tests
+ * holds the two answers together. useResendVerification() relies on all three
+ * answers being the same on both paths.
+ */
+it('resends from Fortify own route the way the twin does', function () {
+    Notification::fake();
+
+    $user = createOwner(['email_verified_at' => null]);
+    $session = sessionRow($user);
+
+    actingAsWebApp($this, $user, $session)
+        ->postJson('/email/verification-notification')
+        ->assertStatus(202);
+    actingAsWebApp($this, $user, $session)
+        ->postJson('/api/auth/email/verification-notification')
+        ->assertStatus(202);
+
+    Notification::assertSentToTimes($user, VerifyEmail::class, 2);
+});
+
+it('sends nothing to a verified address from either route', function () {
+    Notification::fake();
+
+    $user = createOwner(['email_verified_at' => now()]);
+    $session = sessionRow($user);
+
+    actingAsWebApp($this, $user, $session)
+        ->postJson('/email/verification-notification')
+        ->assertNoContent();
+    actingAsWebApp($this, $user, $session)
+        ->postJson('/api/auth/email/verification-notification')
+        ->assertNoContent();
+
+    Notification::assertNothingSent();
 });

@@ -157,6 +157,9 @@ describe('the blocks', () => {
     expect(host.textContent).toContain('Nothing needs you today')
     expect(host.textContent).toContain('Next up')
     expect(host.textContent).toContain('Money')
+    // The figure the first-run test below asserts is absent, present here so
+    // that absence is about something.
+    expect(host.textContent).toContain('Booked ahead')
   })
 
   /**
