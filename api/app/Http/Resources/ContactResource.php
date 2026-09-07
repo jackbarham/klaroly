@@ -7,7 +7,6 @@ use App\Services\ContactActivity;
 use App\Services\OutstandingBalances;
 use App\Support\CurrentAccount;
 use App\Support\OutstandingAmount;
-use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -37,7 +36,7 @@ class ContactResource extends JsonResource
     public function toArray(Request $request): array
     {
         $activity = app(ContactActivity::class);
-        $today = CarbonImmutable::today(app(CurrentAccount::class)->require()->timezone);
+        $today = app(CurrentAccount::class)->require()->today();
 
         $next = $activity->next($this->resource, $today);
         $last = $activity->last($this->resource, $today);

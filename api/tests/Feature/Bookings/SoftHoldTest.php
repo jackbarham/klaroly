@@ -41,7 +41,7 @@ describe('starting a hold', function () {
         $moved = moveTo($this, $user, $booking, BookingStage::Possible);
 
         expect($moved->hold_expires_at->toDateString())
-            ->toBe(today()->addDays(14)->toDateString());
+            ->toBe(todayFor($user)->addDays(14)->toDateString());
     });
 
     /*
@@ -72,7 +72,7 @@ describe('starting a hold', function () {
         currentAccount()->clear();
 
         expect(moveTo($this, $user, $booking, BookingStage::Possible)->hold_expires_at->toDateString())
-            ->toBe(today()->addDays(7)->toDateString());
+            ->toBe(todayFor($account)->addDays(7)->toDateString());
     });
 
     it('applies the default of fourteen to an account that has never set one', function () {
@@ -126,7 +126,7 @@ describe('a hold that already exists', function () {
         $converted = moveTo($this, $user, $booking, BookingStage::Provisional);
 
         expect($converted->hold_expires_at->toDateString())
-            ->toBe(today()->addDays(14)->toDateString())
+            ->toBe(todayFor($user)->addDays(14)->toDateString())
             ->not->toBe($soft->toDateString())
             // converted_at is written in the same breath, so the two agree
             // about when the firm hold began.
@@ -197,7 +197,7 @@ describe('a hold that already exists', function () {
 
         expect($first->fresh()->hold_expires_at->toDateString())->toBe($held->toDateString())
             ->and(moveTo($this, $user, $second, BookingStage::Possible)->hold_expires_at->toDateString())
-            ->toBe(today()->addDays(3)->toDateString());
+            ->toBe(todayFor($account)->addDays(3)->toDateString());
     });
 });
 

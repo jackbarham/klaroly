@@ -59,13 +59,15 @@ it('reduces the paid figure by a negative payment', function () {
 });
 
 it('is overdue only when owing past a due date and not snoozed', function () {
-    $this->invoice->forceFill(['balance_due_on' => today()->subDay()])->save();
-    expect($this->invoice->isOverdue())->toBeTrue();
+    $today = todayFor($this->booking->account);
 
-    $this->invoice->forceFill(['reminders_snoozed_until' => today()->addWeek()])->save();
-    expect($this->invoice->isOverdue())->toBeFalse();
+    $this->invoice->forceFill(['balance_due_on' => $today->subDay()])->save();
+    expect($this->invoice->isOverdue($today))->toBeTrue();
+
+    $this->invoice->forceFill(['reminders_snoozed_until' => $today->addWeek()])->save();
+    expect($this->invoice->isOverdue($today))->toBeFalse();
 
     $this->invoice->forceFill(['reminders_snoozed_until' => null])->save();
     pay($this->invoice, 45000);
-    expect($this->invoice->isOverdue())->toBeFalse();
+    expect($this->invoice->isOverdue($today))->toBeFalse();
 });

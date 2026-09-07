@@ -275,24 +275,21 @@ class Booking extends Model
      * fourteen rather than after it. Every wording around this feature is
      * inclusive: "held until 4 October" means the fourth is covered.
      *
-     * `$today` is the day to judge against, and callers that know whose day it
-     * is should pass it, exactly as App\Models\Invoice::isOverdue() takes one.
-     * Left out it is the application's day, which is UTC (APP_TIMEZONE), and a
-     * date comparison belongs in the timezone the date was written in. This was
-     * the last comparison of a stored date against the present still asking
-     * UTC.
+     * `$today` is the day to judge against, the account's own from
+     * App\Models\Account::today(), exactly as App\Models\Invoice::isOverdue()
+     * takes it.
      *
      * Neither defect could be reached by any existing test, because every
      * fixture set the hold a day or more either side of today and none of them
      * touched the boundary. That is decision 197's lesson again: a test that
      * never touches the edge is documentation rather than a guard.
      */
-    public function holdHasExpired(?CarbonImmutable $today = null): bool
+    public function holdHasExpired(CarbonImmutable $today): bool
     {
         if ($this->hold_expires_at === null) {
             return false;
         }
 
-        return $this->hold_expires_at->lessThan($today ?? CarbonImmutable::today());
+        return $this->hold_expires_at->lessThan($today);
     }
 }

@@ -82,7 +82,7 @@ class HomeController extends Controller
     public function index(): HomeResource
     {
         $account = $this->account->require();
-        $today = CarbonImmutable::today($account->timezone);
+        $today = $account->today();
 
         $live = $this->liveBookings();
         $rows = $this->attention->for($live, $today);

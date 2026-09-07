@@ -54,7 +54,7 @@ class OutstandingBalances
     public function for(Contact $contact): array
     {
         $accountCurrency = $this->account->require()->currency;
-        $today = $this->today();
+        $today = $this->account->require()->today();
 
         /** @var array<string, array{minor: int, overdue: bool}> $totals */
         $totals = [];
@@ -169,19 +169,5 @@ class OutstandingBalances
     private function liveInvoices(Booking $booking): Collection
     {
         return $booking->invoices->filter(fn (Invoice $invoice) => $invoice->isIssued());
-    }
-
-    /**
-     * Today in the artist's own timezone, not the application's.
-     *
-     * APP_TIMEZONE is UTC, so today() is a UTC day. For the last hour of a
-     * British summer evening that is already tomorrow, and an invoice due today
-     * would be reported overdue while the artist looking at the screen is still
-     * on the day it is due. A date comparison has to happen in the timezone the
-     * date was written in.
-     */
-    private function today(): CarbonImmutable
-    {
-        return CarbonImmutable::today($this->account->require()->timezone);
     }
 }

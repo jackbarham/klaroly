@@ -42,7 +42,7 @@ function paidBooking(string $eventDate, int $totalMinor, ?int $paidMinor = null,
             'invoice_id' => $invoice->id,
             'booking_id' => $booking->id,
             'amount_minor' => $paidMinor,
-            'paid_on' => $paidOn ?? today()->toDateString(),
+            'paid_on' => $paidOn ?? currentAccount()->require()->today()->toDateString(),
         ]);
     }
 
@@ -121,7 +121,7 @@ describe('the feature toggles', function () {
         // starts on the first: a booking dated before that is correctly outside
         // it and the test would be asserting the wrong thing.
         $booking = Booking::factory()->create(['stage' => BookingStage::Completed]);
-        Event::factory()->create(['booking_id' => $booking->id, 'event_date' => today()->startOfMonth()]);
+        Event::factory()->create(['booking_id' => $booking->id, 'event_date' => todayFor($user)->startOfMonth()]);
         BookingLine::factory()->create([
             'booking_id' => $booking->id,
             'quantity' => 1,
@@ -425,7 +425,7 @@ describe('received', function () {
             today()->subMonths(2)->toDateString(),
             45000,
             45000,
-            paidOn: today()->toDateString(),
+            paidOn: todayFor($user)->toDateString(),
             invoiceAttributes: ['issued_on' => today()->subMonths(2)],
         );
 
@@ -468,7 +468,7 @@ describe('received', function () {
             'invoice_id' => $invoice->id,
             'booking_id' => $booking->id,
             'amount_minor' => 20000,
-            'paid_on' => today()->toDateString(),
+            'paid_on' => todayFor($user)->toDateString(),
         ]);
 
         currentAccount()->clear();
@@ -487,13 +487,14 @@ describe('the periods', function () {
      */
     it('starts the business year on the configured date and not on 1 January', function () {
         $user = bookingsOwner();
+        $today = todayFor($user);
 
         $this->actingAs($user)->getJson('/api/home')->assertOk()
             ->assertJsonPath(
                 'data.money.periods.business_year.from',
-                today()->month >= 4 && ! (today()->month === 4 && today()->day < 6)
-                    ? today()->year.'-04-06'
-                    : (today()->year - 1).'-04-06',
+                $today->month >= 4 && ! ($today->month === 4 && $today->day < 6)
+                    ? $today->year.'-04-06'
+                    : ($today->year - 1).'-04-06',
             );
     });
 
@@ -537,15 +538,17 @@ describe('the periods', function () {
         ]);
         currentAccount()->set($user->accounts()->first());
 
+        $today = todayFor($user);
+
         // Later this month, so a period ending at the month end would count it.
         $booking = Booking::factory()->confirmed()->create();
-        Event::factory()->create(['booking_id' => $booking->id, 'event_date' => today()->addDays(2)]);
+        Event::factory()->create(['booking_id' => $booking->id, 'event_date' => $today->addDays(2)]);
         BookingLine::factory()->create(['booking_id' => $booking->id, 'quantity' => 1, 'unit_price_minor' => 70000]);
 
         currentAccount()->clear();
 
         $this->actingAs($user)->getJson('/api/home')->assertOk()
-            ->assertJsonPath('data.money.periods.this_month.to', today()->toDateString())
+            ->assertJsonPath('data.money.periods.this_month.to', $today->toDateString())
             ->assertJsonPath('data.money.periods.this_month.value_minor', 0)
             ->assertJsonPath('data.money.booked_ahead_minor', 70000);
     });

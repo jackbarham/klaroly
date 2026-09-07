@@ -67,11 +67,12 @@ it('sends a trial and a wedding day of one booking as two entries', function () 
 
 it('leaves out yesterday and keeps today', function () {
     $user = bookingsOwner();
+    $today = todayFor($user);
     currentAccount()->set($user->accounts()->first());
 
     $booking = Booking::factory()->confirmed()->create();
-    Event::factory()->create(['booking_id' => $booking->id, 'event_date' => today()->subDay()]);
-    Event::factory()->create(['booking_id' => $booking->id, 'event_date' => today(), 'type' => EventType::Trial]);
+    Event::factory()->create(['booking_id' => $booking->id, 'event_date' => $today->subDay()]);
+    Event::factory()->create(['booking_id' => $booking->id, 'event_date' => $today, 'type' => EventType::Trial]);
 
     currentAccount()->clear();
 
@@ -79,7 +80,7 @@ it('leaves out yesterday and keeps today', function () {
         ->assertJsonCount(1, 'data.upcoming')
         // A wedding this morning is the single most useful row this block can
         // carry, so "from today" is inclusive.
-        ->assertJsonPath('data.upcoming.0.date', today()->toDateString());
+        ->assertJsonPath('data.upcoming.0.date', $today->toDateString());
 });
 
 it('leaves out an enquiry, a lost booking and a cancelled one', function () {

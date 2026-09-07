@@ -21,11 +21,8 @@ use Carbon\CarbonImmutable;
  * happened yet into a figure sitting beside one that reports cash received, and
  * the two would answer different questions under one selector.
  *
- * Every boundary is a day in the artist's own timezone. APP_TIMEZONE is UTC, so
- * today() is a UTC day, and for the last hour of a British summer evening that
- * is already tomorrow: a payment recorded this evening would fall outside "this
- * month" on the 30th. The same reason App\Models\Invoice::isOverdue() takes a
- * day rather than assuming one.
+ * Every boundary is a day in the artist's own timezone, from
+ * App\Models\Account::today().
  */
 class BusinessPeriods
 {
@@ -44,7 +41,7 @@ class BusinessPeriods
      */
     public function all(Account $account): array
     {
-        $today = $this->today($account);
+        $today = $account->today();
 
         return [
             self::THIS_MONTH => new DateRange($today->startOfMonth(), $today),
@@ -115,10 +112,5 @@ class BusinessPeriods
         $firstOfMonth = CarbonImmutable::create($year, $month, 1, 0, 0, 0, $timezone);
 
         return $firstOfMonth->setDay(min($day, $firstOfMonth->daysInMonth));
-    }
-
-    private function today(Account $account): CarbonImmutable
-    {
-        return CarbonImmutable::today($account->timezone);
     }
 }

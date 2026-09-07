@@ -6,7 +6,6 @@ use App\Http\Resources\ContactResource;
 use App\Models\Contact;
 use App\Models\Event;
 use App\Support\CurrentAccount;
-use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -109,7 +108,7 @@ class ContactController extends Controller
      */
     private function ordered(): Builder
     {
-        $today = CarbonImmutable::today($this->account->require()->timezone)->toDateString();
+        $today = $this->account->require()->today()->toDateString();
 
         $nearest = fn (string $operator, string $direction) => Event::query()
             ->select('events.event_date')

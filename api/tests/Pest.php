@@ -8,6 +8,7 @@ use App\Models\Contact;
 use App\Models\Event;
 use App\Models\User;
 use App\Support\CurrentAccount;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -186,6 +187,23 @@ function actingForAccount(array $settings = []): Account
 function currentAccount(): CurrentAccount
 {
     return app(CurrentAccount::class);
+}
+
+/**
+ * The day a test's expectations are judged on: the account's own, from
+ * App\Models\Account::today(), never the framework's today().
+ *
+ * APP_TIMEZONE is UTC and the factories put every account on Europe/London,
+ * so for the first hour after midnight in British summer the two disagree by a
+ * day, and an expected value built from today() reports working code as broken
+ * for that hour every day. Takes the user most tests hold rather than the
+ * account, because bookingsOwner() hands back a user.
+ */
+function todayFor(User|Account $owner): CarbonImmutable
+{
+    $account = $owner instanceof User ? $owner->accounts()->firstOrFail() : $owner;
+
+    return $account->today();
 }
 
 /**

@@ -128,14 +128,14 @@ class Invoice extends Model
      * Overdue when issued, still owing, past a due date, and not snoozed.
      * The deposit due date counts only while the deposit is not yet covered.
      *
-     * `$today` is the day to judge against, and callers that know whose day it
-     * is should pass it. Left out it is the application's day, which is UTC
-     * (APP_TIMEZONE), and for the last hour of a British summer evening that is
-     * already tomorrow: an invoice due today would read as overdue while the
-     * artist looking at it is still on the day it is due. A date comparison
+     * `$today` is the day to judge against, and it is the account's own day
+     * from App\Models\Account::today(), never the application's: that one is
+     * UTC (APP_TIMEZONE), and for the last hour of a British summer evening it
+     * is already tomorrow, so an invoice due today would read as overdue while
+     * the artist looking at it is still on the day it is due. A date comparison
      * belongs in the timezone the date was written in, and accounts carry one.
      */
-    public function isOverdue(?CarbonImmutable $today = null): bool
+    public function isOverdue(CarbonImmutable $today): bool
     {
         return $this->isPastDue($today) && ! $this->isSnoozed($today);
     }
@@ -153,13 +153,11 @@ class Invoice extends Model
      *
      * The deposit due date counts only while the deposit is not yet covered.
      */
-    public function isPastDue(?CarbonImmutable $today = null): bool
+    public function isPastDue(CarbonImmutable $today): bool
     {
         if (! $this->isIssued() || $this->outstandingMinor() <= 0) {
             return false;
         }
-
-        $today ??= CarbonImmutable::today();
 
         if ($this->balance_due_on !== null && $this->balance_due_on->lessThan($today)) {
             return true;
@@ -174,10 +172,8 @@ class Invoice extends Model
      * Whether the artist has asked to stop being reminded about this one, and
      * the pause has not run out (decision 27).
      */
-    public function isSnoozed(?CarbonImmutable $today = null): bool
+    public function isSnoozed(CarbonImmutable $today): bool
     {
-        $today ??= CarbonImmutable::today();
-
         return $this->reminders_snoozed_until !== null
             && $this->reminders_snoozed_until->greaterThan($today);
     }
@@ -190,13 +186,11 @@ class Invoice extends Model
      * deposit on a wedding next summer is neither. App\Services\WaitingOnResolver
      * draws the same line between its balance and deposit branches.
      */
-    public function balanceIsPastDue(?CarbonImmutable $today = null): bool
+    public function balanceIsPastDue(CarbonImmutable $today): bool
     {
         if (! $this->isIssued() || $this->outstandingMinor() <= 0) {
             return false;
         }
-
-        $today ??= CarbonImmutable::today();
 
         return $this->balance_due_on !== null && $this->balance_due_on->lessThan($today);
     }

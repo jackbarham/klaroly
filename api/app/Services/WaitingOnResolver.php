@@ -8,7 +8,6 @@ use App\Enums\FeatureKey;
 use App\Enums\WaitingOn;
 use App\Models\Booking;
 use App\Models\Invoice;
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
@@ -126,7 +125,7 @@ class WaitingOnResolver
 
         // The artist's own day, not the application's UTC one, and the same
         // day every other date comparison in this class uses.
-        return $booking->holdHasExpired($this->today($booking)) ? WaitingOn::ArtistNotHeld : null;
+        return $booking->holdHasExpired($booking->account->today()) ? WaitingOn::ArtistNotHeld : null;
     }
 
     /**
@@ -160,7 +159,7 @@ class WaitingOnResolver
             return null;
         }
 
-        $today = $this->today($booking);
+        $today = $booking->account->today();
 
         foreach ($this->liveInvoices($booking) as $invoice) {
             if ($invoice->isOverdue($today)
@@ -310,25 +309,6 @@ class WaitingOnResolver
         }
 
         return null;
-    }
-
-    /**
-     * Today in the artist's own timezone, not the application's.
-     *
-     * APP_TIMEZONE is UTC, so today() is a UTC day, and for the last hour of a
-     * British summer evening that is already tomorrow: a balance due today
-     * would read as overdue while the artist looking at the calendar is still
-     * on the day it is due.
-     *
-     * It matters here beyond being right on its own terms. App\Models\Invoice
-     * asks the same question in isOverdue(), and GET /api/contacts asks it
-     * through there. If only one of the two moved off UTC the app would hold
-     * two answers to "is this overdue", and for that one hour the bookings
-     * screen would say no while the contacts screen said yes.
-     */
-    private function today(Booking $booking): CarbonImmutable
-    {
-        return CarbonImmutable::today($booking->account->timezone);
     }
 
     /**

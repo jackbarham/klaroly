@@ -153,13 +153,9 @@ class SoftHold
     }
 
     /**
-     * The day the hold starts counting from.
-     *
-     * The artist's own day and not the application's. APP_TIMEZONE is UTC, so
-     * today() is a UTC day, and for the last hour of a British summer evening
-     * that is already tomorrow: a hold pencilled in on Tuesday night would run
-     * from Wednesday and expire a day late. The same reason
-     * App\Models\Invoice::isOverdue() takes a day rather than assuming one.
+     * The day the hold starts counting from: the artist's own, from
+     * App\Models\Account::today(), so a hold pencilled in late on a Tuesday
+     * evening runs from Tuesday.
      *
      * A caller may pass one, which is what lets a seeder say a conversion
      * happened three weeks ago and get an honestly lapsed hold out of the same
@@ -172,6 +168,6 @@ class SoftHold
         // is a date, so a time component would be dropped on the way in anyway,
         // and normalising here means the value this returns is the value that
         // is stored.
-        return ($on ?? CarbonImmutable::today($this->account->require()->timezone))->startOfDay();
+        return ($on ?? $this->account->require()->today())->startOfDay();
     }
 }

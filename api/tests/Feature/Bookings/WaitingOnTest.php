@@ -59,17 +59,17 @@ it('reports a provisional booking whose hold has lapsed', function () {
  * documentation rather than a guard.
  */
 it('leaves a provisional booking alone on the last day of its hold', function () {
-    accountWithFeatures();
+    $today = todayFor(accountWithFeatures());
 
     $booking = Booking::factory()->provisional()->create([
-        'hold_expires_at' => today(),
+        'hold_expires_at' => $today,
     ]);
 
     expect(waitingOnFor($booking))->toBeNull();
 
     // The presence half, one day further on, which is what makes the absence
     // above about the boundary rather than about holds in general.
-    $booking->forceFill(['hold_expires_at' => today()->subDay()])->save();
+    $booking->forceFill(['hold_expires_at' => $today->subDay()])->save();
 
     expect(waitingOnFor($booking))->toBe(WaitingOn::ArtistNotHeld);
 });

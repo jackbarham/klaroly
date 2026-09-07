@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Database\Factories\AccountFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -71,6 +72,24 @@ class Account extends Model
         return Attribute::make(
             set: fn (string $value) => mb_strtolower(trim($value)),
         );
+    }
+
+    /**
+     * Today in the artist's own timezone, not the application's.
+     *
+     * APP_TIMEZONE is UTC, so the framework's today() is a UTC day, and for the
+     * last hour of a British summer evening that is already tomorrow: an
+     * invoice due today would read as overdue, a hold pencilled in on Tuesday
+     * night would run from Wednesday, and a payment recorded this evening
+     * would fall outside "this month" on the 30th. Every comparison of a
+     * stored date against the present reads this one method, so the app holds
+     * one answer to "what day is it" rather than one per service, and the
+     * bookings screen and the contacts screen cannot disagree about whether a
+     * balance is late.
+     */
+    public function today(): CarbonImmutable
+    {
+        return CarbonImmutable::today($this->timezone);
     }
 
     public function settings(): HasOne
