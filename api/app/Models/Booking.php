@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
-use App\Enums\AgreementStatus;
 use App\Enums\BookingSource;
 use App\Enums\BookingStage;
 use App\Enums\DiscountType;
@@ -16,6 +15,7 @@ use App\Support\CurrentAccount;
 use Carbon\CarbonImmutable;
 use Database\Factories\BookingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -85,15 +85,13 @@ class Booking extends Model
     public const SETTABLE_STAGES = [...self::LISTED_STAGES, BookingStage::Provisional];
 
     /**
+     * The stages that have left the diary. A record at either waits on nobody,
+     * which App\Services\WaitingOnResolver answers before it asks anything,
+     * and the home screen declines to ask about it at all.
+     *
      * @var array<int, BookingStage>
      */
-    public const BOOKING_STAGES = [
-        BookingStage::Provisional,
-        BookingStage::Confirmed,
-        BookingStage::Completed,
-        BookingStage::Closed,
-        BookingStage::Cancelled,
-    ];
+    public const ARCHIVED_STAGES = [BookingStage::Lost, BookingStage::Cancelled];
 
     protected static function booted(): void
     {
@@ -224,20 +222,20 @@ class Booking extends Model
         return in_array($this->stage, self::ENQUIRY_STAGES, true);
     }
 
-    public function isBooking(): bool
-    {
-        return in_array($this->stage, self::BOOKING_STAGES, true);
-    }
-
     /**
-     * The highest-version signed agreement, or null when none is signed.
+     * The invoices money can be owed on: issued, so neither a draft, which
+     * has no money on it until issue (schema 5.15), nor a void one, which is
+     * not owed.
+     *
+     * Reads the loaded relation and never the query, for the reason
+     * Invoice::paidMinor() gives: every caller has eager loaded invoices, and
+     * a query here would be one per booking.
+     *
+     * @return Collection<int, Invoice>
      */
-    public function agreementInForce(): ?Agreement
+    public function issuedInvoices(): Collection
     {
-        return $this->agreements()
-            ->where('status', AgreementStatus::Signed->value)
-            ->orderByDesc('version')
-            ->first();
+        return $this->invoices->filter(fn (Invoice $invoice) => $invoice->isIssued());
     }
 
     /**

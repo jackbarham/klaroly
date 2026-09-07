@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\EventIndexRequest;
 use App\Http\Resources\BookingEventResource;
 use App\Models\Event;
+use App\Services\WaitingOnResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -52,28 +53,11 @@ class EventController extends Controller
                 // query per line rather than per request. One extra whereIn
                 // buys back a query for every line in the response.
                 'booking.lines.booking',
-                'booking.quotes',
-                'booking.agreements',
-                'booking.invoices.payments',
-                // The same trap as the line above, one level deeper. payments
-                // has no currency column either, so summing what an invoice has
-                // been paid resolves each payment's currency through its
-                // booking. It only started costing anything when
-                // Invoice::paidMinor() was taught to use the loaded relation:
-                // before that it summed in the database and never touched the
-                // cast, so the endpoint paid for a query per invoice instead
-                // and this load would have bought nothing. One trap replaced
-                // the other, and the eager load is what closes both.
-                'booking.invoices.payments.booking',
-                'booking.account.settings',
+                // What the waiting-on state reads, and why the second money
+                // hop is in it, are written once on the resolver.
+                ...array_map(fn (string $relation) => 'booking.'.$relation, WaitingOnResolver::RELATIONS),
             ])
-            ->orderBy('event_date')
-            // Postgres sorts nulls last on an ascending column by default, but
-            // saying so is what keeps this true if the column or the database
-            // ever changes: an event with no call time belongs at the end of
-            // its day, not the start of it.
-            ->orderByRaw('start_time asc nulls last')
-            ->orderBy('id')
+            ->inDiaryOrder()
             ->get();
 
         return BookingEventResource::collection($events);

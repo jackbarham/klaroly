@@ -21,7 +21,7 @@ class InvoiceNumbering
 
     public function issue(Invoice $invoice): Invoice
     {
-        if ($invoice->status !== InvoiceStatus::Draft) {
+        if (! $invoice->isDraft()) {
             throw new RuntimeException('Only a draft invoice can be issued.');
         }
 

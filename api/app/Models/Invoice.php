@@ -194,4 +194,28 @@ class Invoice extends Model
 
         return $this->balance_due_on !== null && $this->balance_due_on->lessThan($today);
     }
+
+    /**
+     * An overdue balance: past its balance due date, still owing, and not
+     * snoozed. App\Services\WaitingOnResolver's balance branch fires on this
+     * and App\Services\AttentionRows selects the invoices a client_balance row
+     * is about with it, so the row cannot name a different set of invoices
+     * from the one that put it on the screen.
+     */
+    public function balanceIsOverdue(CarbonImmutable $today): bool
+    {
+        return $this->balanceIsPastDue($today) && ! $this->isSnoozed($today);
+    }
+
+    /**
+     * A deposit that was asked for and is not yet covered. Unlike the balance
+     * it does not wait for a due date: until the deposit is paid the date is
+     * not secured, which is what business logic 4.4 makes confirmation turn
+     * on. The resolver's deposit branch and the client_deposit row both read
+     * this one.
+     */
+    public function depositIsOwed(): bool
+    {
+        return $this->deposit_minor->minor > 0 && ! $this->depositCovered();
+    }
 }

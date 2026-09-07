@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\EventType;
 use App\Models\Booking;
 use App\Models\Contact;
 use App\Models\Event;
@@ -90,7 +89,7 @@ class ContactActivity
     {
         $events = $booking->events;
 
-        return $events->first(fn (Event $event) => $event->type === EventType::Main)
+        return $events->first(fn (Event $event) => $event->isMain())
             ?? $this->byDate($events)->first();
     }
 

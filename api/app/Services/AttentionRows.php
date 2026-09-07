@@ -34,7 +34,10 @@ use Illuminate\Support\Collection;
  */
 class AttentionRows
 {
-    public function __construct(private readonly WaitingOnResolver $resolver) {}
+    public function __construct(
+        private readonly WaitingOnResolver $resolver,
+        private readonly ContactActivity $activity,
+    ) {}
 
     /**
      * Every booking waiting on something, most urgent first.
@@ -125,7 +128,7 @@ class AttentionRows
         return new AttentionRow(
             booking: $booking,
             waitingOn: $waitingOn,
-            event: app(ContactActivity::class)->mainEvent($booking),
+            event: $this->activity->mainEvent($booking),
             trial: $this->trial($booking),
             invoices: $this->invoicesFor($booking, $waitingOn, $today),
             agreement: $this->agreementFor($booking, $waitingOn),
@@ -152,27 +155,24 @@ class AttentionRows
      * of the rows, under-report by the difference. See App\Support\AttentionRow
      * for the figures this feeds.
      *
-     * The predicates are the resolver's own, and the coupling is real: if its
-     * balance() or deposit() changes what it matches, this has to follow.
-     * Asking Invoice rather than the columns is what keeps that to one line
-     * each.
+     * The predicates are App\Models\Invoice's own, and they are the two the
+     * resolver's balance() and deposit() branches fire on, so this cannot
+     * select a different set of invoices from the one that put the row here.
      *
      * @return Collection<int, Invoice>
      */
     private function invoicesFor(Booking $booking, WaitingOn $waitingOn, CarbonImmutable $today): Collection
     {
-        $live = $booking->invoices->filter(fn (Invoice $invoice) => $invoice->isIssued());
+        $live = $booking->issuedInvoices();
 
         return match ($waitingOn) {
-            // The resolver's balance() condition exactly: past its balance due
-            // date, still owing, and not snoozed.
             WaitingOn::ClientBalance => $live
-                ->filter(fn (Invoice $invoice) => $invoice->balanceIsPastDue($today) && ! $invoice->isSnoozed($today))
+                ->filter(fn (Invoice $invoice) => $invoice->balanceIsOverdue($today))
                 ->sortBy(fn (Invoice $invoice) => $invoice->balance_due_on->format('Y-m-d'))
                 ->values(),
 
             WaitingOn::ClientDeposit => $live
-                ->filter(fn (Invoice $invoice) => $invoice->deposit_minor->minor > 0 && ! $invoice->depositCovered())
+                ->filter(fn (Invoice $invoice) => $invoice->depositIsOwed())
                 // Nulls last: a deposit with no due date is owed but not late,
                 // so it must not sort above one that is and become the date the
                 // row reports.

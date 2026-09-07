@@ -19,11 +19,37 @@ use Illuminate\Support\Collection;
  * the same. The Home attention block in business logic 18.1 is this same
  * calculation grouped by party, and will call this rather than write its own.
  *
- * Load agreements, invoices with their payments, quotes and account.settings
- * before calling this in a loop, or it is a query per booking.
+ * Load RELATIONS before calling this in a loop, or it is a query per booking.
  */
 class WaitingOnResolver
 {
+    /**
+     * What for() reads, so a caller can load it once for a collection rather
+     * than pay a query per booking per relation. Every endpoint that asks this
+     * class spreads this list into its eager load, and a relation added to a
+     * check below is added here in the same change, or three endpoints regain
+     * an N+1 at once and only the query-count test that happens to run sees
+     * it.
+     *
+     * `invoices.payments.booking` looks redundant beside `invoices.payments`
+     * and is not: payments has no currency column, so summing what an invoice
+     * has been paid resolves each payment's currency through its booking, and
+     * without the extra hop that is a query per payment. It started costing
+     * anything only when Invoice::paidMinor() was taught to read the loaded
+     * relation; before that the sum ran in the database and never touched the
+     * cast, so the endpoint paid a query per invoice instead. One trap
+     * replaced the other and this load closes both.
+     *
+     * @var array<int, string>
+     */
+    public const RELATIONS = [
+        'quotes',
+        'agreements',
+        'invoices.payments',
+        'invoices.payments.booking',
+        'account.settings',
+    ];
+
     public function __construct(private readonly Features $features) {}
 
     /**
@@ -78,7 +104,7 @@ class WaitingOnResolver
         // not want would be a second opinion held somewhere else. Without it a
         // lost enquiry carrying an agreement that was sent and never signed
         // reports client_signature, on a row the artist has already closed.
-        if (in_array($booking->stage, [BookingStage::Lost, BookingStage::Cancelled], true)) {
+        if (in_array($booking->stage, Booking::ARCHIVED_STAGES, true)) {
             return null;
         }
 
@@ -136,18 +162,17 @@ class WaitingOnResolver
      * (decision 2026-09-06.1436). Snoozing means "I know, stop telling me",
      * and a flag that ignores it makes the snooze useless: the artist clears
      * the reminder and the row is still on the home screen the next morning.
-     * App\Models\Invoice::isOverdue() already owns that rule, along with
-     * "issued", "still owing" and the artist's own day, so this asks it rather
-     * than holding a second opinion. The two disagreeing is not hypothetical:
-     * GET /api/contacts reads isOverdue() and this reads the columns, so for
-     * a snoozed invoice the contacts screen said no while the bookings and
-     * enquiries screens said yes.
+     * App\Models\Invoice::balanceIsOverdue() owns that rule, along with
+     * "issued", "still owing" and the balance half of the due dates, so this
+     * asks it rather than holding a second opinion. The two disagreeing is not
+     * hypothetical: when this branch read the columns and GET /api/contacts
+     * read the model, a snoozed invoice had the contacts screen saying no
+     * while the bookings and enquiries screens said yes.
      *
-     * The second clause is what keeps this branch about the BALANCE.
-     * isOverdue() is true for an overdue deposit as well, so delegating to it
-     * alone would answer client_balance where deposit() should answer
-     * client_deposit, and the precedence test between the two would pass
-     * while testing nothing.
+     * It is the BALANCE predicate and not isOverdue(), which is true for an
+     * overdue deposit as well: delegating to that would answer client_balance
+     * where deposit() should answer client_deposit, and the precedence test
+     * between the two would pass while testing nothing.
      *
      * deposit() below deliberately does not gain the same check. A snooze is
      * about chasing money; that branch is about the date not being secured,
@@ -161,10 +186,8 @@ class WaitingOnResolver
 
         $today = $booking->account->today();
 
-        foreach ($this->liveInvoices($booking) as $invoice) {
-            if ($invoice->isOverdue($today)
-                && $invoice->balance_due_on !== null
-                && $invoice->balance_due_on->lessThan($today)) {
+        foreach ($booking->issuedInvoices() as $invoice) {
+            if ($invoice->balanceIsOverdue($today)) {
                 return WaitingOn::ClientBalance;
             }
         }
@@ -184,8 +207,8 @@ class WaitingOnResolver
             return null;
         }
 
-        foreach ($this->liveInvoices($booking) as $invoice) {
-            if ($invoice->deposit_minor->minor > 0 && ! $invoice->depositCovered()) {
+        foreach ($booking->issuedInvoices() as $invoice) {
+            if ($invoice->depositIsOwed()) {
                 return WaitingOn::ClientDeposit;
             }
         }
@@ -289,7 +312,7 @@ class WaitingOnResolver
 
         $agreements = $booking->agreements;
 
-        if ($agreements->contains(fn ($agreement) => $agreement->status === AgreementStatus::Signed)) {
+        if ($agreements->contains(fn ($agreement) => $agreement->isSigned())) {
             return null;
         }
 
@@ -309,17 +332,6 @@ class WaitingOnResolver
         }
 
         return null;
-    }
-
-    /**
-     * Invoices that can still be waited on: issued, and not voided. A draft
-     * has no money on it until issue (schema 5.15) and a void one is not owed.
-     *
-     * @return Collection<int, Invoice>
-     */
-    private function liveInvoices(Booking $booking): Collection
-    {
-        return $booking->invoices->filter(fn ($invoice) => $invoice->isIssued());
     }
 
     /*

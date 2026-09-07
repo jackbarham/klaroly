@@ -16,6 +16,7 @@ use App\Services\BusinessPeriods;
 use App\Services\Features;
 use App\Services\OutstandingBalances;
 use App\Services\PaymentsReceived;
+use App\Services\WaitingOnResolver;
 use App\Support\AttentionRow;
 use App\Support\CurrentAccount;
 use App\Support\HomeSummary;
@@ -50,10 +51,10 @@ class HomeController extends Controller
     /**
      * Everything App\Services\WaitingOnResolver reads, plus what a row draws.
      *
-     * The two that look redundant are not, and this is the third endpoint to
-     * need them: booking_lines and payments have no currency column, so
-     * MoneyCast resolves theirs through the booking, and without the extra hop
-     * that is a query per line and per payment.
+     * `lines.booking` looks redundant beside `lines` and is not: booking_lines
+     * has no currency column, so MoneyCast resolves a line's currency through
+     * the booking, and without the extra hop that is a query per line. The
+     * resolver's own list carries the same explanation for payments.
      *
      * @var array<int, string>
      */
@@ -62,11 +63,7 @@ class HomeController extends Controller
         'events',
         'lines',
         'lines.booking',
-        'quotes',
-        'agreements',
-        'invoices.payments',
-        'invoices.payments.booking',
-        'account.settings',
+        ...WaitingOnResolver::RELATIONS,
     ];
 
     public function __construct(
@@ -94,7 +91,7 @@ class HomeController extends Controller
             attentionTotal: count($rows),
             upcoming: $this->upcoming($today),
             money: $this->money($account->currency, $today, $rows, $live),
-            features: $this->features($account),
+            features: $this->features->map($account),
             today: $today,
             timezone: $account->timezone,
         ));
@@ -114,7 +111,7 @@ class HomeController extends Controller
     private function liveBookings(): Collection
     {
         return Booking::query()
-            ->whereNotIn('stage', [BookingStage::Lost->value, BookingStage::Cancelled->value])
+            ->whereNotIn('stage', Booking::ARCHIVED_STAGES)
             ->with(self::ATTENTION_RELATIONS)
             ->get();
     }
@@ -122,10 +119,8 @@ class HomeController extends Controller
     /**
      * The next few events across confirmed and provisional bookings.
      *
-     * Ordered by date, then start time with nulls last, then id, which is the
-     * same total order GET /api/events uses: an event with no call time belongs
-     * at the end of its day, and without the final id two events at the same
-     * time could swap between requests.
+     * In the diary's total order, the same one GET /api/events uses; see
+     * Event::inDiaryOrder() for why it is a total order.
      *
      * @return Collection<int, Event>
      */
@@ -138,9 +133,7 @@ class HomeController extends Controller
                 BookingStage::Provisional->value,
             ]))
             ->with(['booking.contact', 'booking.partyMembers', 'booking.account.settings'])
-            ->orderBy('event_date')
-            ->orderByRaw('start_time asc nulls last')
-            ->orderBy('id')
+            ->inDiaryOrder()
             ->limit((int) config('bookings.home_upcoming'))
             ->get();
     }
@@ -287,18 +280,5 @@ class HomeController extends Controller
             ->get();
 
         return $this->outstanding->total($invoices, $today);
-    }
-
-    /**
-     * Every feature key, resolved for this account, the same shape
-     * GET /api/me sends.
-     *
-     * @return array<string, bool>
-     */
-    private function features(Account $account): array
-    {
-        return collect(FeatureKey::cases())
-            ->mapWithKeys(fn (FeatureKey $key) => [$key->value => $this->features->enabled($account, $key)])
-            ->all();
     }
 }

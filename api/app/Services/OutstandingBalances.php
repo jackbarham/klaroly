@@ -10,7 +10,6 @@ use App\Support\Money;
 use App\Support\OutstandingAmount;
 use App\Support\OutstandingSplit;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Collection;
 
 /**
  * The one place "what does this contact still owe" is answered.
@@ -60,7 +59,7 @@ class OutstandingBalances
         $totals = [];
 
         foreach ($contact->bookings as $booking) {
-            foreach ($this->liveInvoices($booking) as $invoice) {
+            foreach ($booking->issuedInvoices() as $invoice) {
                 $currency = $invoice->currency;
 
                 $totals[$currency] ??= ['minor' => 0, 'overdue' => false];
@@ -159,15 +158,5 @@ class OutstandingBalances
         }
 
         return new OutstandingSplit($due, $overdue, $snoozed);
-    }
-
-    /**
-     * Invoices that can be owed on: issued, and not voided.
-     *
-     * @return Collection<int, Invoice>
-     */
-    private function liveInvoices(Booking $booking): Collection
-    {
-        return $booking->invoices->filter(fn (Invoice $invoice) => $invoice->isIssued());
     }
 }

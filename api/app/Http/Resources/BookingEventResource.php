@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\Concerns\EventRowFields;
 use App\Models\Event;
 use App\Services\BookingPricing;
 use App\Services\WaitingOnResolver;
@@ -27,6 +28,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class BookingEventResource extends JsonResource
 {
+    use EventRowFields;
+
     /**
      * @return array<string, mixed>
      */
@@ -37,33 +40,7 @@ class BookingEventResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'booking_id' => $this->booking_id,
-            'type' => $this->type->value,
-            // The artist's own name for this event, or null to let the app
-            // fall back to the type's own name.
-            'label' => $this->label,
-            // A local calendar date, never an instant. The column is a date
-            // and the cast is immutable_date, so formatting it here cannot
-            // pass through a timezone conversion; sending it as anything else
-            // would move an evening event onto the wrong day for the eight
-            // months the clocks are forward.
-            'date' => $this->event_date->format('Y-m-d'),
-            // 'HH:mm'. Null when no call time is agreed yet, which is normal
-            // on an enquiry.
-            'start_time' => $this->start_time === null
-                ? null
-                : substr($this->start_time, 0, 5),
-            // Where the artist works for this event: base, client or venue,
-            // and null when nobody has said. The screen needs it because the
-            // venue columns cannot tell the difference between "not known" and
-            // "at her own place, whose address lives in settings": both are a
-            // null venue_name and a null city, and a trial at base was reading
-            // as a wedding with a missing venue.
-            'location_type' => $this->location_type?->value,
-            'venue_name' => $this->venue_name,
-            'city' => $this->city,
-            'client_name' => $booking->contact->fullName(),
-            'stage' => $booking->stage->value,
+            ...$this->eventRowFields($booking),
             // Through BookingPricing, which is the one place a booking's money
             // is worked out: it honours the pricing mode, the fixed price and
             // both kinds of discount. Summing the lines here would be a second

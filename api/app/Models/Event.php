@@ -8,6 +8,8 @@ use App\Models\Concerns\BelongsToAccount;
 use Carbon\CarbonImmutable;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -50,6 +52,28 @@ class Event extends Model
     public function partyMembers(): HasMany
     {
         return $this->hasMany(PartyMember::class);
+    }
+
+    /**
+     * The diary's total order: date, then start time with nulls last, then id.
+     * An event with no call time belongs at the end of its day rather than the
+     * start of it, and without the final id two events at the same time could
+     * swap between requests. Postgres sorts nulls last on an ascending column
+     * by default, but saying so is what keeps this true if the column or the
+     * database ever changes. GET /api/events renders in exactly this sequence
+     * and must not have to sort again, and the home screen's Next up block
+     * reads the same order.
+     *
+     * @param  Builder<Event>  $query
+     * @return Builder<Event>
+     */
+    #[Scope]
+    protected function inDiaryOrder(Builder $query): Builder
+    {
+        return $query
+            ->orderBy('event_date')
+            ->orderByRaw('start_time asc nulls last')
+            ->orderBy('id');
     }
 
     public function isMain(): bool

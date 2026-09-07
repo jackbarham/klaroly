@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Enums\FeatureKey;
 use App\Models\User;
 use App\Services\Features;
 use App\Support\CurrentAccount;
@@ -63,9 +62,7 @@ class MeResource extends JsonResource
                 'can_see_invoices' => $membership->can_see_invoices,
                 'can_see_contacts' => $membership->can_see_contacts,
             ],
-            'features' => collect(FeatureKey::cases())
-                ->mapWithKeys(fn (FeatureKey $key) => [$key->value => $features->enabled($account, $key)])
-                ->all(),
+            'features' => $features->map($account),
         ];
     }
 }

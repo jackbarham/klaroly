@@ -10,6 +10,7 @@ use App\Models\Booking;
 use App\Services\ContactActivity;
 use App\Services\EnquiryClashes;
 use App\Services\SoftHold;
+use App\Services\WaitingOnResolver;
 use App\Support\BookingOccasion;
 use App\Support\ClashCounts;
 use App\Support\EnquiryRow;
@@ -47,9 +48,10 @@ class EnquiryController extends Controller
      * Everything a row, a detail or a write needs, loaded once rather than once
      * per relation per record.
      *
-     * The two that look redundant are not. booking_lines and payments have no
-     * currency column, so MoneyCast resolves theirs through the booking, and
-     * without the extra hop that is a query per line and per payment.
+     * `lines.booking` looks redundant beside `lines` and is not: booking_lines
+     * has no currency column, so MoneyCast resolves a line's currency through
+     * the booking, and without the extra hop that is a query per line. The
+     * resolver's own list carries the same explanation for payments.
      *
      * @var array<int, string>
      */
@@ -61,11 +63,7 @@ class EnquiryController extends Controller
         // What WaitingOnResolver reads. An enquiry rarely has an invoice or an
         // agreement, but the resolver asks every booking and an unloaded
         // relation is a query whether or not it is empty.
-        'quotes',
-        'agreements',
-        'invoices.payments',
-        'invoices.payments.booking',
-        'account.settings',
+        ...WaitingOnResolver::RELATIONS,
         // "Met at Elspeth Rowntree's wedding". A belongsTo on the scoped
         // Booking model, so the eager load carries the account scope with it.
         'sourceBooking.contact',
@@ -82,6 +80,12 @@ class EnquiryController extends Controller
         'partyMembers',
         'notes',
     ];
+
+    public function __construct(
+        private readonly ContactActivity $activity,
+        private readonly EnquiryClashes $clashes,
+        private readonly SoftHold $hold,
+    ) {}
 
     /**
      * Every enquiry, most neglected first.
@@ -196,7 +200,7 @@ class EnquiryController extends Controller
             // set by hand. App\Services\SoftHold owns the rule, including what
             // happens when a conversion is undone; this is a write path calling
             // it, the way every write path calls touchActivity() below.
-            'hold_expires_at' => app(SoftHold::class)->forTransition(
+            'hold_expires_at' => $this->hold->forTransition(
                 from: $booking->stage,
                 to: $stage,
                 existing: $booking->hold_expires_at,
@@ -218,7 +222,9 @@ class EnquiryController extends Controller
      *
      * One method rather than two, so the write's answer and the detail read's
      * answer are the same code rather than two paths a test has to hold
-     * together.
+     * together. And the row inside it comes from rows(), so the detail cannot
+     * choose a different event, or count a different clash, from the list's
+     * row for the same record.
      */
     private function detail(Booking $booking): EnquiryDetailResource
     {
@@ -226,13 +232,7 @@ class EnquiryController extends Controller
         // memory may predate it.
         $booking->load([...self::ROW_RELATIONS, ...self::DETAIL_RELATIONS]);
 
-        $occasion = new BookingOccasion($booking, app(ContactActivity::class)->mainEvent($booking));
-        $clashes = app(EnquiryClashes::class);
-
-        $date = $occasion->event?->event_date->format('Y-m-d');
-        $counts = $clashes->forDates($date === null ? [] : [$date]);
-
-        return new EnquiryDetailResource(new EnquiryRow($occasion, $this->clashFor($clashes, $counts, $occasion)));
+        return new EnquiryDetailResource($this->rows(new Collection([$booking]))[0]);
     }
 
     /**
@@ -249,21 +249,18 @@ class EnquiryController extends Controller
      */
     private function rows(Collection $enquiries): array
     {
-        $activity = app(ContactActivity::class);
-        $clashes = app(EnquiryClashes::class);
-
         /** @var array<int, BookingOccasion> $occasions */
         $occasions = $enquiries
-            ->map(fn (Booking $booking) => new BookingOccasion($booking, $activity->mainEvent($booking)))
+            ->map(fn (Booking $booking) => new BookingOccasion($booking, $this->activity->mainEvent($booking)))
             ->all();
 
-        $counts = $clashes->forDates(array_values(array_filter(array_map(
+        $counts = $this->clashes->forDates(array_values(array_filter(array_map(
             fn (BookingOccasion $occasion) => $occasion->event?->event_date->format('Y-m-d'),
             $occasions,
         ))));
 
         return array_map(
-            fn (BookingOccasion $occasion) => new EnquiryRow($occasion, $this->clashFor($clashes, $counts, $occasion)),
+            fn (BookingOccasion $occasion) => new EnquiryRow($occasion, $this->clashFor($counts, $occasion)),
             $occasions,
         );
     }
@@ -277,7 +274,7 @@ class EnquiryController extends Controller
      *
      * @param  array<string, ClashCounts>  $counts
      */
-    private function clashFor(EnquiryClashes $clashes, array $counts, BookingOccasion $occasion): ?ClashCounts
+    private function clashFor(array $counts, BookingOccasion $occasion): ?ClashCounts
     {
         $event = $occasion->event;
 
@@ -285,7 +282,7 @@ class EnquiryController extends Controller
             return null;
         }
 
-        return $clashes->forRow($counts, $event->event_date->format('Y-m-d'), $occasion->booking->stage);
+        return $this->clashes->forRow($counts, $event->event_date->format('Y-m-d'), $occasion->booking->stage);
     }
 
     /**

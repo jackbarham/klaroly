@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Enums\FeatureKey;
+use App\Http\Resources\Concerns\EventRowFields;
 use App\Models\Event;
 use App\Services\Features;
 use Illuminate\Http\Request;
@@ -22,6 +23,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class UpcomingEventResource extends JsonResource
 {
+    use EventRowFields;
+
     /**
      * @return array<string, mixed>
      */
@@ -31,33 +34,7 @@ class UpcomingEventResource extends JsonResource
 
         return [
             'event_id' => $this->id,
-            'booking_id' => $this->booking_id,
-            // main or trial, mostly. The screen draws a Trial pill off this;
-            // the wedding day is `main` and there is no `wedding` value.
-            'type' => $this->type->value,
-            'label' => $this->label,
-            // A local calendar date, never an instant; see AttentionResource.
-            'date' => $this->event_date->format('Y-m-d'),
-            // 'HH:mm', and null when no call time is agreed. Sent without a
-            // judgement about whether it is early: an early start is a fact
-            // about a Saturday rather than a fault, and the prototype drew it
-            // in a warning colour and then took it out for saying "problem" on
-            // a row that only says "wedding".
-            'start_time' => $this->start_time === null
-                ? null
-                : substr($this->start_time, 0, 5),
-            // Nullable, which is four render cases and not three (decision
-            // 228). The venue columns cannot tell "nobody has said" from "at
-            // her own place, whose address lives in settings", because both are
-            // a null venue_name and a null city.
-            'location_type' => $this->location_type?->value,
-            // Two fields rather than one line, which is what the prototype
-            // asked for: "The Old Corn Exchange, Saffron Walden" truncates at
-            // 375px, so the screen drops the town rather than the venue.
-            'venue_name' => $this->venue_name,
-            'city' => $this->city,
-            'client_name' => $booking->contact->fullName(),
-            'stage' => $booking->stage->value,
+            ...$this->eventRowFields($booking),
             // The party as a number, never as words. The screen writes "Bride
             // and 4" in its own locale file, and null at nought rather than a
             // nought: a party of nobody is not something anybody books, so the

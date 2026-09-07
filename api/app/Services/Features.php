@@ -37,6 +37,19 @@ class Features
     }
 
     /**
+     * Every key resolved for the account, which is the `features` map
+     * GET /api/me and GET /api/home both send.
+     *
+     * @return array<string, bool>
+     */
+    public function map(Account $account): array
+    {
+        return collect(FeatureKey::cases())
+            ->mapWithKeys(fn (FeatureKey $key) => [$key->value => $this->enabled($account, $key)])
+            ->all();
+    }
+
+    /**
      * Whether the account is allowed in at all.
      *
      * TODO (billing prompt): read the entitlements table and return false for
