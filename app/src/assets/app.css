@@ -703,15 +703,24 @@ body {
   puts the bar here, above-bar rests a sticky row on the bar's top edge, and
   page-bottom keeps the page clear of the bar and this gap together.
 
-  It is the larger of the inset and the gap rather than their sum, because on a
-  device that reports an inset the inset already is the gap. Adding them put
-  the bar 50px up in an installed PWA on an iPhone, where the home indicator's
-  34px had done the job on its own, while a desktop browser reporting no inset
-  got the 16px the bar was drawn for. max() is also what makes the number safe
-  to move: the second term is a floor no inset can take the bar below.
+  It is built from the inset rather than added to it, because on a device that
+  reports an inset the inset already is the gap. Adding them put the bar 50px
+  up in an installed PWA on an iPhone, where the home indicator's 34px had done
+  the job on its own, while a desktop browser reporting no inset got the 16px
+  the bar was drawn for.
+
+  The 8px comes off the inset rather than off the whole expression, so it is
+  spent only where there is an inset to spend it from: the iPhone's 34px
+  becomes 26px, which still clears the home indicator's own strip, and a
+  browser reporting nothing is untouched at 16px.
+
+  max() is what makes both terms safe. The second is a floor, so no inset and
+  no subtraction can take the bar below 16px and off the bottom of a desktop
+  window, which is the failure this shape exists to rule out rather than to
+  test for.
 */
 :root {
-  --bar-gap: max(env(safe-area-inset-bottom), var(--spacing) * 4);
+  --bar-gap: max(env(safe-area-inset-bottom) - var(--spacing) * 2, var(--spacing) * 4);
 }
 
 @utility page-top {

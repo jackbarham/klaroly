@@ -16,7 +16,9 @@ import { oneOf, readSettings, writeSettings, type Checks } from '@/lib/viewSetti
 // current: 20px icon over a 12px label, which is what the bar draws today.
 // larger:  22px icon over an 11px label, the same shape with the weight moved
 //          from the words to the picture.
-// icons:   24px icon and no label at all.
+// icons:   28px icon, no label at all, and the bar itself pulled in a spacing
+//          step at each end, because without the words it does not need the
+//          width.
 export type TabBarStyle = 'current' | 'larger' | 'icons'
 
 interface TrialSettings {
@@ -51,5 +53,5 @@ export function setTabBarStyle(style: TabBarStyle): void {
 export const tabBarStyleOptions: { value: TabBarStyle, label: string }[] = [
   { value: 'current', label: 'Current: 20px icon, 12px label' },
   { value: 'larger', label: 'Larger: 22px icon, 11px label' },
-  { value: 'icons', label: 'Icons only: 24px icon, no label' },
+  { value: 'icons', label: 'Icons only: 28px icon, narrower bar' },
 ]

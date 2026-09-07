@@ -518,15 +518,19 @@ top bar's height, so that is one variable too: `--bar-gap`, which places the bar
 rests a sticky row of form actions on its top edge, and pads the page clear of
 the bar and the gap together.
 
-**It is the larger of the bottom inset and 16px, and never their sum.** On a
-device that reports an inset, the inset already is the gap: the home indicator's
-34px is space nothing may be drawn in. Adding 16px to it floated the bar 50px up
-in an installed PWA on an iPhone, which is where a phone and a desktop browser
-stopped agreeing, because a desktop browser reports no inset and got the 16px the
-bar was drawn for. `max()` gives the phone 34px, leaves the desktop at 16px, and
-makes the 16px a floor rather than an addition, so the number can be moved
-without a browser reporting nothing dropping the bar off the bottom of the
-window.
+**It is built from the bottom inset and never added to it.** On a device that
+reports an inset, the inset already is the gap: the home indicator's 34px is
+space nothing may be drawn in. Adding 16px to it floated the bar 50px up in an
+installed PWA on an iPhone, which is where a phone and a desktop browser stopped
+agreeing, because a desktop browser reports no inset and got the 16px the bar was
+drawn for.
+
+`max(env(safe-area-inset-bottom) - 8px, 16px)` is the shape. **The 8px comes off
+the inset rather than off the whole expression**, so it is spent only where there
+is an inset to spend it from: the iPhone's 34px becomes **26px**, which still
+clears the indicator's own strip, and a browser reporting nothing stays at
+**16px**. The second term is a floor, so no inset and no subtraction can drop the
+bar off the bottom of a desktop window.
 
 **The bottom sheet still adds.** It reaches the bottom edge rather than floating
 above it, so its padding has to clear the indicator with a gap of its own, and

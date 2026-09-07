@@ -10,7 +10,8 @@
     list of places you can go, which is the one thing it is for.
   -->
   <nav
-    class="fixed inset-x-4 z-10 bar-bottom lg:hidden"
+    class="fixed z-10 bar-bottom lg:hidden"
+    :class="insetClasses"
     :aria-label="t('nav.primary_label')"
   >
     <!--
@@ -117,8 +118,13 @@ const showLabels = computed(() => tabBarStyle.value !== 'icons')
 const iconClasses = computed(() => ({
   current: 'h-5 w-5',
   larger: 'h-5.5 w-5.5',
-  icons: 'h-6 w-6',
+  icons: 'h-7 w-7',
 }[tabBarStyle.value]))
+
+// With no labels the bar does not need the width, so it gives back a spacing
+// step at each end. The pill follows on its own: the ResizeObserver above is
+// watching the bar, and this changes the bar's width.
+const insetClasses = computed(() => (tabBarStyle.value === 'icons' ? 'inset-x-8' : 'inset-x-4'))
 
 const labelClasses = computed(() => (tabBarStyle.value === 'larger' ? 'trial-label' : 'text-xs'))
 
