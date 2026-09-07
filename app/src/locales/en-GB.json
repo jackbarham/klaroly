@@ -220,8 +220,7 @@
       },
       "count": "Attention items",
       "count_all": "All",
-      "wide_note": "On a wide screen Attention takes the main column and shows every item, so the count applies to a phone.",
-      "reset": "Reset"
+      "wide_note": "On a wide screen Attention takes the main column and shows every item, so the count applies to a phone."
     },
     "first_run": {
       "title": "Nothing here yet",
@@ -236,13 +235,10 @@
   "bookings": {
     "title": "Bookings",
     "detail_title": "Booking",
-    "loading": "Loading your bookings",
     "failed": "Those bookings could not be loaded. Try again in a moment.",
     "retry": "Try again",
     "hide_calendar": "Hide",
     "show_calendar": "Show",
-    "hide_calendar_label": "Hide the calendar",
-    "show_calendar_label": "Show the calendar",
     "calendar": {
       "label": "Calendar",
       "month_label": "{month}. Jump to another month",
@@ -262,15 +258,12 @@
       "provisional_count": "{count} provisional booking | {count} provisional bookings",
       "enquiry_count": "{count} enquiry | {count} enquiries",
       "jump_label": "Jump to a month",
-      "jump_close": "Close",
       "jump_years_label": "Year",
       "jump_months_label": "Month",
       "jump_has_work": "{month}, has bookings",
       "format": {
         "month_year": "MMMM yyyy",
         "weekday_heading": "EEE",
-        "weekday_heading_full": "EEEE",
-        "day_number": "d",
         "day_full": "EEEE d MMMM",
         "day_full_year": "EEEE d MMMM yyyy",
         "row_date": "EEE d MMM",
@@ -286,13 +279,10 @@
       "later": "Later",
       "show_all": "Show all bookings",
       "empty": "Nothing coming up",
-      "empty_hint": "New enquiries and bookings appear here.",
       "empty_day": "Nothing on this day",
-      "empty_day_hint": "Free for a wedding or a trial.",
       "no_venue": "Venue not given",
       "at_base": "Your place",
       "at_client": "Their place",
-      "no_time": "Time not set",
       "touched": "Last touched today | Last touched {count} day ago | Last touched {count} days ago"
     },
     "stage": {
@@ -377,8 +367,7 @@
       "booked": "You are already booked",
       "pencilled_and_others": "Pencilled in, and one other wants it | Pencilled in, and {count} others want it",
       "pencilled": "Pencilled in for someone else",
-      "others": "One other wants this date | {count} others want this date",
-      "long": "This date already carries other work. Ring the ones that were live recently first."
+      "others": "One other wants this date | {count} others want this date"
     },
     "source": {
       "manual": "Added by you",
@@ -443,12 +432,10 @@
       "back": "All enquiries",
       "choose": "Choose an enquiry to see it here.",
       "not_found": "That enquiry could not be found.",
-      "failed": "That enquiry could not be loaded. Try again in a moment.",
       "said_title": "What they said",
       "source_label": "Came from",
       "party": "{count} people",
       "party_one": "One person",
-      "no_party": "Nobody added yet",
       "nothing_here": "Nothing here yet",
       "to_come": "Price appears once this moves to Possible. Payments, the intake form, agreement, messages and photos appear once this becomes a booking.",
       "action_possible": "Move to Possible",
@@ -553,8 +540,7 @@
       "title": "Delete this contact?",
       "confirm": "{name} will be removed. This cannot be undone.",
       "confirm_action": "Delete",
-      "cancel": "Cancel",
-      "dismiss": "OK"
+      "cancel": "Cancel"
     },
     "format": {
       "day_month": "d MMM",

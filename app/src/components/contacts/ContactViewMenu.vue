@@ -52,27 +52,21 @@
       </button>
     </div>
 
-    <div class="flex min-h-11 items-center justify-between gap-4">
+    <div
+      v-for="(row, index) in switches"
+      :key="row.field"
+      class="flex min-h-11 items-center justify-between gap-4"
+      :class="index > 0 ? 'mt-2 border-t border-border pt-2' : ''"
+    >
       <span
-        :id="initialsLabelId"
+        :id="row.labelId"
         class="text-body font-medium text-text-strong"
-      >{{ t('contacts.view.initials_label') }}</span>
+      >{{ t(row.labelKey) }}</span>
       <ToggleSwitch
-        :id="initialsSwitchId"
-        v-model="showInitials"
-        :labelled-by="initialsLabelId"
-      />
-    </div>
-
-    <div class="mt-2 flex min-h-11 items-center justify-between gap-4 border-t border-border pt-2">
-      <span
-        :id="amountsLabelId"
-        class="text-body font-medium text-text-strong"
-      >{{ t('contacts.view.amounts_label') }}</span>
-      <ToggleSwitch
-        :id="amountsSwitchId"
-        v-model="showAmounts"
-        :labelled-by="amountsLabelId"
+        :id="row.switchId"
+        :model-value="settings[row.field]"
+        :labelled-by="row.labelId"
+        @update:model-value="(value) => contacts.update({ [row.field]: value })"
       />
     </div>
   </AnchoredSheet>
@@ -93,9 +87,10 @@
 // Everything in this file is about the content.
 import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { segmentClasses, segmentOffClasses, segmentOnClasses } from '@/components/form/field'
 import ToggleSwitch from '@/components/form/ToggleSwitch.vue'
 import { useContactsStore } from '@/stores/contacts'
-import type { LeadWith, SortMode } from '@/lib/contactView'
+import type { LeadWith, SortMode, ViewSettings } from '@/lib/contactView'
 
 defineProps<{
   // The button this hangs under at lg and up.
@@ -111,10 +106,6 @@ const settings = computed(() => contacts.settings)
 
 const sortLabelId = useId()
 const leadLabelId = useId()
-const initialsLabelId = useId()
-const initialsSwitchId = useId()
-const amountsLabelId = useId()
-const amountsSwitchId = useId()
 
 const sortOptions: { value: SortMode, labelKey: string }[] = [
   { value: 'recent', labelKey: 'contacts.view.sort_recent' },
@@ -126,23 +117,22 @@ const leadOptions: { value: LeadWith, labelKey: string }[] = [
   { value: 'booking', labelKey: 'contacts.view.lead_booking' },
 ]
 
-// A switch writes straight through to the store, which persists it, so there
-// is no local copy that could be a setting behind what the list is drawing.
-const showInitials = computed({
-  get: () => contacts.settings.showInitials,
-  set: (value: boolean) => contacts.update({ showInitials: value }),
-})
+// The two switches as data rather than two copies of the same markup, the
+// way the enquiries menu writes its four. A switch writes straight through to
+// the store, which persists it, so there is no local copy that could be a
+// setting behind what the list is drawing.
+type SwitchField = Exclude<keyof ViewSettings, 'sort' | 'leadWith'>
 
-const showAmounts = computed({
-  get: () => contacts.settings.showAmounts,
-  set: (value: boolean) => contacts.update({ showAmounts: value }),
-})
+const switchFields: { field: SwitchField, labelKey: string }[] = [
+  { field: 'showInitials', labelKey: 'contacts.view.initials_label' },
+  { field: 'showAmounts', labelKey: 'contacts.view.amounts_label' },
+]
 
-// The selected segment is a filled accent carrying a white label. That is a
-// deliberate departure from the segmented control in docs/style-guide.md,
-// which is quieter: here the two groups sit inside a panel that is itself over
-// a scrim, and the quieter treatment could not be read as chosen at a glance.
-const segmentClasses = 'h-11 grow rounded-control text-body font-medium transition-colors focus-visible:focus-ring'
-const segmentOnClasses = 'bg-accent text-text-on-accent'
-const segmentOffClasses = 'text-text-muted hover:text-accent-text'
+// The ids are made once rather than inside the loop, because useId may only be
+// called during setup.
+const switches = switchFields.map((row) => ({
+  ...row,
+  labelId: useId(),
+  switchId: useId(),
+}))
 </script>

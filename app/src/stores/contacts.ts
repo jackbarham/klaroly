@@ -1,7 +1,9 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { loadContacts } from '@/lib/contactFixtures'
-import { defaultSettings, readSettings, writeSettings, type ViewSettings } from '@/lib/contactView'
+import { defaultSettings, readSettings, writeSettings } from '@/lib/contactView'
+import type { LoadStatus } from '@/lib/loadStatus'
+import { settingsState } from '@/lib/viewSettings'
 import type { Contact } from '@/types/contacts'
 
 // The contacts the screen draws, and how this device likes to read them.
@@ -15,16 +17,11 @@ import type { Contact } from '@/types/contacts'
 // nothing to wait for. If the list ever does outgrow one payload, the thing to
 // change is this store and not the screen.
 
-export type ContactsStatus = 'idle' | 'loading' | 'ready' | 'failed'
-
 export const useContactsStore = defineStore('contacts', () => {
   const contacts = ref<Contact[]>([])
-  const status = ref<ContactsStatus>('idle')
+  const status = ref<LoadStatus>('idle')
 
-  // Read once, when the store is created, so the first render is already in
-  // the shape this person left it in and no setting is seen to change after
-  // the list has drawn. readSettings copes with a storage that throws.
-  const settings = ref<ViewSettings>(readSettings())
+  const { settings, update, reset } = settingsState(readSettings, writeSettings, defaultSettings)
 
   /**
    * Fetches once. Coming back to Contacts from another tab does not refetch,
@@ -55,21 +52,6 @@ export const useContactsStore = defineStore('contacts', () => {
 
   function find(id: number): Contact | null {
     return byId.value.get(id) ?? null
-  }
-
-  // A patch rather than a whole object, because the menu changes one setting
-  // at a time and stays open while it does, so the list redraws underneath and
-  // the setting is judged by its effect rather than by its name.
-  function update(patch: Partial<ViewSettings>): void {
-    settings.value = { ...settings.value, ...patch }
-
-    writeSettings(settings.value)
-  }
-
-  function reset(): void {
-    settings.value = { ...defaultSettings }
-
-    writeSettings(settings.value)
   }
 
   // Local only, until there is an endpoint to call. It is here rather than in

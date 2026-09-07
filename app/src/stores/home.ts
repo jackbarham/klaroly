@@ -2,7 +2,9 @@ import { computed, ref } from 'vue'
 import { parseISO } from 'date-fns'
 import { defineStore } from 'pinia'
 import { home as fetchHome } from '@/lib/home'
-import { defaultSettings, readSettings, writeSettings, type HomeViewSettings } from '@/lib/homeView'
+import { defaultSettings, readSettings, writeSettings } from '@/lib/homeView'
+import type { LoadStatus } from '@/lib/loadStatus'
+import { settingsState } from '@/lib/viewSettings'
 import type { HomeMeta, HomeSummary } from '@/types/home'
 
 // The home screen's one payload and how this device likes to read it.
@@ -13,17 +15,12 @@ import type { HomeMeta, HomeSummary } from '@/types/home'
 // no signal. There is no pagination, no filter and no spinner inside a block:
 // the whole summary arrives or it does not.
 
-export type LoadStatus = 'idle' | 'loading' | 'ready' | 'failed'
-
 export const useHomeStore = defineStore('home', () => {
   const summary = ref<HomeSummary | null>(null)
   const meta = ref<HomeMeta | null>(null)
   const status = ref<LoadStatus>('idle')
 
-  // Read once, when the store is created, so the first render is already in the
-  // shape this person left it in and no block is seen to move after the screen
-  // has drawn. readSettings copes with a storage that throws.
-  const settings = ref<HomeViewSettings>(readSettings())
+  const { settings, update, reset } = settingsState(readSettings, writeSettings, defaultSettings)
 
   /**
    * Fetches once. Coming back to Home from another tab does not refetch, and
@@ -108,21 +105,6 @@ export const useHomeStore = defineStore('home', () => {
       && (found.money.owed_minor ?? 0) === 0
       && Object.values(found.money.periods).every((period) => period.booking_count === 0)
   })
-
-  // A patch rather than a whole object, because Adjust changes one setting at a
-  // time and stays open while it does, so the screen redraws underneath and the
-  // setting is judged by its effect rather than by its name.
-  function update(patch: Partial<HomeViewSettings>): void {
-    settings.value = { ...settings.value, ...patch }
-
-    writeSettings(settings.value)
-  }
-
-  function reset(): void {
-    settings.value = { ...defaultSettings }
-
-    writeSettings(settings.value)
-  }
 
   return {
     summary,

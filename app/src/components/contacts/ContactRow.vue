@@ -54,6 +54,7 @@ import Icon from '@/components/ui/Icon.vue'
 import StatusPill, { type PillTone } from '@/components/ui/StatusPill.vue'
 import { fullName, initials, nearestBooking, pillFor, secondLine, type PillKind } from '@/lib/contactList'
 import type { LeadWith } from '@/lib/contactView'
+import { formatMoney } from '@/lib/money'
 import type { Contact } from '@/types/contacts'
 
 const props = defineProps<{
@@ -106,16 +107,11 @@ const pillLabel = computed(() => {
     return t('contacts.pill.upcoming')
   }
 
-  // Money never becomes a string by putting a pound sign in front of a number.
-  // The minor units are divided here rather than stored as a decimal: the
-  // integer is the value, and this is the last moment before it is drawn. A
-  // round amount drops its pence, because "£450.00" at 12px inside a pill is
-  // two characters of noise; anything else keeps them, because a rounded
+  // Formatted at the edge, in src/lib/money.ts, which is where the rule that a
+  // round amount drops its pence lives: "£450.00" at 12px inside a pill is two
+  // characters of noise, and anything else keeps them because a rounded
   // balance is the wrong balance.
-  const amount = n(current.amount.minor / 100, {
-    key: current.amount.minor % 100 === 0 ? 'currency_whole' : 'currency',
-    currency: current.amount.currency,
-  })
+  const amount = formatMoney(n, current.amount.minor, current.amount.currency)
 
   return t(`contacts.pill.${current.kind}`, { amount })
 })

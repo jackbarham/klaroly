@@ -44,6 +44,7 @@ import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import EnquiryDetail from '@/components/enquiries/EnquiryDetail.vue'
+import { routeId } from '@/lib/routeId'
 import { useAuthStore } from '@/stores/auth'
 import { useEnquiriesStore } from '@/stores/enquiries'
 
@@ -62,11 +63,7 @@ const enquiries = useEnquiriesStore()
 const auth = useAuthStore()
 const route = useRoute()
 
-const id = computed(() => {
-  const value = Number(route.params.id)
-
-  return Number.isFinite(value) && value > 0 ? value : null
-})
+const id = computed(() => routeId(route))
 
 // The list row first, because it is already in memory. The detail response is
 // the same shape with three more fields, so it stands in on a deep link.

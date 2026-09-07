@@ -1,7 +1,10 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { enquiries as fetchEnquiries, enquiry as fetchEnquiry, setStage as writeStage } from '@/lib/enquiries'
-import { defaultSettings, readSettings, writeSettings, type EnquiryViewSettings } from '@/lib/enquiryView'
+import { liveStages } from '@/lib/enquiryList'
+import { defaultSettings, readSettings, writeSettings } from '@/lib/enquiryView'
+import type { LoadStatus } from '@/lib/loadStatus'
+import { settingsState } from '@/lib/viewSettings'
 import type { BookingStage } from '@/types/bookings'
 import type { Enquiry, EnquiryDetail, EnquiryMeta, LostReason } from '@/types/enquiries'
 
@@ -19,11 +22,10 @@ import type { Enquiry, EnquiryDetail, EnquiryMeta, LostReason } from '@/types/en
 // a pasted WhatsApp thread: five hundred of those is not a list payload, and a
 // detail opened by tapping does not have to work offline.
 
-export type LoadStatus = 'idle' | 'loading' | 'ready' | 'failed'
-
-// The stages this list holds. Anything from provisional onwards belongs to the
-// bookings list, so a record that reaches one leaves this one.
-const listed: BookingStage[] = ['new', 'in_conversation', 'possible', 'quoted', 'lost']
+// The stages this list holds: the live four plus the archive. Anything from
+// provisional onwards belongs to the bookings list, so a record that reaches
+// one leaves this one.
+const listed: BookingStage[] = [...liveStages, 'lost']
 
 export const useEnquiriesStore = defineStore('enquiries', () => {
   const enquiries = ref<Enquiry[]>([])
@@ -33,10 +35,7 @@ export const useEnquiriesStore = defineStore('enquiries', () => {
   const detail = ref<EnquiryDetail | null>(null)
   const detailStatus = ref<LoadStatus>('idle')
 
-  // Read once, when the store is created, so the first render is already in
-  // the shape this person left it in and no setting is seen to change after
-  // the list has drawn. readSettings copes with a storage that throws.
-  const settings = ref<EnquiryViewSettings>(readSettings())
+  const { settings, update, reset } = settingsState(readSettings, writeSettings, defaultSettings)
 
   /**
    * Fetches once. Coming back to Enquiries from another tab does not refetch,
@@ -139,21 +138,6 @@ export const useEnquiriesStore = defineStore('enquiries', () => {
     }
 
     return written
-  }
-
-  // A patch rather than a whole object, because the menu changes one setting
-  // at a time and stays open while it does, so the list redraws underneath and
-  // the setting is judged by its effect rather than by its name.
-  function update(patch: Partial<EnquiryViewSettings>): void {
-    settings.value = { ...settings.value, ...patch }
-
-    writeSettings(settings.value)
-  }
-
-  function reset(): void {
-    settings.value = { ...defaultSettings }
-
-    writeSettings(settings.value)
   }
 
   return {

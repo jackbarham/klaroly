@@ -14,8 +14,7 @@
       <AppButton
         variant="secondary"
         size="small"
-        :pending="retrying"
-        @click="onRetry"
+        @click="contacts.retry()"
       >
         {{ t('contacts.retry') }}
       </AppButton>
@@ -125,12 +124,14 @@
 // card beside it, because selecting the first row would put a real person's
 // number on screen because of an accident of sort order, and would leave the
 // address bar disagreeing with what is being shown.
-import { computed, onBeforeUnmount, onMounted, ref, useId, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import ContactFilterBar from '@/components/contacts/ContactFilterBar.vue'
 import ContactList from '@/components/contacts/ContactList.vue'
 import { groupContacts, matches } from '@/lib/contactList'
+import { routeId } from '@/lib/routeId'
+import { useSplitList } from '@/lib/splitList'
 import { useContactsStore } from '@/stores/contacts'
 
 const { t } = useI18n()
@@ -160,11 +161,7 @@ const ordered = computed(() => groups.value.flatMap((group) => group.contacts))
 
 const detailOpen = computed(() => typeof route.params.id === 'string' && route.params.id !== '')
 
-const selectedId = computed(() => {
-  const id = Number(route.params.id)
-
-  return Number.isFinite(id) && id > 0 ? id : null
-})
+const selectedId = computed(() => routeId(route))
 
 // -- The keyboard cursor ----------------------------------------------------
 //
@@ -216,75 +213,8 @@ function onChoose(): void {
   }
 }
 
-// -- Where the group headings come to rest ----------------------------------
-//
-// A ResizeObserver rather than a watcher, because the bar's height moves for
-// reasons this component does not initiate: the button wrapping under the
-// field at a narrow width, and the browser's own text size.
-const bar = useTemplateRef<{ $el: HTMLElement } | null>('bar')
-const barHeight = ref(0)
-
-// Whether the card fits in the window, which is the only thing this screen
-// asks the viewport. See the comment on the detail column.
-const detailCol = useTemplateRef<HTMLElement>('detailCol')
-const detailFits = ref(true)
-
-let sizes: ResizeObserver | null = null
-
-function measure(): void {
-  const barElement = bar.value?.$el
-
-  if (barElement instanceof HTMLElement) {
-    barHeight.value = Math.round(barElement.getBoundingClientRect().height)
-  }
-
-  const card = detailCol.value
-
-  if (card) {
-    // offsetHeight rather than the bounding rectangle, because a sticky
-    // element that is currently pinned still reports its whole height here and
-    // the answer must not depend on where the page happens to be scrolled to.
-    // Toggling stickiness does not change this number, so the two cannot
-    // chase each other.
-    detailFits.value = card.offsetHeight <= window.innerHeight
-  }
-}
-
-onMounted(() => {
-  measure()
-
-  sizes = new ResizeObserver(measure)
-
-  const barElement = bar.value?.$el
-
-  if (barElement instanceof HTMLElement) {
-    sizes.observe(barElement)
-  }
-
-  if (detailCol.value) {
-    sizes.observe(detailCol.value)
-  }
-
-  // A ResizeObserver sees the card change and not the window, and the window
-  // is half of the comparison.
-  window.addEventListener('resize', measure, { passive: true })
-})
-
-onBeforeUnmount(() => {
-  sizes?.disconnect()
-  sizes = null
-  window.removeEventListener('resize', measure)
-})
-
-const retrying = ref(false)
-
-async function onRetry(): Promise<void> {
-  retrying.value = true
-
-  try {
-    await contacts.retry()
-  } finally {
-    retrying.value = false
-  }
-}
+// Where the group headings come to rest, and whether the card fits in the
+// window, which is the only thing this screen asks the viewport. See the
+// comment on the detail column, and src/lib/splitList.ts for the measuring.
+const { barHeight, detailFits } = useSplitList()
 </script>

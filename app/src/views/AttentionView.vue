@@ -14,8 +14,7 @@
       <AppButton
         variant="secondary"
         size="small"
-        :pending="retrying"
-        @click="onRetry"
+        @click="home.retry()"
       >
         {{ t('home.retry') }}
       </AppButton>
@@ -56,25 +55,13 @@
 //
 // It reads the same store as Home, so arriving here directly fetches once and
 // arriving from Home fetches not at all.
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AttentionList from '@/components/home/AttentionList.vue'
 import { useHomeStore } from '@/stores/home'
 
 const { t } = useI18n()
 const home = useHomeStore()
-
-const retrying = ref(false)
-
-async function onRetry(): Promise<void> {
-  retrying.value = true
-
-  try {
-    await home.retry()
-  } finally {
-    retrying.value = false
-  }
-}
 
 onMounted(() => {
   void home.load()

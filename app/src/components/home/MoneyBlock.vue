@@ -1,13 +1,9 @@
 <template>
-  <section aria-labelledby="money-heading">
-    <div class="mb-1 flex items-baseline justify-between gap-4 px-6 @split:px-4">
-      <h2
-        id="money-heading"
-        class="text-lg font-semibold text-text-strong"
-      >
-        {{ t('home.money.title') }}
-      </h2>
-
+  <section :aria-labelledby="headingId">
+    <BlockHeader
+      :title="t('home.money.title')"
+      :heading-id="headingId"
+    >
       <RouterLink
         class="flex shrink-0 items-center gap-1 text-meta font-medium text-accent-text focus-visible:focus-ring"
         :to="{ name: 'settings' }"
@@ -19,7 +15,7 @@
           aria-hidden="true"
         />
       </RouterLink>
-    </div>
+    </BlockHeader>
 
     <div class="space-y-4 px-6 @split:px-4">
       <!--
@@ -161,10 +157,12 @@
 // here to consult a store about, and a stale auth store cannot make this block
 // draw a figure the server did not compute. Passing the flags in would only
 // create a second opinion about what to draw.
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
+import BlockHeader from '@/components/home/BlockHeader.vue'
 import Icon from '@/components/ui/Icon.vue'
+import { periodKeys } from '@/lib/homeView'
 import { formatMoney } from '@/lib/money'
 import type { HomeMoney, PeriodKey } from '@/types/home'
 
@@ -179,7 +177,7 @@ const emit = defineEmits<{
 
 const { n, t } = useI18n()
 
-const periodKeys: PeriodKey[] = ['this_month', 'three_months', 'twelve_months', 'business_year']
+const headingId = useId()
 
 function amount(minor: number): string {
   return formatMoney(n, minor, props.money.currency)

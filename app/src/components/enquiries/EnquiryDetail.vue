@@ -152,9 +152,10 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import AppButton from '@/components/ui/AppButton.vue'
 import Icon from '@/components/ui/Icon.vue'
-import StatusPill, { type PillTone } from '@/components/ui/StatusPill.vue'
-import { agoKey, daysSince, whenAndWhere } from '@/lib/enquiryList'
+import StatusPill from '@/components/ui/StatusPill.vue'
+import { agoKey, daysSince, labelForStage, sourceKey, toneForStage, whenAndWhere } from '@/lib/enquiryList'
 import { sectionsFor } from '@/lib/enquirySections'
+import { formatMoney } from '@/lib/money'
 import type { FeatureMap } from '@/types/auth'
 import type { Enquiry, EnquiryDetail } from '@/types/enquiries'
 
@@ -173,45 +174,22 @@ const emit = defineEmits<{
 
 const { t, n } = useI18n()
 
-const stageLabel = computed(() => (
-  props.enquiry.stage === 'lost' && props.enquiry.lost_side
-    ? t(`enquiries.lost_pill.${props.enquiry.lost_side}`)
-    : t(`bookings.stage.${props.enquiry.stage}`)
-))
+const stageLabel = computed(() => labelForStage(props.enquiry, t))
 
-const toneByStage: Partial<Record<Enquiry['stage'], PillTone>> = {
-  new: 'accent',
-  in_conversation: 'neutral',
-  possible: 'info',
-  quoted: 'success',
-  lost: 'neutral',
-}
-
-const stageTone = computed(() => toneByStage[props.enquiry.stage] ?? 'neutral')
+const stageTone = computed(() => toneForStage(props.enquiry.stage))
 
 const ago = computed(() => agoKey(daysSince(props.enquiry.last_touched_at, props.today)))
 
 const sourceLine = computed(() => {
-  const booking = props.enquiry.source_booking
+  const source = sourceKey(props.enquiry)
 
-  if (booking) {
-    return t('enquiries.source.met_at', { name: booking.client_name })
-  }
-
-  return props.enquiry.source ? t(`enquiries.source.${props.enquiry.source}`) : null
+  return source ? t(source.key, source.values) : null
 })
 
 const total = computed(() => {
   const minor = props.enquiry.total_minor
 
-  if (minor === null) {
-    return null
-  }
-
-  return n(minor / 100, {
-    key: minor % 100 === 0 ? 'currency_whole' : 'currency',
-    currency: props.enquiry.currency,
-  })
+  return minor === null ? null : formatMoney(n, minor, props.enquiry.currency)
 })
 
 const sections = computed(() => sectionsFor(props.enquiry.stage, props.features))

@@ -75,7 +75,7 @@
         v-else
         :tone="stageTone"
       >
-        {{ lostLabel }}
+        {{ stageLabel }}
       </StatusPill>
 
       <!--
@@ -108,8 +108,9 @@ import { computed, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import Icon from '@/components/ui/Icon.vue'
-import StatusPill, { type PillTone } from '@/components/ui/StatusPill.vue'
-import { agoKey, clashLine, daysSince, isCold, whenAndWhere } from '@/lib/enquiryList'
+import StatusPill from '@/components/ui/StatusPill.vue'
+import { agoKey, clashLine, daysSince, isCold, labelForStage, sourceKey, toneForStage, whenAndWhere } from '@/lib/enquiryList'
+import { formatMoney } from '@/lib/money'
 import type { Enquiry } from '@/types/enquiries'
 
 const props = defineProps<{
@@ -146,30 +147,9 @@ const settable = computed(() => props.enquiry.stage !== 'lost')
 
 const lostReason = computed(() => (props.enquiry.stage === 'lost' ? props.enquiry.lost_reason : null))
 
-const lostLabel = computed(() => (
-  props.enquiry.lost_side ? t(`enquiries.lost_pill.${props.enquiry.lost_side}`) : t('bookings.stage.lost')
-))
+const stageLabel = computed(() => labelForStage(props.enquiry, t))
 
-/**
- * Colour on this row means attention, not stage.
- *
- * So warning and danger are reserved for the staleness figure and the clash
- * line, and the stages take the quieter families. New is the accent because
- * "nobody has looked at this" is the one stage that is a call to act; the rest
- * are neutral, info and success in pipeline order. An earlier version had
- * Possible on warning and it read as an alarm about a good thing:
- * --warning-text is --color-warning-800, which reads red, so anything wearing
- * it reads as a problem.
- */
-const toneByStage: Partial<Record<Enquiry['stage'], PillTone>> = {
-  new: 'accent',
-  in_conversation: 'neutral',
-  possible: 'info',
-  quoted: 'success',
-  lost: 'neutral',
-}
-
-const stageTone = computed(() => toneByStage[props.enquiry.stage] ?? 'neutral')
+const stageTone = computed(() => toneForStage(props.enquiry.stage))
 
 const cold = computed(() => isCold(props.enquiry))
 
@@ -179,17 +159,10 @@ const clash = computed(() => (
   props.showClashes && props.enquiry.stage !== 'lost' ? clashLine(props.enquiry.clash) : null
 ))
 
-// How it arrived. A captured enquiry names the booking it was captured at,
-// because "met at Elspeth Rowntree's wedding" is the useful half of that fact
-// and "captured at an event" is not.
 const sourceLine = computed(() => {
-  const booking = props.enquiry.source_booking
+  const source = sourceKey(props.enquiry)
 
-  if (booking) {
-    return t('enquiries.source.met_at', { name: booking.client_name })
-  }
-
-  return props.enquiry.source ? t(`enquiries.source.${props.enquiry.source}`) : null
+  return source ? t(source.key, source.values) : null
 })
 
 /**
@@ -209,10 +182,7 @@ const total = computed(() => {
     return null
   }
 
-  return n(minor / 100, {
-    key: minor % 100 === 0 ? 'currency_whole' : 'currency',
-    currency: props.enquiry.currency,
-  })
+  return formatMoney(n, minor, props.enquiry.currency)
 })
 </script>
 

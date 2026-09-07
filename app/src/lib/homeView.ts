@@ -50,8 +50,11 @@ export const blockKeys: BlockKey[] = ['next', 'attention', 'money']
 
 export const previewCounts: PreviewCount[] = [3, 4, 6, 'all']
 
+// The four periods, in the order the money block's selector draws them.
+export const periodKeys: PeriodKey[] = ['this_month', 'three_months', 'twelve_months', 'business_year']
+
 export const defaultSettings: HomeViewSettings = {
-  order: ['next', 'attention', 'money'],
+  order: [...blockKeys],
   previewCount: 4,
   period: 'this_month',
 }
@@ -61,7 +64,7 @@ export const defaultSettings: HomeViewSettings = {
 const checks: Checks<HomeViewSettings> = {
   order: permutationOf<BlockKey>(...blockKeys),
   previewCount: oneOf<PreviewCount>(...previewCounts),
-  period: oneOf<PeriodKey>('this_month', 'three_months', 'twelve_months', 'business_year'),
+  period: oneOf<PeriodKey>(...periodKeys),
 }
 
 export function readSettings(): HomeViewSettings {

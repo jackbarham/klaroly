@@ -14,8 +14,7 @@
       <AppButton
         variant="secondary"
         size="small"
-        :pending="retrying"
-        @click="onRetry"
+        @click="enquiries.retry()"
       >
         {{ t('enquiries.retry') }}
       </AppButton>
@@ -120,13 +119,15 @@
 // card beside it, because selecting the first row would open somebody's
 // enquiry because of an accident of sort order and leave the address bar
 // disagreeing with what is being shown.
-import { computed, onBeforeUnmount, onMounted, ref, useId, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterView, useRoute } from 'vue-router'
 import EnquiryFilterBar from '@/components/enquiries/EnquiryFilterBar.vue'
 import EnquiryList from '@/components/enquiries/EnquiryList.vue'
 import EnquiryStageSheet from '@/components/enquiries/EnquiryStageSheet.vue'
 import { groupEnquiries, matches } from '@/lib/enquiryList'
+import { routeId } from '@/lib/routeId'
+import { useSplitList } from '@/lib/splitList'
 import { useEnquiriesStore } from '@/stores/enquiries'
 import type { BookingStage } from '@/types/bookings'
 import type { Enquiry, LostReason } from '@/types/enquiries'
@@ -157,11 +158,7 @@ const groups = computed(() => groupEnquiries(
 
 const detailOpen = computed(() => typeof route.params.id === 'string' && route.params.id !== '')
 
-const selectedId = computed(() => {
-  const id = Number(route.params.id)
-
-  return Number.isFinite(id) && id > 0 ? id : null
-})
+const selectedId = computed(() => routeId(route))
 
 // -- The stage sheet --------------------------------------------------------
 
@@ -245,71 +242,10 @@ async function move(enquiry: Enquiry, stage: BookingStage, reason: LostReason | 
   }
 }
 
-// -- Where the band headings come to rest -----------------------------------
-//
-// A ResizeObserver rather than a watcher, because the bar's height moves for
-// reasons this component does not initiate: the button wrapping under the
-// field at a narrow width, and the browser's own text size.
-const bar = useTemplateRef<{ $el: HTMLElement } | null>('bar')
-const barHeight = ref(0)
-
-const detailCol = useTemplateRef<HTMLElement>('detailCol')
-const detailFits = ref(true)
-
-let sizes: ResizeObserver | null = null
-
-function measure(): void {
-  const barElement = bar.value?.$el
-
-  if (barElement instanceof HTMLElement) {
-    barHeight.value = Math.round(barElement.getBoundingClientRect().height)
-  }
-
-  const card = detailCol.value
-
-  if (card) {
-    // offsetHeight rather than the bounding rectangle, because a sticky
-    // element that is currently pinned still reports its whole height here and
-    // the answer must not depend on where the page happens to be scrolled to.
-    detailFits.value = card.offsetHeight <= window.innerHeight
-  }
-}
-
-onMounted(() => {
-  measure()
-
-  sizes = new ResizeObserver(measure)
-
-  const barElement = bar.value?.$el
-
-  if (barElement instanceof HTMLElement) {
-    sizes.observe(barElement)
-  }
-
-  if (detailCol.value) {
-    sizes.observe(detailCol.value)
-  }
-
-  window.addEventListener('resize', measure, { passive: true })
-})
-
-onBeforeUnmount(() => {
-  sizes?.disconnect()
-  sizes = null
-  window.removeEventListener('resize', measure)
-})
-
-const retrying = ref(false)
-
-async function onRetry(): Promise<void> {
-  retrying.value = true
-
-  try {
-    await enquiries.retry()
-  } finally {
-    retrying.value = false
-  }
-}
+// Where the band headings come to rest, and whether the card fits in the
+// window. The same two measurements the contacts screen makes, made in
+// src/lib/splitList.ts.
+const { barHeight, detailFits } = useSplitList()
 
 // A sheet left open over a row that has just left the list has nothing to act
 // on, so it closes with it.

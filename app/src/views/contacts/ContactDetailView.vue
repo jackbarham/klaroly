@@ -50,6 +50,7 @@ import { useRoute, useRouter } from 'vue-router'
 import ContactDeleteDialog from '@/components/contacts/ContactDeleteDialog.vue'
 import ContactDetail from '@/components/contacts/ContactDetail.vue'
 import { fullName } from '@/lib/contactList'
+import { routeId } from '@/lib/routeId'
 import { useContactsStore } from '@/stores/contacts'
 
 const { t } = useI18n()
@@ -58,9 +59,9 @@ const route = useRoute()
 const router = useRouter()
 
 const contact = computed(() => {
-  const id = Number(route.params.id)
+  const id = routeId(route)
 
-  return Number.isFinite(id) ? contacts.find(id) : null
+  return id === null ? null : contacts.find(id)
 })
 
 const name = computed(() => (contact.value ? fullName(contact.value) : ''))

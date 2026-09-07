@@ -64,6 +64,7 @@
 // Five is close to the limit for one menu. A sixth needs an argument.
 import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { segmentClasses, segmentOffClasses, segmentOnClasses } from '@/components/form/field'
 import ToggleSwitch from '@/components/form/ToggleSwitch.vue'
 import { useEnquiriesStore } from '@/stores/enquiries'
 import type { EnquirySort, EnquiryViewSettings } from '@/lib/enquiryView'
@@ -107,12 +108,4 @@ const switches = switchFields.map((row) => ({
   labelId: useId(),
   switchId: useId(),
 }))
-
-// The same segmented treatment the contacts menu uses, and the same deliberate
-// departure from the quieter one in docs/style-guide.md: these sit inside a
-// panel that is itself over a scrim, where the quieter version could not be
-// read as chosen at a glance.
-const segmentClasses = 'h-11 grow rounded-control text-body font-medium transition-colors focus-visible:focus-ring'
-const segmentOnClasses = 'bg-accent text-text-on-accent'
-const segmentOffClasses = 'text-text-muted hover:text-accent-text'
 </script>

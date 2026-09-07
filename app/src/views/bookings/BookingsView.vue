@@ -37,8 +37,7 @@
       <AppButton
         variant="secondary"
         size="small"
-        :pending="retrying"
-        @click="onRetry"
+        @click="bookings.retry(month)"
       >
         {{ t('bookings.retry') }}
       </AppButton>
@@ -372,18 +371,6 @@ watch([month, mode], holdSync)
 watch(month, (current) => {
   bookings.ensureMonthLoaded(current)
 })
-
-const retrying = ref(false)
-
-async function onRetry(): Promise<void> {
-  retrying.value = true
-
-  try {
-    await bookings.retry(month.value)
-  } finally {
-    retrying.value = false
-  }
-}
 </script>
 
 <style scoped>

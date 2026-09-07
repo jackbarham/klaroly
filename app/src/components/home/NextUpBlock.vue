@@ -8,16 +8,12 @@
   -->
   <section
     v-if="events.length > 0"
-    aria-labelledby="next-heading"
+    :aria-labelledby="headingId"
   >
-    <div class="mb-1 flex items-baseline justify-between gap-4 px-6 @split:px-4">
-      <h2
-        id="next-heading"
-        class="text-lg font-semibold text-text-strong"
-      >
-        {{ t('home.next.title') }}
-      </h2>
-
+    <BlockHeader
+      :title="t('home.next.title')"
+      :heading-id="headingId"
+    >
       <!--
         **Bookings, not Calendar.** Section 17 merged the calendar into Bookings
         because they are two views of one thing, so a link named Calendar would
@@ -34,7 +30,7 @@
           aria-hidden="true"
         />
       </RouterLink>
-    </div>
+    </BlockHeader>
 
     <ul role="list">
       <NextUpRow
@@ -57,9 +53,10 @@
 // at 375px, so six of them fill the screen on their own and push every
 // attention row below the fold. Three plus the Bookings link is 18.2's "next
 // two or three", and it is what leaves room for the block underneath.
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
+import BlockHeader from '@/components/home/BlockHeader.vue'
 import NextUpRow from '@/components/home/NextUpRow.vue'
 import Icon from '@/components/ui/Icon.vue'
 import type { UpcomingEvent } from '@/types/home'
@@ -70,6 +67,8 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+
+const headingId = useId()
 
 const shown = computed(() => props.events.slice(0, 3))
 </script>

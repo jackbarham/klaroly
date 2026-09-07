@@ -1,5 +1,5 @@
-import { differenceInCalendarDays, format, getYear, parseISO } from 'date-fns'
-import { venueShort, type Translate } from '@/lib/eventLine'
+import { differenceInCalendarDays, format, parseISO } from 'date-fns'
+import { dayMonth, daysAgo, venueShort, type Translate } from '@/lib/eventLine'
 import type { AttentionRow, UpcomingEvent, WaitingParty } from '@/types/home'
 
 // Everything the home screen works out about a row: which band it falls in,
@@ -16,18 +16,10 @@ import type { AttentionRow, UpcomingEvent, WaitingParty } from '@/types/home'
 
 // -- Day counts -------------------------------------------------------------
 
-/**
- * How many whole calendar days ago an instant was.
- *
- * Calendar days rather than elapsed hours, so something sent at eleven last
- * night reads as one day ago this morning rather than as nought until eleven.
- * The instant comes from the server and the day is worked out here, which is
- * why every timestamp in the payload is an instant: a number computed on the
- * server would be wrong by the time a tab left open overnight read it.
- */
-export function daysAgo(instant: string, today: Date): number {
-  return Math.max(differenceInCalendarDays(today, parseISO(instant)), 0)
-}
+// The arithmetic is src/lib/eventLine.ts's daysAgo, which the enquiries list
+// counts with too. It is re-exported here under both the names this screen's
+// callers use rather than renamed at each of them.
+export { daysAgo }
 
 /**
  * How many whole calendar days until a date, negative when it has passed.
@@ -37,11 +29,10 @@ export function daysUntil(date: string, today: Date): number {
 }
 
 /**
- * How late something is, in whole days, or nought when it is not late.
+ * How late something is, in whole days, or nought when it is not late: the
+ * same count as daysAgo, named for what it is asked about, a due date.
  */
-export function daysLate(due: string, today: Date): number {
-  return Math.max(differenceInCalendarDays(today, parseISO(due)), 0)
-}
+export const daysLate = daysAgo
 
 // -- The countdown pill -----------------------------------------------------
 
@@ -319,20 +310,8 @@ export function dateParts(date: string, t: Translate): { weekday: string, day: s
 }
 
 /**
- * A date on an attention row's detail line: the day and month, plus the year
- * when it is not this one.
- *
- * The patterns are contacts' keys rather than a third pair spelled the same
- * way, for the reason eventLine.ts gives: two places to change "12 Sep" and one
- * place to forget.
+ * A date on an attention row's detail line, or nothing when the row has none.
  */
 function eventDay(date: string | null, today: Date, t: Translate): string {
-  if (date === null) {
-    return ''
-  }
-
-  const parsed = parseISO(date)
-  const sameYear = getYear(parsed) === getYear(today)
-
-  return format(parsed, t(sameYear ? 'contacts.format.day_month' : 'contacts.format.day_month_year'))
+  return date === null ? '' : dayMonth(date, today, t)
 }

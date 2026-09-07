@@ -1,16 +1,12 @@
 <template>
   <section
     v-if="total > 0"
-    aria-labelledby="attention-heading"
+    :aria-labelledby="headingId"
   >
-    <div class="mb-1 flex items-baseline justify-between gap-4 px-6 @split:px-4">
-      <h2
-        id="attention-heading"
-        class="text-lg font-semibold text-text-strong"
-      >
-        {{ t('home.attention.title') }}
-      </h2>
-
+    <BlockHeader
+      :title="t('home.attention.title')"
+      :heading-id="headingId"
+    >
       <!--
         **N is always the real total**, whatever the cap is set to. A preview
         that quietly showed four of eight would be the amounts-owed switch
@@ -35,7 +31,7 @@
           aria-hidden="true"
         />
       </RouterLink>
-    </div>
+    </BlockHeader>
 
     <!--
       Two renders, one per width, because the band headings differ in TEXT and
@@ -90,9 +86,11 @@
 <script setup lang="ts">
 // The attention block: business logic 18.1, what is waiting and whose court the
 // ball is in.
+import { useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import AttentionList from '@/components/home/AttentionList.vue'
+import BlockHeader from '@/components/home/BlockHeader.vue'
 import Icon from '@/components/ui/Icon.vue'
 import type { AttentionRow } from '@/types/home'
 
@@ -106,4 +104,6 @@ defineProps<{
 }>()
 
 const { t } = useI18n()
+
+const headingId = useId()
 </script>

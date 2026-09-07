@@ -2,14 +2,16 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { endOfMonth, startOfMonth, subMonths } from 'date-fns'
 import * as bookings from '@/lib/bookings'
+import type { LoadStatus } from '@/lib/loadStatus'
 import { dayKey } from '@/lib/monthGrid'
 import type { BookingEvent } from '@/types/bookings'
 
 // The events the bookings screen draws, and the months its jump sheet dots.
 // Components read this store and never call the API themselves.
 
-export type BookingsStatus = 'idle' | 'loading' | 'ready' | 'failed'
-export type WindowStatus = 'idle' | 'loading' | 'failed'
+// A window fetched around a month, which is never "ready" in the way the
+// first load is: the store holds a list of loaded ranges instead.
+type WindowStatus = 'idle' | 'loading' | 'failed'
 
 // What is known to be loaded. `to` of null means "and everything after", which
 // is what the first call fetches.
@@ -61,7 +63,7 @@ function mergeRanges(ranges: Range[]): Range[] {
 export const useBookingsStore = defineStore('bookings', () => {
   const events = ref<BookingEvent[]>([])
   const monthsWithWork = ref<ReadonlySet<string>>(new Set())
-  const status = ref<BookingsStatus>('idle')
+  const status = ref<LoadStatus>('idle')
   const windowStatus = ref<WindowStatus>('idle')
 
   const loaded = ref<Range[]>([])
@@ -215,7 +217,6 @@ export const useBookingsStore = defineStore('bookings', () => {
     status,
     windowStatus,
     hasFailed,
-    loaded,
     load,
     ensureMonthLoaded,
     retry,

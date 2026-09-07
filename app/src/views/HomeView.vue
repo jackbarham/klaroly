@@ -25,8 +25,7 @@
       <AppButton
         variant="secondary"
         size="small"
-        :pending="retrying"
-        @click="onRetry"
+        @click="home.retry()"
       >
         {{ t('home.retry') }}
       </AppButton>
@@ -168,18 +167,6 @@ const splitPlacement: Record<BlockKey, string> = {
   attention: '@split:col-start-1 @split:row-start-1 @split:row-span-2',
   next: '@split:col-start-2',
   money: '@split:col-start-2',
-}
-
-const retrying = ref(false)
-
-async function onRetry(): Promise<void> {
-  retrying.value = true
-
-  try {
-    await home.retry()
-  } finally {
-    retrying.value = false
-  }
 }
 
 function openAdjust(anchor: HTMLElement | null): void {

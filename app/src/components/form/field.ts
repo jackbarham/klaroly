@@ -54,6 +54,16 @@ export function edgeClasses(invalid: boolean): string {
   return 'shadow-input enabled:hover:not-focus:shadow-input-hover focus:shadow-input-focus'
 }
 
+// The segmented control a view menu draws its sort with: a row of buttons in
+// a sunken track, the chosen one a filled accent carrying a white label. That
+// is a deliberate departure from the segmented control in docs/style-guide.md,
+// which is quieter: these sit inside a panel that is itself over a scrim, and
+// the quieter treatment could not be read as chosen at a glance. The contacts
+// and enquiries menus both read these three, so they cannot drift.
+export const segmentClasses = 'h-11 grow rounded-control text-body font-medium transition-colors focus-visible:focus-ring'
+export const segmentOnClasses = 'bg-accent text-text-on-accent'
+export const segmentOffClasses = 'text-text-muted hover:text-accent-text'
+
 // The option row the checkbox and the radio group share. A 20px box is
 // smaller than a thumb, so the whole row is the hit area, at least 44px tall.
 // The negative margin pulls the row's padding back out to the edge of the

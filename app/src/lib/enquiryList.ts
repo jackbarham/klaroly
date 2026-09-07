@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns'
-import { datePlace, venueShort, type Translate } from '@/lib/eventLine'
+import { fold } from '@/lib/contactList'
+import { datePlace, daysAgo, venueShort, type Translate } from '@/lib/eventLine'
 import type { EnquirySort } from '@/lib/enquiryView'
 import type { BookingStage } from '@/types/bookings'
 import type { Clash, Enquiry } from '@/types/enquiries'
@@ -20,20 +21,68 @@ import type { Clash, Enquiry } from '@/types/enquiries'
 // under its own heading.
 export const liveStages: BookingStage[] = ['new', 'in_conversation', 'possible', 'quoted']
 
-// -- Staleness --------------------------------------------------------------
+// -- The stage pill ---------------------------------------------------------
+
+// The tones a stage pill can wear, a subset of StatusPill's own so a screen
+// hands the answer straight to the pill.
+export type StageTone = 'accent' | 'neutral' | 'info' | 'success'
 
 /**
- * How many whole calendar days ago this was last touched.
+ * Colour on a row means attention, not stage.
  *
- * Calendar days rather than elapsed hours, so something touched at eleven last
- * night reads as "Yesterday" this morning rather than as "Today" until eleven.
- * The instant comes from the server and the day is worked out here, which is
- * why last_touched_at is sent as an instant: a number computed on the server
- * would be wrong by the time a tab left open overnight read it.
+ * So warning and danger are reserved for the staleness figure and the clash
+ * line, and the stages take the quieter families. New is the accent because
+ * "nobody has looked at this" is the one stage that is a call to act; the rest
+ * are neutral, info and success in pipeline order. An earlier version had
+ * Possible on warning and it read as an alarm about a good thing:
+ * --warning-text is --color-warning-800, which reads red, so anything wearing
+ * it reads as a problem. The row and the detail both read this map, so the two
+ * cannot colour one stage two ways.
  */
-export function daysSince(instant: string, today: Date): number {
-  return Math.max(differenceInCalendarDays(today, parseISO(instant)), 0)
+const toneByStage: Partial<Record<BookingStage, StageTone>> = {
+  new: 'accent',
+  in_conversation: 'neutral',
+  possible: 'info',
+  quoted: 'success',
+  lost: 'neutral',
 }
+
+export function toneForStage(stage: BookingStage): StageTone {
+  return toneByStage[stage] ?? 'neutral'
+}
+
+/**
+ * What the stage pill says. A lost enquiry that carries a side names which of
+ * the two endings it was, because on a closed row the ending is the fact worth
+ * reading.
+ */
+export function labelForStage(enquiry: Enquiry, t: Translate): string {
+  return enquiry.stage === 'lost' && enquiry.lost_side
+    ? t(`enquiries.lost_pill.${enquiry.lost_side}`)
+    : t(`bookings.stage.${enquiry.stage}`)
+}
+
+/**
+ * How it arrived, as a key and what it interpolates. A captured enquiry names
+ * the booking it was captured at, because "met at Elspeth Rowntree's wedding"
+ * is the useful half of that fact and "captured at an event" is not.
+ */
+export function sourceKey(enquiry: Enquiry): { key: string, values: Record<string, string> } | null {
+  const booking = enquiry.source_booking
+
+  if (booking) {
+    return { key: 'enquiries.source.met_at', values: { name: booking.client_name } }
+  }
+
+  return enquiry.source ? { key: `enquiries.source.${enquiry.source}`, values: {} } : null
+}
+
+// -- Staleness --------------------------------------------------------------
+
+// How many whole calendar days ago this was last touched. The arithmetic is
+// src/lib/eventLine.ts's daysAgo, shared with the home screen, and it keeps
+// this screen's name here rather than being renamed at every caller.
+export const daysSince = daysAgo
 
 /**
  * The staleness figure, in words, because the arithmetic is the whole content
@@ -161,10 +210,6 @@ export function clashLine(clash: Clash | null): ClashLine | null {
 }
 
 // -- The filter -------------------------------------------------------------
-
-function fold(value: string): string {
-  return value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
-}
 
 /**
  * Whether an enquiry survives the filter box.

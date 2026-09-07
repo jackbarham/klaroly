@@ -68,6 +68,7 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { differenceInCalendarDays, format, parseISO } from 'date-fns'
 import type { PillTone } from '@/components/ui/StatusPill.vue'
+import { liveStages } from '@/lib/enquiryList'
 import type { BookingEvent, BookingStage } from '@/types/bookings'
 
 const props = defineProps<{
@@ -155,7 +156,7 @@ const meta = computed(() => {
 
 // Only an enquiry: on a confirmed booking, how long ago somebody last touched
 // it says nothing useful.
-const showTouched = computed(() => ['new', 'in_conversation', 'possible', 'quoted'].includes(props.event.stage))
+const showTouched = computed(() => liveStages.includes(props.event.stage))
 
 const touched = computed(() => {
   // Calendar days rather than an elapsed duration divided by 86400, which is

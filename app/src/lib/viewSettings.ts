@@ -15,6 +15,7 @@
 //
 // Each screen supplies its own type, defaults and field checks, so a value
 // written by an older build cannot reach that screen's sort function.
+import { ref, type Ref } from 'vue'
 
 // One field's check: whatever came out of storage, and what to use instead.
 export type Check<T> = (value: unknown, fallback: T) => T
@@ -116,4 +117,38 @@ export function writeSettings<T>(key: string, settings: T): void {
   } catch {
     // Nothing to do and nothing to say.
   }
+}
+
+/**
+ * A screen's settings as store state: the value, a patch and a reset, written
+ * once. Each store spreads what this returns into its own, so the fourth
+ * screen does not write a fourth copy of update() and reset().
+ *
+ * Read once, when the store is created, so the first render is already in the
+ * shape this person left it in and no setting is seen to change after the
+ * screen has drawn; the reader copes with a storage that throws. A patch
+ * rather than a whole object, because a menu changes one setting at a time and
+ * stays open while it does, so the screen redraws underneath and the setting
+ * is judged by its effect rather than by its name.
+ */
+export function settingsState<T extends object>(
+  read: () => T,
+  write: (settings: T) => void,
+  defaults: T,
+): { settings: Ref<T>, update: (patch: Partial<T>) => void, reset: () => void } {
+  const settings = ref(read()) as Ref<T>
+
+  function update(patch: Partial<T>): void {
+    settings.value = { ...settings.value, ...patch }
+
+    write(settings.value)
+  }
+
+  function reset(): void {
+    settings.value = { ...defaults }
+
+    write(settings.value)
+  }
+
+  return { settings, update, reset }
 }

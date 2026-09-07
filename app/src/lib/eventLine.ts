@@ -1,4 +1,4 @@
-import { format, getYear, parseISO } from 'date-fns'
+import { differenceInCalendarDays, format, getYear, parseISO } from 'date-fns'
 import type { EventType } from '@/types/bookings'
 
 // The date-and-place line, which two list screens draw and which must not be
@@ -52,6 +52,35 @@ export function venueShort(place: Pick<DatedPlace, 'venue_name' | 'city'>): stri
 }
 
 /**
+ * How many whole calendar days ago something was, or nought when it is still
+ * to come. Takes an instant or a plain date, since both parse the same way.
+ *
+ * Calendar days rather than elapsed hours, so something touched at eleven last
+ * night reads as one day ago this morning rather than as nought until eleven.
+ * The instant comes from the server and the day is worked out here, which is
+ * why every timestamp in a payload is an instant: a number computed on the
+ * server would be wrong by the time a tab left open overnight read it. Three
+ * screens count days and all three count them here.
+ */
+export function daysAgo(when: string, today: Date): number {
+  return Math.max(differenceInCalendarDays(today, parseISO(when)), 0)
+}
+
+/**
+ * A calendar date as "12 Sep", with the year added when it is not this one.
+ *
+ * The patterns are contacts' keys rather than neutral ones, because they are
+ * the same two patterns everywhere a date is drawn, and a second pair spelled
+ * the same way is two places to change "12 Sep" and one place to forget.
+ */
+export function dayMonth(date: string, today: Date, t: Translate): string {
+  const parsed = parseISO(date)
+  const sameYear = getYear(parsed) === getYear(today)
+
+  return format(parsed, t(sameYear ? 'contacts.format.day_month' : 'contacts.format.day_month_year'))
+}
+
+/**
  * The date and the place, shortened.
  *
  * Three things are dropped, and each one is dropped because it is the thing
@@ -66,15 +95,9 @@ export function venueShort(place: Pick<DatedPlace, 'venue_name' | 'city'>): stri
  * line. Three list screens in one app separating their meta with different
  * characters is the sort of drift that is invisible in a diff and obvious on a
  * phone.
- *
- * The date patterns are contacts' keys rather than neutral ones, because they
- * are the same two patterns and a second pair spelled the same way is two
- * places to change "12 Sep" and one place to forget.
  */
 export function datePlace(place: DatedPlace, today: Date, t: Translate): string {
-  const date = parseISO(place.date)
-  const sameYear = getYear(date) === getYear(today)
-  const when = format(date, t(sameYear ? 'contacts.format.day_month' : 'contacts.format.day_month_year'))
+  const when = dayMonth(place.date, today, t)
 
   // The event-type words live under bookings.event_type.*, and they are reused
   // rather than copied: "Trial" spelled in two locale groups is two places to
