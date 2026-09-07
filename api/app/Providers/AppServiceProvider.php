@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Account;
 use App\Support\CurrentAccount;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
@@ -30,6 +31,14 @@ class AppServiceProvider extends ServiceProvider
         // Every date the framework hands back is immutable, so a value read
         // from a model cannot be changed by accident somewhere else.
         Date::use(CarbonImmutable::class);
+
+        // A fillable model handed an attribute it does not list drops it in
+        // silence, so a misspelt key in a create() call is a column left null
+        // with no error anywhere. Outside production that is an exception
+        // instead, so it fails where it is written rather than on a screen
+        // nobody was looking at. Seeders are not affected: db:seed runs them
+        // unguarded, which is why the demo seeder may set created_at.
+        Model::preventSilentlyDiscardingAttributes(! $this->app->isProduction());
 
         // The account, not the user, is the billable entity.
         Cashier::useCustomerModel(Account::class);
