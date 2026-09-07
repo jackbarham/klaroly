@@ -494,7 +494,7 @@ DOM at every width: which one shows is Tailwind's `lg` variant and nothing else.
 | Top bar | 52px row, full width, `top: 0` with the top inset as padding so the glass covers the status bar |
 | Top bar title | `--text-section` at 500, `text-strong`, truncates. The route's own name, and the business name on Summary alone |
 | Top bar actions | A pill at the right holding the bell and the accent New button, each 38px painted and 44px to hit |
-| Tab bar | 60px, `--radius-pill`, inset 16px from both edges, floating 16px above the bottom inset |
+| Tab bar | 60px, `--radius-pill`, inset 16px from both edges, floating `--bar-gap` above the bottom edge |
 | Tab item | 48px, 20px icon over a 12px label, with the sliding pill behind the current one |
 | Glass | `surface-raised` at 60%, `blur(24px) saturate(180%)` |
 
@@ -512,6 +512,25 @@ agreeing, so it is one variable, `--bar-height`, at 52px below `lg` and **zero
 from `lg` up**: the bar draws a row that tall, `page-under-bar` keeps the page
 clear of it, and `stick-top` keeps every sticky block clear of it too. It is not
 a token, because nothing chooses it.
+
+**Three rules read how far the tab bar floats**, in the same way three read the
+top bar's height, so that is one variable too: `--bar-gap`, which places the bar,
+rests a sticky row of form actions on its top edge, and pads the page clear of
+the bar and the gap together.
+
+**It is the larger of the bottom inset and 16px, and never their sum.** On a
+device that reports an inset, the inset already is the gap: the home indicator's
+34px is space nothing may be drawn in. Adding 16px to it floated the bar 50px up
+in an installed PWA on an iPhone, which is where a phone and a desktop browser
+stopped agreeing, because a desktop browser reports no inset and got the 16px the
+bar was drawn for. `max()` gives the phone 34px, leaves the desktop at 16px, and
+makes the 16px a floor rather than an addition, so the number can be moved
+without a browser reporting nothing dropping the bar off the bottom of the
+window.
+
+**The bottom sheet still adds.** It reaches the bottom edge rather than floating
+above it, so its padding has to clear the indicator with a gap of its own, and
+`sheet-bottom` is a sum for that reason.
 
 **The page heading gives way below `lg`.** The bar already says which screen
 this is, so `PageHeader`'s `h1` is `sr-only` there: off the screen, still in the

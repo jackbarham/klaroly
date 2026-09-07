@@ -45,18 +45,31 @@
           The icon is 20px rather than 24. The item is still h-12 inside an
           h-16 bar, so the tap target has not moved: what the smaller icon
           buys is room for a five-item bar to keep its labels at 375px.
+
+          TEMPORARY: the three bindings below are the tab bar trial, switched
+          from the bottom of the More page. See src/lib/tabBarTrial.ts. When
+          the choice is made the winner becomes the only treatment here and
+          the bindings become plain classes again.
+
+          The label keeps its accessible name when the words go: a bar of five
+          unlabelled pictures says nothing to a screen reader, so the icons-only
+          treatment moves the name to aria-label rather than dropping it.
         -->
         <RouterLink
-          class="relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-full text-xs transition-colors focus-visible:focus-ring"
+          class="relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-full transition-colors focus-visible:focus-ring"
           :class="isCurrent(item) ? 'font-medium text-accent-text' : 'text-text-muted'"
           :to="{ name: item.routeName }"
           :aria-current="isCurrent(item) ? 'page' : undefined"
+          :aria-label="showLabels ? undefined : t(item.labelKey)"
         >
           <Icon
             :name="item.icon"
-            class="h-5 w-5"
+            :class="iconClasses"
           />
-          {{ t(item.labelKey) }}
+          <span
+            v-if="showLabels"
+            :class="labelClasses"
+          >{{ t(item.labelKey) }}</span>
         </RouterLink>
       </div>
     </div>
@@ -84,6 +97,7 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { barGlassClasses } from '@/components/layout/barGlass'
 import { activeTabIndex, activeTabKey, tabBarItems, type Destination } from '@/lib/navigation'
+import { tabBarStyle } from '@/lib/tabBarTrial'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -95,6 +109,18 @@ const pillLeft = ref(0)
 const pillWidth = ref(0)
 
 const activeIndex = computed(() => activeTabIndex(route.name))
+
+// TEMPORARY, the tab bar trial. Item width is flex-1 and the bar's height is
+// fixed, so none of this moves the pill and nothing has to be measured again.
+const showLabels = computed(() => tabBarStyle.value !== 'icons')
+
+const iconClasses = computed(() => ({
+  current: 'h-5 w-5',
+  larger: 'h-5.5 w-5.5',
+  icons: 'h-6 w-6',
+}[tabBarStyle.value]))
+
+const labelClasses = computed(() => (tabBarStyle.value === 'larger' ? 'trial-label' : 'text-xs'))
 
 const pillStyle = computed(() => ({
   '--pill-x': `${pillLeft.value}px`,
@@ -167,5 +193,16 @@ watch(activeIndex, async () => {
   .pill {
     transition: none;
   }
+}
+
+/*
+  TEMPORARY, the tab bar trial. 11px is not a step on the type scale, and a
+  treatment that may not survive the week should not put a token in the style
+  guide that nothing ends up reading. If this one wins, this becomes a token
+  and this block goes with the rest of the trial.
+*/
+.trial-label {
+  font-size: 11px;
+  line-height: 16px;
 }
 </style>

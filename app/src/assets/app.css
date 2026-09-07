@@ -664,10 +664,12 @@ body {
 }
 
 /*
-  Safe areas. env() cannot live in the @theme block, so these utilities are the
-  one place the insets are applied, and everything else composes them with
-  Tailwind variants. Each one adds a step from the spacing scale to the inset so
-  that a device with no inset still gets sensible spacing.
+  Safe areas. env() cannot live in the @theme block, so these utilities and the
+  two variables below them are the one place the insets are applied, and
+  everything else composes them with Tailwind variants. A utility that pads a
+  thing touching an edge adds a step from the spacing scale to the inset, so
+  that a device with no inset still gets sensible spacing. The three that place
+  the floating tab bar do not, for the reason given on --bar-gap.
 */
 
 /*
@@ -693,18 +695,38 @@ body {
   }
 }
 
+/*
+  How far the floating tab bar sits above the bottom of the screen.
+
+  Three rules read it and all three break together if one of them stops
+  agreeing, which is the same argument --bar-height makes above: bar-bottom
+  puts the bar here, above-bar rests a sticky row on the bar's top edge, and
+  page-bottom keeps the page clear of the bar and this gap together.
+
+  It is the larger of the inset and the gap rather than their sum, because on a
+  device that reports an inset the inset already is the gap. Adding them put
+  the bar 50px up in an installed PWA on an iPhone, where the home indicator's
+  34px had done the job on its own, while a desktop browser reporting no inset
+  got the 16px the bar was drawn for. max() is also what makes the number safe
+  to move: the second term is a floor no inset can take the bar below.
+*/
+:root {
+  --bar-gap: max(env(safe-area-inset-bottom), var(--spacing) * 4);
+}
+
 @utility page-top {
   padding-top: calc(env(safe-area-inset-top) + var(--spacing) * 6);
 }
 
-/* Clears the floating tab bar: its own inset, its height and a gap. */
+/* Clears the floating tab bar: where it sits, its own 64px height and a gap
+   above it. */
 @utility page-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom) + var(--spacing) * 24);
+  padding-bottom: calc(var(--bar-gap) + var(--spacing) * 20);
 }
 
 /* Where the floating tab bar sits above the bottom of the screen. */
 @utility bar-bottom {
-  bottom: calc(env(safe-area-inset-bottom) + var(--spacing) * 4);
+  bottom: var(--bar-gap);
 }
 
 /* The bottom sheet reaches the bottom edge, so its padding clears the inset. */
@@ -712,9 +734,10 @@ body {
   padding-bottom: calc(env(safe-area-inset-bottom) + var(--spacing) * 4);
 }
 
-/* A sticky row of form actions sits directly on top of the tab bar. */
+/* A sticky row of form actions sits directly on top of the tab bar, so this is
+   where the bar sits plus the bar's own 64px height. */
 @utility above-bar {
-  bottom: calc(env(safe-area-inset-bottom) + var(--spacing) * 20);
+  bottom: calc(var(--bar-gap) + var(--spacing) * 16);
 }
 
 /* Clears the fixed top bar: its own inset, its height and the page's own top
