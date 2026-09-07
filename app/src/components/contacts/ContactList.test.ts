@@ -10,10 +10,9 @@ import type { Contact } from '@/types/contacts'
 // the two empty states being different states, and about which of a row's two
 // lines is the strong one.
 //
-// The contacts are built here rather than taken from src/lib/contactFixtures.
-// That file is a stand-in for an endpoint and no component may import it, but
-// the better reason is that a test asserting a query matches nobody should say
-// which two people it is filtering rather than inherit twenty-two.
+// The contacts are built here rather than taken from a shared payload: a test
+// asserting that a query matches nobody should say which two people it is
+// filtering rather than inherit a list of them.
 
 const mount = mountWithCleanup()
 

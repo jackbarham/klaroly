@@ -981,9 +981,9 @@ The screens, and what each reads:
   `GET /api/events/months`. `/bookings/:id` echoes its id and looks nothing up.
 - Enquiries, at `/enquiries` and `/enquiries/:id`: built, on all three
   enquiry routes, and the first screen that writes to a booking.
-- Contacts, at `/contacts` and `/contacts/:id`: built, still on
-  `src/lib/contactFixtures.ts`. `GET /api/contacts` exists and the screen has
-  not been moved onto it.
+- Contacts, at `/contacts` and `/contacts/:id`: built, on
+  `GET /api/contacts`. `/contacts/:id` is resolved out of the same payload and
+  makes no second request.
 - My account: its four pages read and write real data through the routes in
   the table above.
 - Settings: the index and `/settings/travel` are real, and the latter saves
@@ -1211,6 +1211,10 @@ and the row's position in the list asserted to move with it.
 - A contact is the person who books and pays, and that is all. `last_name` is
   nullable and the whole feature has to mean it.
 - `outstanding` is an array of amounts per currency, never a figure and a flag.
+  Its fields are the resource's: `amount_minor`, `is_overdue` and
+  `is_account_currency`.
+- A booking can have no event, so `event_type` and `date` are nullable and
+  every reader of them says what an undated booking looks like.
 - One payload, and every sort, group and filter happens in the browser. The
   filter box is a filter, with no request behind it.
 - The row's second line is always the nearest booking, and there is one pill

@@ -1,10 +1,10 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { loadContacts } from '@/lib/contactFixtures'
+import { contacts as fetchContacts } from '@/lib/contacts'
 import { defaultSettings, readSettings, writeSettings } from '@/lib/contactView'
 import type { LoadStatus } from '@/lib/loadStatus'
 import { settingsState } from '@/lib/viewSettings'
-import type { Contact } from '@/types/contacts'
+import type { Contact, ContactMeta } from '@/types/contacts'
 
 // The contacts the screen draws, and how this device likes to read them.
 // Components read this store and never call the data layer themselves.
@@ -20,6 +20,7 @@ import type { Contact } from '@/types/contacts'
 export const useContactsStore = defineStore('contacts', () => {
   const contacts = ref<Contact[]>([])
   const status = ref<LoadStatus>('idle')
+  const meta = ref<ContactMeta | null>(null)
 
   const { settings, update, reset } = settingsState(readSettings, writeSettings, defaultSettings)
 
@@ -35,7 +36,10 @@ export const useContactsStore = defineStore('contacts', () => {
     status.value = 'loading'
 
     try {
-      contacts.value = await loadContacts()
+      const answer = await fetchContacts()
+
+      contacts.value = answer.contacts
+      meta.value = answer.meta
       status.value = 'ready'
     } catch {
       status.value = 'failed'
@@ -64,6 +68,7 @@ export const useContactsStore = defineStore('contacts', () => {
   return {
     contacts,
     status,
+    meta,
     settings,
     load,
     retry,

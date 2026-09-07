@@ -235,8 +235,8 @@ describe('the second line', () => {
 })
 
 describe('the pill', () => {
-  const overdue = { currency: 'GBP', minor: 28000, overdue: true }
-  const owing = { currency: 'GBP', minor: 45000, overdue: false }
+  const overdue = { currency: 'GBP', amount_minor: 28000, is_overdue: true, is_account_currency: true }
+  const owing = { currency: 'GBP', amount_minor: 45000, is_overdue: false, is_account_currency: true }
   const soon = booking({ stage: 'confirmed' })
 
   it('puts overdue above owing', () => {
@@ -279,7 +279,7 @@ describe('the pill', () => {
   })
 
   it('reports the amount in its own currency rather than summing across two', () => {
-    const euros = { currency: 'EUR', minor: 50000, overdue: true }
+    const euros = { currency: 'EUR', amount_minor: 50000, is_overdue: true, is_account_currency: false }
     const pill = pillFor(contact({ outstanding: [owing, euros] }), true)
 
     expect(pill?.amount).toEqual(euros)

@@ -12,20 +12,20 @@ const feature = withoutTests(import.meta.glob<string>([
   '../views/contacts/**/*.ts',
   '../lib/contactList.ts',
   '../lib/contactView.ts',
-  '../lib/contactFixtures.ts',
+  '../lib/contacts.ts',
   '../stores/contacts.ts',
   '../types/contacts.ts',
 ], { query: '?raw', import: 'default', eager: true }))
 
-// Every component and view in the app, for the fixtures rule, which is not
-// about this feature's files but about all of them: the fixtures would be just
-// as wrong imported from HomeView.
+// Every component and view in the app, for the data-module rule, which is not
+// about this feature's files but about all of them: src/lib/contacts.ts would
+// be just as wrong imported from HomeView.
 //
 // Test files are left out of both, for the reason boundary.test.ts leaves them
 // out: a test may reach for anything, and this file itself names the module it
 // is banning. No live test uses that exit. ContactList.test.ts needs contacts
-// to mount a list with, and it builds its own two rather than importing
-// twenty-two, because a test asserting that a query matches nobody should say
+// to mount a list with, and it builds its own two rather than importing a
+// payload, because a test asserting that a query matches nobody should say
 // which people it is filtering.
 const components = withoutTests(import.meta.glob<string>([
   '../components/**/*.vue',
@@ -38,20 +38,26 @@ describe('the contacts feature', () => {
     expect(components.length).toBeGreaterThan(20)
   })
 
-  // The fixtures are a stand-in for an endpoint that does not exist yet. A
-  // component reaching past the store to read them would still work today and
-  // would break on the day the API lands, which is the worst possible time to
-  // find out. The store is the only caller.
-  it('has no component importing the fixtures', () => {
-    expect(offences(/contactFixtures/, components)).toEqual([])
+  // src/lib/contacts.ts is the data module for this screen. A component
+  // reaching past the store to it would go round the store's fetch-once rule
+  // and its failed state, and boundary.test.ts bans it for every data module;
+  // this says it again for the one this feature owns, because that rule finds
+  // the layer by derivation and this names the file.
+  //
+  // It replaces the same pair written about src/lib/contactFixtures.ts, which
+  // this screen read until it moved onto GET /api/contacts. The pair is
+  // repointed rather than dropped: a guard whose subject has been deleted
+  // finds nothing and passes for that reason.
+  it('has no component importing the data module', () => {
+    expect(offences(/from '@\/lib\/contacts'/, components)).toEqual([])
   })
 
   // Paired with the assertion above, so it cannot quietly stop being about
-  // anything: something has to import the fixtures, or a guard that finds
+  // anything: something has to import the module, or a guard that finds
   // nothing is passing because the file is unreferenced rather than because
   // the rule is kept.
-  it('has the store importing the fixtures, which is what makes the rule meaningful', () => {
-    expect(offences(/contactFixtures/, feature).join('\n')).toContain('src/stores/contacts.ts')
+  it('has the store importing the data module, which is what makes the rule meaningful', () => {
+    expect(offences(/from '@\/lib\/contacts'/, feature).join('\n')).toContain('src/stores/contacts.ts')
   })
 
   // The bug this exists to stop: toISOString is UTC, so using it to build a

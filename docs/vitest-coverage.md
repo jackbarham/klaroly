@@ -28,7 +28,7 @@ read the source of the app rather than run it:
 hex colour reaching a component, `lib/bookings.guards.test.ts`,
 `lib/contacts.guards.test.ts` and `lib/enquiries.guards.test.ts`, which stop a
 day key being built from `toISOString`, a component importing the contacts
-fixtures and the enquiries list becoming a listbox, all five on the scaffold
+data module and the enquiries list becoming a listbox, all five on the scaffold
 in `lib/sourceRules.ts`, and `router/routeNames.test.ts`, which fails
 if any route name written down anywhere is not a route that exists. Renaming
 a route is the change that breaks a `router.push` in a screen nobody opened,

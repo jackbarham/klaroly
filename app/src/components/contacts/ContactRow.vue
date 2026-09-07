@@ -78,7 +78,16 @@ const name = computed(() => fullName(props.contact))
 const booking = computed(() => {
   const nearest = nearestBooking(props.contact)
 
-  return nearest ? secondLine(nearest, props.today, t) : t('contacts.list.no_bookings')
+  if (nearest === null) {
+    return t('contacts.list.no_bookings')
+  }
+
+  // The nearest booking is next_booking or last_booking, and the API picks
+  // both by having a date, so the fallback is for a shape this endpoint does
+  // not send rather than for a row anybody will see. It is here because that
+  // guarantee lives in one private method on the API side with no test naming
+  // it, and a line of text is a cheaper thing to be wrong about than a render.
+  return secondLine(nearest, props.today, t) ?? t('contacts.detail.no_date')
 })
 
 const pill = computed(() => pillFor(props.contact, props.showAmounts))
@@ -111,7 +120,7 @@ const pillLabel = computed(() => {
   // round amount drops its pence lives: "£450.00" at 12px inside a pill is two
   // characters of noise, and anything else keeps them because a rounded
   // balance is the wrong balance.
-  const amount = formatMoney(n, current.amount.minor, current.amount.currency)
+  const amount = formatMoney(n, current.amount.amount_minor, current.amount.currency)
 
   return t(`contacts.pill.${current.kind}`, { amount })
 })

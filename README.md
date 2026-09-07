@@ -111,7 +111,7 @@ npm test
 
 | Folder | What is in it |
 | --- | --- |
-| `lib/` | Everything that is not a component. The data layer is `api.ts` (the only caller of `fetch`) and the modules that use its verbs, `auth.ts`, `bookings.ts`, `enquiries.ts` and `home.ts`; a screen may not import any of them, and `boundary.test.ts` works out that list rather than holding one. `contactFixtures.ts` sits in the same place for contacts and is temporary: it stands in for `GET /api/contacts`, which exists and the screen has not been moved onto yet, only the store may call it, and it goes when the screen moves. Above that layer sit `verification.ts`, `form.ts`, `splitList.ts` and `routeId.ts`, which a screen may import. The rest is `platform.ts`, `navigation.ts` (the one list of destinations), `dialog.ts` (the focus trap every panel shares), `monthGrid.ts` and `dayMarks.ts` (the calendar's arithmetic), `contactList.ts`, `enquiryList.ts`, `enquirySections.ts` and `homeList.ts` (each screen's rules), `contactView.ts`, `enquiryView.ts` and `homeView.ts` (each screen's saved view settings, on `viewSettings.ts`), `eventLine.ts` and `money.ts` (the formatting the screens share), and the test-only `testMount.ts`, `testHelpers.ts`, `sourceRules.ts` and `*.sample.ts` |
+| `lib/` | Everything that is not a component. The data layer is `api.ts` (the only caller of `fetch`) and the modules that use its verbs, `auth.ts`, `bookings.ts`, `contacts.ts`, `enquiries.ts` and `home.ts`; a screen may not import any of them, and `boundary.test.ts` works out that list rather than holding one. Above that layer sit `verification.ts`, `form.ts`, `splitList.ts` and `routeId.ts`, which a screen may import. The rest is `platform.ts`, `navigation.ts` (the one list of destinations), `dialog.ts` (the focus trap every panel shares), `monthGrid.ts` and `dayMarks.ts` (the calendar's arithmetic), `contactList.ts`, `enquiryList.ts`, `enquirySections.ts` and `homeList.ts` (each screen's rules), `contactView.ts`, `enquiryView.ts` and `homeView.ts` (each screen's saved view settings, on `viewSettings.ts`), `eventLine.ts` and `money.ts` (the formatting the screens share), and the test-only `testMount.ts`, `testHelpers.ts`, `sourceRules.ts` and `*.sample.ts` |
 | `stores/` | Pinia. `auth.ts` is the only way a screen reads or changes who is signed in; `bookings.ts`, `contacts.ts`, `enquiries.ts` and `home.ts` are the only way a screen reads each of those screens' data, and each holds that screen's view settings |
 | `router/` | One explicit routes array. Everything behind the sign-in is a child of the layout route |
 | `components/layout/` | The app shell: `AppLayout`, `AppSidebar`, `AppTopBar`, `AppTabBar`, `AccountMenu`, `CreateMenu`, `SectionNav`, and `barGlass.ts`, the material the two bars share |
@@ -136,17 +136,18 @@ the result, and components read the store. There are no fixtures left.
 `docs/bookings-screen.md` and `docs/bookings-endpoints.md` cover how the two
 halves fit together.
 
-**The contacts screen is not on its endpoint yet.** `GET /api/contacts` now
-exists and returns the whole list in one payload, but the screen still reads
-`src/lib/contactFixtures.ts` behind the same seam: `loadContacts()` is what
-`src/stores/contacts.ts` calls, and components read the store exactly as they
-will afterwards. Swapping it over means writing `src/lib/contacts.ts` the way
-`src/lib/bookings.ts` is written, pointing the store at it, deleting the
-fixtures, and three small changes to `src/types/contacts.ts`: the outstanding
-entry becomes `amount_minor` / `is_overdue` / `is_account_currency`, a booking's
-`event_type` and `date` become nullable, and the payload gains a `meta` block.
-`src/lib/contacts.guards.test.ts` fails if a component reaches past the store to
-those fixtures.
+**The contacts screen is on its endpoint too.** `src/lib/contacts.ts` reads
+`GET /api/contacts`, `src/stores/contacts.ts` calls it, and the fixtures that
+stood in for it are gone; `src/lib/contacts.guards.test.ts` fails if a
+component reaches past the store to that module. What the swap cost is worth
+knowing, because it is the argument for and against building against a seam:
+components did not change at all, and `src/types/contacts.ts` did, in the two
+places the fixtures had guessed. The outstanding entry is `amount_minor` /
+`is_overdue` / `is_account_currency` where the seam had said `minor` and
+`overdue`, and a booking's `event_type` and `date` are nullable, which the
+fixtures could not have shown anybody: they gave every booking a date by
+construction, and undated, the card threw. `docs/contacts-screen.md` and
+`docs/contacts-endpoint.md` cover the two halves.
 
 **The enquiries screen reads all three of its endpoints.** `GET /api/enquiries`
 returns every booking at an enquiry stage, one row per enquiry rather than one

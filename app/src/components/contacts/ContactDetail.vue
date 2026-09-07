@@ -143,7 +143,7 @@
         >
           <span class="min-w-0 grow">
             <span class="booking-line__lead block truncate text-body font-medium text-text-strong transition-colors">
-              {{ t(`bookings.event_type.${booking.event_type}`) }}, {{ dateOf(booking) }}
+              {{ leadFor(booking) }}
             </span>
             <span class="block truncate text-meta text-text-muted">{{ venueShort(booking) ?? t('bookings.list.no_venue') }}</span>
           </span>
@@ -254,11 +254,37 @@ const mapsUrl = computed(() => {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
 })
 
-// Newest first, which is the order somebody thinks about their own work in.
-const bookings = computed(() => [...props.contact.bookings].sort((a, b) => b.date.localeCompare(a.date)))
+/**
+ * Newest first, which is the order somebody thinks about their own work in,
+ * and an undated booking last.
+ *
+ * A booking with no events has no date to sort on. Comparing the empty string
+ * puts it below every dated one on a descending sort, which is the rule
+ * App\Services\ContactActivity::occasions() already uses at the other end and
+ * for the same reason, so the card and the payload agree about where it goes.
+ */
+const bookings = computed(() => [...props.contact.bookings]
+  .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')))
 
-function dateOf(booking: ContactBooking): string {
-  return format(parseISO(booking.date), t('contacts.format.full_date'))
+/**
+ * A booking's strong line: what kind of day it is and when.
+ *
+ * Both halves come off the same event, so a booking with none has neither and
+ * says so instead. An enquiry that arrived before anybody named a day is a
+ * real row (ContactBookingResource says so), and the fixtures this screen was
+ * built against could not produce one: they derived every field from a dated
+ * array.
+ */
+function leadFor(booking: ContactBooking): string {
+  if (booking.event_type === null || booking.date === null) {
+    return t('contacts.detail.no_date')
+  }
+
+  return `${t(`bookings.event_type.${booking.event_type}`)}, ${dateOf(booking.date)}`
+}
+
+function dateOf(date: string): string {
+  return format(parseISO(date), t('contacts.format.full_date'))
 }
 
 function totalOf(booking: ContactBooking): string {

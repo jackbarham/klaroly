@@ -1,14 +1,17 @@
 # The contacts screen
 
-`/contacts` is a list beside one person's card, and it is the second screen
-built against a seam rather than against the API. The endpoint,
-`GET /api/contacts`, exists now and the screen has not been moved onto it, so
-`src/lib/contactFixtures.ts` still stands in: it exports `loadContacts()`,
-`src/stores/contacts.ts` is its only caller, and a component reaching past the
-store to it is a test failure rather than a convention. **That file is deleted
-when the screen moves**, `src/lib/contacts.ts` is written the way
-`src/lib/bookings.ts` is, the front-end type takes the resource's field names,
-and nothing else in the feature changes.
+`/contacts` is a list beside one person's card, and it reads
+`GET /api/contacts` through `src/lib/contacts.ts`, which is written the way
+`src/lib/enquiries.ts` is: one `api.get`, unwrapping `data` and `meta`, below
+the store and above `src/lib/api.ts`. A component reaching past the store to it
+is a test failure rather than a convention, in `src/lib/boundary.test.ts` by
+derivation and in `src/lib/contacts.guards.test.ts` by name.
+
+It was built against a seam first. `src/lib/contactFixtures.ts` stood in for
+the endpoint, and the swap deleted it. **Almost nothing else in the feature
+changed, and the two things that did are the two the fixtures could not have
+told anybody about**, which is the honest lesson of building against a seam:
+the field names of `outstanding`, and a booking with no event. Both are below.
 
 - **A contact is the person who books and pays, and that is all.** Per schema
   5.7 it holds a name, one email, ONE phone number and an address. Everyone
@@ -23,17 +26,41 @@ and nothing else in the feature changes.
   final Other group rather than sprinkling them through the letters under their
   first initial, because a list that files Anna under A next to Adebayo is a
   list where half the As are surnames and cannot be scanned.
-- **`outstanding` is an array of `{currency, minor, overdue}`, not a figure and
+- **`outstanding` is an array of
+  `{currency, amount_minor, is_overdue, is_account_currency}`, not a figure and
   a flag.** Schema section 8 is explicit that money is grouped by currency and
   never summed across it, and a contact with one job abroad has a balance that
   cannot be written as one number. The flat version had no way to say so: it
   would have reported a figure in the wrong currency while looking correct.
-  `overdue` belongs to the amount rather than to the person, because a contact
-  can owe an overdue balance on last June's wedding and a deposit that is not
-  due until spring. `booking_count`, `next_booking` and `last_booking` are
-  computed by the API and arrive on the payload; nothing derives them in a
-  component, and `next_booking` and `last_booking` are whole objects so a list
-  payload could drop the `bookings` array entirely.
+  `is_overdue` belongs to the amount rather than to the person, because a
+  contact can owe an overdue balance on last June's wedding and a deposit that
+  is not due until spring. **The names are the resource's**, and they are
+  written here because the seam had guessed three of them: the fixtures said
+  `minor` and `overdue`, and had no `is_account_currency` at all, so the swap
+  was a rename in the type and its two readers. `booking_count`, `next_booking`
+  and `last_booking` are computed by the API and arrive on the payload; nothing
+  derives them in a component, and `next_booking` and `last_booking` are whole
+  objects so a list payload could drop the `bookings` array entirely.
+- **A booking can have no event, and the screen had never been shown one.**
+  `event_type`, `date`, `venue_name` and `city` are all absent together when a
+  booking has nothing in its diary, which is what an enquiry that arrived
+  before anybody named a day looks like. The fixtures could not produce it:
+  they derived `next_booking` and `last_booking` out of the same dated array
+  they used for `bookings`, so every fixture booking had a date by
+  construction. On the endpoint the two rules are different, and the card's
+  bookings list is the one that sees the null. Undated, a booking reads
+  "No date yet" in place of its type and day, and sorts below every dated one,
+  which is the rule `App\Services\ContactActivity::occasions()` uses at the
+  other end. Before the guards it was not a missing line but a **crash**:
+  `b.date.localeCompare(a.date)` threw inside the render and took the whole
+  card with it.
+- **`next_booking` and `last_booking` cannot be undated, and the screen does
+  not rely on it.** `App\Services\ContactActivity::pick()` builds its
+  candidates by flat-mapping the bookings' events, so a booking with none
+  contributes nothing and it returns null rather than an occasion. The type
+  keeps both fields nullable and `ContactRow` carries a fallback anyway,
+  because that guarantee lives in one private method with no test naming it,
+  and the alternative is asserting it from a file that cannot see it.
 - **One payload, and every sort, group and filter happens in the browser.** Two
   hundred contacts after five years is about fifty kilobytes, so there is no
   pagination, no infinite scroll, no virtualisation and no spinner. The filter
@@ -54,6 +81,15 @@ and nothing else in the feature changes.
   confirmed future booking. Both money pills go when the amounts-owed setting
   is off and the row then falls through to Upcoming, because switching money
   off is a request to hide figures and not a request to hide the diary.
+  **A contact owing in two currencies gets the first entry rather than the
+  account's**: there is one pill and there are two amounts, and the endpoint's
+  order, which is by currency code, decides. On a GBP account that is the euros.
+  It is the wrong row rather than a wrong figure, because `formatMoney` is
+  passed the amount's own currency and the pill reads "Owes €500"; the amount
+  and its symbol cannot disagree. `is_account_currency` is on every entry, so
+  preferring the account's is one line in `pillFor` on the day somebody decides
+  it should be. The fixtures never held two currencies, so this had never been
+  reachable.
 - **The line-shortening and the settings mechanism are both shared now.**
   `venueShort` and the date-and-place line moved to `src/lib/eventLine.ts` when
   the enquiries row needed the same three rules, and the localStorage reader
@@ -113,6 +149,14 @@ and nothing else in the feature changes.
   filled accent button makes something new, a subtle accent chip acts on what
   is already there, and the danger chip is destructive.
 
+- **`meta.truncated` arrives and nothing draws it.** The endpoint caps the
+  response at `config/contacts.php`'s 1000 and says so in `meta`; the store
+  holds it and no part of the screen reads it, so an account over the ceiling
+  sees a list that is quietly short. That is a gap the swap created rather than
+  one it closed, and it needs a decision about what to say and where before it
+  needs code.
+
 Not built yet on that screen: adding, editing and saving a contact to the
-phone, which all need endpoints or flows that do not exist, and the two
-create buttons on the card, which carry the same TODO `CreateMenu` does.
+phone, which all need endpoints or flows that do not exist, the two create
+buttons on the card, which carry the same TODO `CreateMenu` does, and deleting,
+which is still local to the store because there is no delete route.

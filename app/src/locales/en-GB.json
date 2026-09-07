@@ -517,6 +517,7 @@
       "no_phone": "No number yet",
       "no_email": "No email address yet",
       "no_address": "No address yet",
+      "no_date": "No date yet",
       "action_call": "Call",
       "action_call_label": "Call {name}",
       "action_text": "Text",

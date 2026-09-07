@@ -20,9 +20,14 @@
   first, then everybody with neither.** It is not the arbitrary "activity
   descending" it could have been: because a contact with a future date sorts
   above every contact without one, a truncated response is the useful end of the
-  list rather than a slice, and the server's order matches the screen's default
-  so a future consumer gets it free. Ties break on id, so two identical requests
-  render identically.
+  list rather than a slice. Ties break on id, so two identical requests render
+  identically. **What it is for is the ceiling, not the screen.** The consumer
+  has arrived now, and it re-sorts the whole payload in the browser under both
+  of its sort modes, so the server's order reaches a reader only as the
+  tie-break between two contacts the screen itself cannot separate: two with the
+  same next date, where the screen's sort is stable and this order decides. The
+  ordering would still be worth having with no consumer at all, because it is
+  what decides which thousand rows survive the limit.
 - **The event a booking carries depends on why it is being shown**, and
   `App\Services\ContactActivity` is the one place that decides. `bookings[]`
   shows the main day, because a list of somebody's work is a list of the jobs

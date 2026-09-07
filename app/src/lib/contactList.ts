@@ -58,14 +58,20 @@ export function nearestBooking(contact: Contact): ContactBooking | null {
 }
 
 /**
- * A booking as the shared line-writer wants it.
+ * A booking as the shared line-writer wants it, or null when it has no event.
  *
- * The only difference is the name of one field: this payload calls it
+ * Two differences, and only one of them is a name. This payload calls the type
  * event_type and an enquiry's event calls it type, because each mirrors its own
- * endpoint. One adapter line here is the price of both screens shortening a
- * venue the same way.
+ * endpoint. And a contact's booking can have no event at all, where an
+ * enquiry's whole `event` is the nullable thing; DatedPlace takes the
+ * enquiries side's shape, so the null is answered here rather than pushed into
+ * a module the other screen shares.
  */
-function asPlace(booking: ContactBooking): DatedPlace {
+function asPlace(booking: ContactBooking): DatedPlace | null {
+  if (booking.event_type === null || booking.date === null) {
+    return null
+  }
+
   return {
     type: booking.event_type,
     date: booking.date,
@@ -74,21 +80,26 @@ function asPlace(booking: ContactBooking): DatedPlace {
   }
 }
 
+// The venue needs no adapter and no date: it reads venue_name and city, which
+// are the two fields a ContactBooking and a DatedPlace already spell the same
+// way and which are both nullable on either side.
 export function venueShort(booking: ContactBooking): string | null {
-  return shortVenue(asPlace(booking))
+  return shortVenue(booking)
 }
 
 /**
  * The row's supporting line, which is always the nearest booking and never the
- * phone number.
+ * phone number. Null when that booking has no date to write.
  *
  * The shortening lives in src/lib/eventLine.ts, because the enquiries list
  * draws the same line from a different payload and three rules measured once
  * at 375px must not be written down twice. What stays here is which booking a
  * contact's row is about; what moved is how a date and a place are written.
  */
-export function secondLine(booking: ContactBooking, today: Date, t: Translate): string {
-  return datePlace(asPlace(booking), today, t)
+export function secondLine(booking: ContactBooking, today: Date, t: Translate): string | null {
+  const place = asPlace(booking)
+
+  return place === null ? null : datePlace(place, today, t)
 }
 
 // -- The filter -------------------------------------------------------------
@@ -157,11 +168,20 @@ export interface ContactPill {
  * deliberate. Switching money off is a request to hide figures, not a request
  * to hide the diary, and a row that went blank would lose something true for
  * the sake of something that is no longer being shown anyway.
+ *
+ * **A contact owing in two currencies gets the first entry, not the account's.**
+ * There is one pill and there are two amounts, so one of them is shown and the
+ * endpoint's order decides which: sorted by currency code, that is the euros
+ * before the pounds on a GBP account. It is the wrong row rather than a wrong
+ * figure: the amount is drawn with its OWN currency's symbol, through
+ * formatMoney, so the pill reads "Owes €500" and not "Owes £500". Every entry
+ * carries is_account_currency, so preferring the account's is a one-line
+ * change here whenever somebody decides it should be.
  */
 export function pillFor(contact: Contact, showAmounts: boolean): ContactPill | null {
   if (showAmounts) {
-    const owed = contact.outstanding.filter((amount) => amount.minor > 0)
-    const overdue = owed.find((amount) => amount.overdue)
+    const owed = contact.outstanding.filter((amount) => amount.amount_minor > 0)
+    const overdue = owed.find((amount) => amount.is_overdue)
 
     if (overdue) {
       return { kind: 'overdue', amount: overdue }
