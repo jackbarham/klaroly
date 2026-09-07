@@ -47,4 +47,13 @@ export default defineConfig(
       'vue/require-default-prop': 'off',
     },
   },
+  {
+    // The build gate runs in Node rather than the browser, so it reads process
+    // and exits with a code. Everything else in the project is browser code,
+    // which is why the globals above are the browser's alone.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 )

@@ -36,18 +36,21 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'prompt',
         injectRegister: null,
-        manifest: {
-          name: 'Klaroly',
-          short_name: 'Klaroly',
-          start_url: '/',
-          display: 'standalone',
-          // Keep these in step with --surface and --accent in
-          // src/assets/app.css. A manifest cannot read CSS variables.
-          background_color: '#ffffff',
-          theme_color: '#7047eb',
-          // Icons are added when the brand assets exist.
-          icons: [],
-        },
+        // The manifest is public/manifest.webmanifest, written by hand, and
+        // index.html links it. This is false so that the plugin neither
+        // generates one nor injects a second link: both files want the name
+        // manifest.webmanifest in dist, the plugin writes after the public
+        // directory is copied, and it wins silently. Turning generation back
+        // on ships the icons and colours below instead of the ones in the
+        // file, with nothing failing anywhere, so src/lib/manifest.test.ts
+        // asserts this line.
+        //
+        // Both colours in that file are #ffffff, which is --surface in
+        // src/assets/app.css. The theme colour was the accent purple here and
+        // is not the accent's to hold: it paints the status bar strip, which
+        // sits directly above the top bar's white glass, so the accent put a
+        // purple band above it. The accent belongs in the icon.
+        manifest: false,
       }),
     )
   }

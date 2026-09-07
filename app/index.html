@@ -4,6 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Klaroly</title>
+
+    <!--
+      Added to a home screen, the app launches standalone with no browser
+      chrome. public/manifest.webmanifest carries the icons and the colours;
+      vite.config.ts sets the PWA plugin's manifest to false so that this is
+      the only one. src/lib/manifest.test.ts holds the paths together, because
+      every failure here is silent: a wrong one is a blank white icon and no
+      error anywhere.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- iOS reads none of the manifest's icons. This is the home screen one. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- Below iOS 16.4 the manifest is not read at all, and this is what
+         carries standalone display there. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- What actually names the icon under the artist's thumb. -->
+    <meta name="apple-mobile-web-app-title" content="Klaroly" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <!-- The same #ffffff as the manifest: --surface in src/assets/app.css. -->
+    <meta name="theme-color" content="#ffffff" />
   </head>
   <body>
     <div id="app"></div>

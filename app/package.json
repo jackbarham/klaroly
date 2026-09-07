@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "VITE_TARGET=web vite",
     "build": "VITE_TARGET=web vue-tsc --build && VITE_TARGET=web vite build",
+    "postbuild": "node scripts/verify-manifest.mjs",
     "build:mobile": "VITE_TARGET=mobile vue-tsc --build && VITE_TARGET=mobile vite build",
     "preview": "VITE_TARGET=web vite preview",
     "typecheck": "vue-tsc --build",

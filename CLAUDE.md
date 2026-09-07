@@ -639,9 +639,25 @@ The rules:
   through `StatusPill`, and the entries say what uses them now. Removing one is a
   style-guide change first. A variable that is in neither the guide nor a
   component is the only kind that is simply deleted.
-- The PWA manifest in `vite.config.ts` carries `background_color` and
-  `theme_color` as hex, because a manifest cannot read CSS. They are copies of
-  `--surface` and `--accent` and change when those do.
+- The web app manifest is `app/public/manifest.webmanifest`, written by hand,
+  and it is not in `vite.config.ts`. It carries `background_color` and
+  `theme_color` as hex, because a manifest cannot read CSS; **both are
+  `--surface` and neither is the accent**, because those two colours paint the
+  generated launch screen and the status bar strip, and the strip sits directly
+  above the top bar's glass, where the accent put a purple band. The accent
+  belongs in the icon. **`vite-plugin-pwa` is configured with `manifest: false`
+  and that line is load-bearing**: the plugin generates a manifest under the
+  same name, after the public directory is copied into `dist`, so re-enabling
+  it overwrites the static file in the build and ships the plugin's icons and
+  colours instead, with nothing failing anywhere. `app/src/lib/manifest.test.ts`
+  is the guard, and it asserts that line as well as the paths.
+- **The manifest and the icons are checked against the build, by
+  `app/scripts/verify-manifest.mjs` running as `postbuild`.** The reason is the
+  Worker: `not_found_handling` is `single-page-application`, so a path that the
+  build never emitted is answered by the edge with `index.html` and a 200
+  rather than a 404, and iOS draws a blank icon with no error anywhere. That
+  behaviour is deliberate and stays; the gate is what closes the case it hides,
+  which is a manifest naming a file the build did not produce.
 - Every component works in light and dark.
 - **Every new or changed component is added to `/kitchen-sink` in the same
   change**, in every variant and state it supports. A component that is not on
