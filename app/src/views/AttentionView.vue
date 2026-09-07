@@ -5,20 +5,11 @@
       :back-to="{ name: 'home' }"
     />
 
-    <p
+    <LoadFailed
       v-if="home.status === 'failed'"
-      class="mb-4 flex flex-wrap items-center gap-3 rounded-card border border-border bg-surface-raised p-4 text-body text-text"
-      role="status"
-    >
-      {{ t('home.load_failed') }}
-      <AppButton
-        variant="secondary"
-        size="small"
-        @click="home.retry()"
-      >
-        {{ t('home.retry') }}
-      </AppButton>
-    </p>
+      :message="t('home.load_failed')"
+      @retry="home.retry()"
+    />
 
     <!--
       **No cap here, so the band headings and the account total are the same

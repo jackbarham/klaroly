@@ -120,7 +120,7 @@ const sections: Section[] = [
   },
   {
     id: 'cards',
-    title: 'Card, EmptyState, and the thing to use instead of a card',
+    title: 'Card, EmptyState, LoadFailed, and the thing to use instead of a card',
     note: 'A card is for a group that genuinely needs lifting off the page. The default is a heading and a hairline.',
     component: KsCards,
   },

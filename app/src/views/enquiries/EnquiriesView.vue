@@ -5,20 +5,11 @@
       :description="t('enquiries.description')"
     />
 
-    <p
+    <LoadFailed
       v-if="enquiries.status === 'failed'"
-      class="mb-4 flex flex-wrap items-center gap-3 rounded-card border border-border bg-surface-raised p-4 text-body text-text"
-      role="status"
-    >
-      {{ t('enquiries.failed') }}
-      <AppButton
-        variant="secondary"
-        size="small"
-        @click="enquiries.retry()"
-      >
-        {{ t('enquiries.retry') }}
-      </AppButton>
-    </p>
+      :message="t('enquiries.failed')"
+      @retry="enquiries.retry()"
+    />
 
     <!--
       One layout, switched on a container query at --container-split and never

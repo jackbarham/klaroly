@@ -490,9 +490,9 @@ screen.
 
 ### The UI kit and the form kit
 
-`src/components/ui` is PageHeader, Card, EmptyState, AppButton, IconButton,
-Sheet, AnchoredSheet, Notice, Icon, StatusPill, ListRow, DataTable and
-SectionBand. `AppButton` is
+`src/components/ui` is PageHeader, Card, EmptyState, LoadFailed, AppButton,
+IconButton, Sheet, AnchoredSheet, Notice, Icon, StatusPill, ListRow, DataTable
+and SectionBand. `AppButton` is
 the only button component in the app: anything that looks like a button is
 that with a different variant or size. A click on it, or on `IconButton`, is
 the native event on the root element; neither declares an event of its own.

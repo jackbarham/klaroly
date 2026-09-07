@@ -122,9 +122,17 @@
         text="No contacts yet."
       />
     </div>
+
+    <div class="space-y-2">
+      <p class="text-xs font-medium text-text-muted">
+        LoadFailed, which a screen draws above whatever it could not load
+      </p>
+      <LoadFailed message="Those bookings could not be loaded. Try again in a moment." />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// The standard surface, and what a panel shows when it has nothing in it.
+// The standard surface, what a panel shows when it has nothing in it, and
+// what a screen shows when it could not load.
 </script>

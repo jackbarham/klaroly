@@ -20,6 +20,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import Icon from '@/components/ui/Icon.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import ListRow from '@/components/ui/ListRow.vue'
+import LoadFailed from '@/components/ui/LoadFailed.vue'
 import Notice from '@/components/ui/Notice.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionBand from '@/components/ui/SectionBand.vue'
@@ -49,6 +50,7 @@ export const kit = {
   Icon,
   IconButton,
   ListRow,
+  LoadFailed,
   MoneyInput,
   Notice,
   PageHeader,

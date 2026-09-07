@@ -18,6 +18,7 @@ declare module 'vue' {
     Icon: typeof kit.Icon
     IconButton: typeof kit.IconButton
     ListRow: typeof kit.ListRow
+    LoadFailed: typeof kit.LoadFailed
     MoneyInput: typeof kit.MoneyInput
     Notice: typeof kit.Notice
     PageHeader: typeof kit.PageHeader

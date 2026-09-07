@@ -28,20 +28,11 @@
       with no marks on it, which is recoverable; the first load failing is an
       empty screen. Either way there is now something to do about it.
     -->
-    <p
+    <LoadFailed
       v-if="bookings.hasFailed"
-      class="mb-4 flex flex-wrap items-center gap-3 rounded-card border border-border bg-surface-raised p-4 text-sm text-text"
-      role="status"
-    >
-      {{ t('bookings.failed') }}
-      <AppButton
-        variant="secondary"
-        size="small"
-        @click="bookings.retry(month)"
-      >
-        {{ t('bookings.retry') }}
-      </AppButton>
-    </p>
+      :message="t('bookings.failed')"
+      @retry="bookings.retry(month)"
+    />
 
     <!--
       Below the breakpoint the calendar is a band above the list; above it, a

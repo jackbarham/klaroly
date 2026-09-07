@@ -15,21 +15,11 @@
 
     <VerificationBanner />
 
-    <!-- The same failed-load shape the enquiries and bookings screens use. -->
-    <p
+    <LoadFailed
       v-if="home.status === 'failed'"
-      class="mb-4 flex flex-wrap items-center gap-3 rounded-card border border-border bg-surface-raised p-4 text-body text-text"
-      role="status"
-    >
-      {{ t('home.load_failed') }}
-      <AppButton
-        variant="secondary"
-        size="small"
-        @click="home.retry()"
-      >
-        {{ t('home.retry') }}
-      </AppButton>
-    </p>
+      :message="t('home.load_failed')"
+      @retry="home.retry()"
+    />
 
     <template v-else-if="home.summary">
       <FirstRun

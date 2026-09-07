@@ -10,6 +10,7 @@
     "reference": "Reference {id}",
     "too_many_attempts": "Too many attempts. Wait a minute and try again.",
     "request_failed": "Something went wrong. Check your connection and try again.",
+    "retry": "Try again",
     "dismiss": "OK"
   },
   "nav": {
@@ -229,14 +230,12 @@
       "add_enquiry": "Add an enquiry",
       "setup_title": "One sit-down job, and it is worth it",
       "setup_body": "Put your services and prices in once, and every quote after that is a few taps rather than typing. Settings, then Rate card."
-    },
-    "retry": "Try again"
+    }
   },
   "bookings": {
     "title": "Bookings",
     "detail_title": "Booking",
     "failed": "Those bookings could not be loaded. Try again in a moment.",
-    "retry": "Try again",
     "hide_calendar": "Hide",
     "show_calendar": "Show",
     "calendar": {
@@ -324,7 +323,6 @@
     "description": "Everyone who has asked, and how long they have been waiting.",
     "loading": "Loading your enquiries",
     "failed": "Those enquiries could not be loaded. Try again in a moment.",
-    "retry": "Try again",
     "filter": {
       "label": "Filter enquiries",
       "placeholder": "Name, venue, stage or source",
@@ -474,7 +472,6 @@
     "description": "Everyone who has booked you, and everyone who has asked.",
     "loading": "Loading your contacts",
     "failed": "Those contacts could not be loaded. Try again in a moment.",
-    "retry": "Try again",
     "filter": {
       "label": "Filter contacts",
       "placeholder": "Name, number, town or venue",
