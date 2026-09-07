@@ -6,6 +6,8 @@ import router, { destinationAfterSignIn } from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import { jsonResponse } from '@/lib/testHelpers'
 
+// Not stubFetch(): that resets the mock before every test, and the call count
+// below is meant to carry across them, because the router bootstraps once.
 const fetchMock = vi.fn<typeof fetch>()
 
 // One pinia for the whole file: the router bootstraps the store once, on

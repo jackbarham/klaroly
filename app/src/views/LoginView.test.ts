@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import LoginView from '@/views/LoginView.vue'
-import { element, jsonResponse, settle, submitForm, typeInto } from '@/lib/testHelpers'
+import { element, jsonResponse, settle, stubFetch, submitForm, typeInto } from '@/lib/testHelpers'
 import { mountWithCleanup, type Mounted } from '@/lib/testMount'
 
 // The sign-in screen, driven the way a person drives it: type, submit, and
@@ -10,20 +10,14 @@ import { mountWithCleanup, type Mounted } from '@/lib/testMount'
 // lands on no field, or focus that stays where it was, looks like nothing
 // happening at all.
 
-const fetchMock = vi.fn<typeof fetch>()
+const fetchMock = stubFetch()
 
 const mount = mountWithCleanup()
 
 beforeEach(() => {
-  fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
   // With the cookie already there the wrapper does not fetch a fresh one, so
   // the calls counted below are the ones this screen actually made.
   document.cookie = 'XSRF-TOKEN=token'
-})
-
-afterEach(() => {
-  vi.unstubAllGlobals()
 })
 
 async function signInWith(credentials: { email: string, password: string }): Promise<Mounted> {

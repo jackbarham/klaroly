@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import AttentionBlock from '@/components/home/AttentionBlock.vue'
 import AttentionList from '@/components/home/AttentionList.vue'
+import { attentionRow as row } from '@/lib/home.sample'
+import { sampleToday } from '@/lib/testHelpers'
 import { mountWithCleanup } from '@/lib/testMount'
 import type { AttentionRow } from '@/types/home'
 
@@ -17,30 +19,7 @@ import type { AttentionRow } from '@/types/home'
 
 const mount = mountWithCleanup()
 
-const today = new Date(2026, 8, 6)
-
-function row(id: number, overrides: Partial<AttentionRow> = {}): AttentionRow {
-  return {
-    booking_id: id,
-    waiting_on: 'artist_price',
-    party: 'artist',
-    client_name: `Client ${id}`,
-    contact_id: id,
-    stage: 'possible',
-    currency: 'GBP',
-    event_date: '2027-07-04',
-    trial_date: null,
-    last_touched_at: '2026-09-01T09:00:00.000000Z',
-    created_at: '2026-09-01T09:00:00.000000Z',
-    converted_at: null,
-    sent_at: null,
-    hold_expires_at: null,
-    outstanding_minor: null,
-    invoice_total_minor: null,
-    due_on: null,
-    ...overrides,
-  }
-}
+const today = sampleToday
 
 const eight: AttentionRow[] = [
   row(1, { waiting_on: 'artist_not_held', party: 'artist', converted_at: '2026-08-21T09:00:00.000000Z' }),

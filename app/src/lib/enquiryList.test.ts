@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import i18n from '@/i18n'
+import { sampleEnquiry } from '@/lib/enquiries.sample'
+import { sampleToday } from '@/lib/testHelpers'
 import {
   agoKey,
   clashLine,
@@ -17,7 +19,7 @@ import type { Enquiry } from '@/types/enquiries'
 
 const t = (key: string) => i18n.global.t(key)
 
-const today = new Date(2026, 8, 6)
+const today = sampleToday
 
 // An instant this many whole days before the test's today, at midday so no
 // assertion turns on the hour.
@@ -30,30 +32,7 @@ function daysAgo(days: number): string {
 }
 
 function enquiry(over: Partial<Enquiry> = {}): Enquiry {
-  return {
-    id: 1,
-    stage: 'possible',
-    client_name: 'Imogen Hartwell',
-    contact_id: 10,
-    source: 'web_form',
-    source_booking: null,
-    last_touched_at: daysAgo(3),
-    waiting_on: null,
-    total_minor: null,
-    currency: 'GBP',
-    event: {
-      type: 'main',
-      date: '2027-05-29',
-      location_type: 'venue',
-      venue_name: 'Marlbrook Hall',
-      city: 'Ludworth',
-    },
-    has_trial: false,
-    lost_reason: null,
-    lost_side: null,
-    clash: null,
-    ...over,
-  }
+  return sampleEnquiry({ last_touched_at: daysAgo(3), ...over })
 }
 
 function keysOf(groups: ReturnType<typeof groupEnquiries>): string[] {

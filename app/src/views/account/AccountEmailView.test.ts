@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import { sampleMe } from '@/lib/auth.sample'
-import { element, jsonResponse, settle } from '@/lib/testHelpers'
+import { element, jsonResponse, settle, stubFetch } from '@/lib/testHelpers'
 import { mountWithCleanup, type Mounted } from '@/lib/testMount'
 import { useAuthStore } from '@/stores/auth'
 import AccountEmailView from '@/views/account/AccountEmailView.vue'
@@ -11,18 +11,12 @@ import type { Me } from '@/types/auth'
 // are that it really sends and that a failure puts it back. A switch left
 // showing a state the API does not hold is worse than no switch at all.
 
-const fetchMock = vi.fn<typeof fetch>()
+const fetchMock = stubFetch()
 
 const mount = mountWithCleanup()
 
 beforeEach(() => {
-  fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
   document.cookie = 'XSRF-TOKEN=token'
-})
-
-afterEach(() => {
-  vi.unstubAllGlobals()
 })
 
 function me(overrides: { consentedAt?: string | null, verifiedAt?: string | null } = {}): Me {

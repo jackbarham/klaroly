@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, vi, type Mock } from 'vitest'
 import { nextTick } from 'vue'
 
 // The handful of things every test reaches for, written once. Imported by
@@ -33,4 +34,28 @@ export function submitForm(host: HTMLElement): void {
 export async function settle(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0))
   await nextTick()
+}
+
+// A fixed today for the tests that count days or group by date, so nothing in
+// them depends on the day they are run: Sunday 6 September 2026.
+export const sampleToday = new Date(2026, 8, 6)
+
+// The fetch mock a test that makes requests installs, with its reset before
+// each test and its removal after. Called once at the top of a test file, the
+// way mountWithCleanup is, and what it returns answers the requests. The one
+// file that does not use it is router/index.test.ts, whose call count is meant
+// to carry across its tests.
+export function stubFetch(): Mock<typeof fetch> {
+  const fetchMock = vi.fn<typeof fetch>()
+
+  beforeEach(() => {
+    fetchMock.mockReset()
+    vi.stubGlobal('fetch', fetchMock)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  return fetchMock
 }

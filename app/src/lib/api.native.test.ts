@@ -1,6 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '@/lib/api'
 import * as tokenStorage from '@/lib/tokenStorage'
+import { jsonResponse, stubFetch } from '@/lib/testHelpers'
 
 // The native branch. Mocking platform.ts is the one approved way to test it.
 vi.mock('@/lib/platform', () => ({
@@ -11,22 +12,16 @@ vi.mock('@/lib/platform', () => ({
   deviceName: () => 'Mobile',
 }))
 
-const fetchMock = vi.fn<typeof fetch>()
+const fetchMock = stubFetch()
 
 beforeEach(() => {
-  fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
   tokenStorage.clear()
-})
-
-afterEach(() => {
-  vi.unstubAllGlobals()
 })
 
 describe('api on native', () => {
   it('sends the bearer token from tokenStorage, omits credentials and never fetches the CSRF cookie', async () => {
     tokenStorage.set('secret-token')
-    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 }))
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, {}))
 
     await api.post('/api/auth/token', { email: 'a@example.com' })
 
@@ -41,7 +36,7 @@ describe('api on native', () => {
   })
 
   it('sends no Authorization header when there is no token', async () => {
-    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 }))
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, {}))
 
     await api.get('/api/me')
 
@@ -50,7 +45,7 @@ describe('api on native', () => {
   })
 
   it('does not retry a 419', async () => {
-    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 419 }))
+    fetchMock.mockResolvedValueOnce(jsonResponse(419, {}))
 
     await expect(api.post('/api/thing')).rejects.toMatchObject({ status: 419 })
     expect(fetchMock).toHaveBeenCalledTimes(1)

@@ -9,7 +9,6 @@ use App\Models\Booking;
 use App\Models\Contact;
 use App\Models\Event;
 use App\Models\Invoice;
-use App\Models\Payment;
 
 // Business logic 18.1, and decision 217's precedence.
 
@@ -19,26 +18,15 @@ use App\Models\Payment;
  */
 function overdueBalance(int $totalMinor = 68000, int $paidMinor = 34000, int $daysLate = 9): Booking
 {
-    // invoices is unique on (account_id, sequence), so a test creating two on
-    // one account has to number them. Counting the account's own rows rather
-    // than a static keeps it right across tests in one run.
-    $sequence = Invoice::query()->count() + 1;
-
     $booking = Booking::factory()->confirmed()->create(['contact_id' => Contact::factory()]);
 
-    $invoice = Invoice::factory()->issued($sequence)->create([
-        'booking_id' => $booking->id,
+    $invoice = issuedInvoice($booking, [
         'total_minor' => $totalMinor,
-        'deposit_minor' => 0,
         'balance_due_on' => today()->subDays($daysLate),
     ]);
 
     if ($paidMinor > 0) {
-        Payment::factory()->create([
-            'invoice_id' => $invoice->id,
-            'booking_id' => $booking->id,
-            'amount_minor' => $paidMinor,
-        ]);
+        paymentOf($invoice, $paidMinor);
     }
 
     return $booking;
@@ -256,22 +244,12 @@ describe('what a row carries', function () {
         $booking = Booking::factory()->confirmed()->create(['contact_id' => Contact::factory()]);
 
         // £340 still owing, 9 days late.
-        $first = Invoice::factory()->issued(1)->create([
-            'booking_id' => $booking->id,
-            'total_minor' => 68000,
-            'deposit_minor' => 0,
-            'balance_due_on' => today()->subDays(9),
-        ]);
-        Payment::factory()->create(['invoice_id' => $first->id, 'booking_id' => $booking->id, 'amount_minor' => 34000]);
+        $first = issuedInvoice($booking, ['total_minor' => 68000, 'balance_due_on' => today()->subDays(9)]);
+        paymentOf($first, 34000);
 
         // A second, raised manually, £200 still owing and 16 days late.
-        $second = Invoice::factory()->issued(2)->create([
-            'booking_id' => $booking->id,
-            'total_minor' => 52000,
-            'deposit_minor' => 0,
-            'balance_due_on' => today()->subDays(16),
-        ]);
-        Payment::factory()->create(['invoice_id' => $second->id, 'booking_id' => $booking->id, 'amount_minor' => 32000]);
+        $second = issuedInvoice($booking, ['total_minor' => 52000, 'balance_due_on' => today()->subDays(16)]);
+        paymentOf($second, 32000);
 
         currentAccount()->clear();
 
@@ -303,21 +281,11 @@ describe('what a row carries', function () {
 
         $booking = Booking::factory()->confirmed()->create(['contact_id' => Contact::factory()]);
 
-        $overdue = Invoice::factory()->issued(1)->create([
-            'booking_id' => $booking->id,
-            'total_minor' => 68000,
-            'deposit_minor' => 0,
-            'balance_due_on' => today()->subDays(9),
-        ]);
-        Payment::factory()->create(['invoice_id' => $overdue->id, 'booking_id' => $booking->id, 'amount_minor' => 34000]);
+        $overdue = issuedInvoice($booking, ['total_minor' => 68000, 'balance_due_on' => today()->subDays(9)]);
+        paymentOf($overdue, 34000);
 
         // Due next month, so it is outstanding and nobody is waiting on it.
-        Invoice::factory()->issued(2)->create([
-            'booking_id' => $booking->id,
-            'total_minor' => 90000,
-            'deposit_minor' => 0,
-            'balance_due_on' => today()->addDays(30),
-        ]);
+        issuedInvoice($booking, ['total_minor' => 90000, 'balance_due_on' => today()->addDays(30)]);
 
         currentAccount()->clear();
 
@@ -337,18 +305,13 @@ describe('what a row carries', function () {
         $booking = Booking::factory()->confirmed()->create();
         Event::factory()->create(['booking_id' => $booking->id, 'event_date' => '2026-09-26']);
 
-        $invoice = Invoice::factory()->issued()->create([
-            'booking_id' => $booking->id,
+        $invoice = issuedInvoice($booking, [
             'total_minor' => 68000,
             'deposit_minor' => 17000,
             'deposit_due_on' => today()->subDays(4),
             'balance_due_on' => today()->addDays(30),
         ]);
-        Payment::factory()->create([
-            'invoice_id' => $invoice->id,
-            'booking_id' => $booking->id,
-            'amount_minor' => 5000,
-        ]);
+        paymentOf($invoice, 5000);
 
         currentAccount()->clear();
 
@@ -426,13 +389,9 @@ describe('what is suppressed', function () {
 
         // Both carry an overdue balance, which would be a row on any live
         // record. An ending waits on nobody.
-        foreach ([BookingStage::Lost, BookingStage::Cancelled] as $index => $stage) {
+        foreach ([BookingStage::Lost, BookingStage::Cancelled] as $stage) {
             $booking = Booking::factory()->create(['stage' => $stage]);
-            Invoice::factory()->issued($index + 1)->create([
-                'booking_id' => $booking->id,
-                'deposit_minor' => 0,
-                'balance_due_on' => today()->subDays(5),
-            ]);
+            issuedInvoice($booking, ['balance_due_on' => today()->subDays(5)]);
         }
 
         // The presence half, on an otherwise identical live record.
@@ -455,9 +414,8 @@ describe('what is suppressed', function () {
         currentAccount()->set($user->accounts()->first());
 
         $snoozed = Booking::factory()->confirmed()->create();
-        Invoice::factory()->issued(99)->snoozedUntil(today()->addWeek()->toDateString())->create([
-            'booking_id' => $snoozed->id,
-            'deposit_minor' => 0,
+        issuedInvoice($snoozed, [
+            'reminders_snoozed_until' => today()->addWeek()->toDateString(),
             'balance_due_on' => today()->subDays(6),
         ]);
 

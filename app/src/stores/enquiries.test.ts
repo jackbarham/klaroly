@@ -1,6 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { jsonResponse } from '@/lib/testHelpers'
+import { jsonResponse, stubFetch } from '@/lib/testHelpers'
+import { sampleEnquiry } from '@/lib/enquiries.sample'
 import { useEnquiriesStore } from '@/stores/enquiries'
 import type { Enquiry, EnquiryDetail } from '@/types/enquiries'
 
@@ -8,36 +9,17 @@ import type { Enquiry, EnquiryDetail } from '@/types/enquiries'
 // stage change leaves behind.
 
 function enquiry(over: Partial<Enquiry> = {}): Enquiry {
-  return {
-    id: 1,
-    stage: 'possible',
-    client_name: 'Imogen Hartwell',
-    contact_id: 10,
-    source: 'web_form',
-    source_booking: null,
-    last_touched_at: new Date(2026, 8, 3, 12).toISOString(),
-    waiting_on: null,
-    total_minor: null,
-    currency: 'GBP',
-    event: null,
-    has_trial: false,
-    lost_reason: null,
-    lost_side: null,
-    clash: null,
-    ...over,
-  }
+  return sampleEnquiry({ event: null, ...over })
 }
 
 function detail(over: Partial<EnquiryDetail> = {}): EnquiryDetail {
   return { ...enquiry(), enquiry_message: null, party_size: null, notes: [], ...over }
 }
 
-const fetchMock = vi.fn()
+const fetchMock = stubFetch()
 
 beforeEach(() => {
   setActivePinia(createPinia())
-  fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
   window.localStorage.clear()
 
   // api.ts fetches the CSRF cookie before a non-GET when this is absent, which
@@ -45,10 +27,6 @@ beforeEach(() => {
   // by the time any of this runs; see src/lib/auth.test.ts, which does the
   // same.
   document.cookie = 'XSRF-TOKEN=token'
-})
-
-afterEach(() => {
-  vi.unstubAllGlobals()
 })
 
 function listResponse(rows: Enquiry[]): Response {
@@ -154,7 +132,7 @@ describe('changing the stage', () => {
 
     await store.setStage(1, 'lost', 'already_booked')
 
-    const body = JSON.parse(String(fetchMock.mock.calls[1][1].body))
+    const body = JSON.parse(String(fetchMock.mock.calls[1][1]?.body))
 
     expect(body).toEqual({ stage: 'lost', lost_reason: 'already_booked' })
     // Lost is archived rather than gone: it stays in the list for the setting

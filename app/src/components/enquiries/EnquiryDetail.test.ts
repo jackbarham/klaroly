@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
-import { settle } from '@/lib/testHelpers'
+import { allFeaturesOn as allOn, sampleEnquiry as enquiry } from '@/lib/enquiries.sample'
+import { sampleToday, settle } from '@/lib/testHelpers'
 import { mountWithCleanup } from '@/lib/testMount'
 import EnquiryDetail from '@/components/enquiries/EnquiryDetail.vue'
 import type { FeatureMap } from '@/types/auth'
@@ -12,46 +13,7 @@ import type { Enquiry, EnquiryDetail as Detail } from '@/types/enquiries'
 
 const mount = mountWithCleanup()
 
-const today = new Date(2026, 8, 6)
-
-const allOn: FeatureMap = {
-  enquiries: true,
-  intake_forms: true,
-  agreements: true,
-  invoicing: true,
-  payment_tracking: true,
-  automation: true,
-  travel_estimates: true,
-  photos: true,
-  feedback_requests: true,
-}
-
-function enquiry(over: Partial<Enquiry> = {}): Enquiry {
-  return {
-    id: 1,
-    stage: 'possible',
-    client_name: 'Imogen Hartwell',
-    contact_id: 10,
-    source: 'web_form',
-    source_booking: null,
-    last_touched_at: new Date(2026, 8, 3, 12).toISOString(),
-    waiting_on: null,
-    total_minor: null,
-    currency: 'GBP',
-    event: {
-      type: 'main',
-      date: '2027-05-29',
-      location_type: 'venue',
-      venue_name: 'Marlbrook Hall',
-      city: 'Ludworth',
-    },
-    has_trial: false,
-    lost_reason: null,
-    lost_side: null,
-    clash: null,
-    ...over,
-  }
-}
+const today = sampleToday
 
 // The section headings, read as headings rather than as body text: the
 // closing sentence names Payments and the agreement on purpose, so a substring

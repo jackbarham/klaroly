@@ -115,10 +115,8 @@ it('reports an overdue balance', function () {
 
     $booking = Booking::factory()->confirmed()->create();
 
-    Invoice::factory()->issued()->create([
-        'booking_id' => $booking->id,
+    issuedInvoice($booking, [
         'balance_due_on' => today()->subDays(3),
-        'deposit_minor' => 0,
     ]);
 
     expect(waitingOnFor($booking))->toBe(WaitingOn::ClientBalance);
@@ -140,10 +138,9 @@ describe('a snoozed invoice', function () {
 
         $booking = Booking::factory()->confirmed()->create();
 
-        $invoice = Invoice::factory()->issued()->snoozedUntil(today()->addWeek()->toDateString())->create([
-            'booking_id' => $booking->id,
+        $invoice = issuedInvoice($booking, [
             'balance_due_on' => today()->subDays(3),
-            'deposit_minor' => 0,
+            'reminders_snoozed_until' => today()->addWeek()->toDateString(),
         ]);
 
         expect(waitingOnFor($booking))->toBeNull();
@@ -164,10 +161,9 @@ describe('a snoozed invoice', function () {
 
         // Yesterday. The invoice knows the difference between a snooze that
         // still stands and one that has expired, and this is the boundary.
-        Invoice::factory()->issued()->snoozedUntil(today()->subDay()->toDateString())->create([
-            'booking_id' => $booking->id,
+        issuedInvoice($booking, [
             'balance_due_on' => today()->subDays(3),
-            'deposit_minor' => 0,
+            'reminders_snoozed_until' => today()->subDay()->toDateString(),
         ]);
 
         expect(waitingOnFor($booking))->toBe(WaitingOn::ClientBalance);
@@ -185,10 +181,10 @@ describe('a snoozed invoice', function () {
 
         $booking = Booking::factory()->confirmed()->create();
 
-        Invoice::factory()->issued()->snoozedUntil(today()->addWeek()->toDateString())->create([
-            'booking_id' => $booking->id,
+        issuedInvoice($booking, [
             'balance_due_on' => today()->subDays(3),
             'deposit_minor' => 11250,
+            'reminders_snoozed_until' => today()->addWeek()->toDateString(),
         ]);
 
         expect(waitingOnFor($booking))->toBe(WaitingOn::ClientDeposit);
@@ -200,8 +196,7 @@ it('reports an unpaid deposit', function () {
 
     $booking = Booking::factory()->confirmed()->create();
 
-    Invoice::factory()->issued()->create([
-        'booking_id' => $booking->id,
+    issuedInvoice($booking, [
         'balance_due_on' => today()->addDays(30),
         'deposit_minor' => 11250,
     ]);
@@ -423,10 +418,8 @@ describe('an archived booking', function () {
 
         $booking = Booking::factory()->cancelled()->create();
 
-        Invoice::factory()->issued()->create([
-            'booking_id' => $booking->id,
+        issuedInvoice($booking, [
             'balance_due_on' => today()->subDays(3),
-            'deposit_minor' => 0,
         ]);
 
         expect(waitingOnFor($booking))->toBeNull();
@@ -442,10 +435,8 @@ describe('an archived booking', function () {
 
         $booking = Booking::factory()->confirmed()->create();
 
-        Invoice::factory()->issued()->create([
-            'booking_id' => $booking->id,
+        issuedInvoice($booking, [
             'balance_due_on' => today()->subDays(3),
-            'deposit_minor' => 0,
         ]);
 
         expect(waitingOnFor($booking))->toBe(WaitingOn::ClientBalance);
@@ -475,10 +466,8 @@ it('puts a lapsed hold above an overdue balance on a hold the app wrote itself',
         ),
     ])->save();
 
-    Invoice::factory()->issued()->create([
-        'booking_id' => $booking->id,
+    issuedInvoice($booking, [
         'balance_due_on' => today()->subDays(9),
-        'deposit_minor' => 0,
     ]);
 
     expect($booking->hold_expires_at->toDateString())->toBe(today()->subDays(7)->toDateString())
@@ -492,8 +481,7 @@ it('puts a lapsed hold above an overdue balance when both are true', function ()
         'hold_expires_at' => today()->subDay(),
     ]);
 
-    Invoice::factory()->issued()->create([
-        'booking_id' => $booking->id,
+    issuedInvoice($booking, [
         'balance_due_on' => today()->subDays(3),
         'deposit_minor' => 11250,
     ]);
@@ -508,8 +496,7 @@ it('puts an overdue balance above an unpaid deposit when both are true', functio
 
     $booking = Booking::factory()->confirmed()->create();
 
-    Invoice::factory()->issued()->create([
-        'booking_id' => $booking->id,
+    issuedInvoice($booking, [
         'balance_due_on' => today()->subDays(3),
         'deposit_minor' => 11250,
     ]);
@@ -523,8 +510,7 @@ it('never waits on money when invoicing is switched off', function () {
 
     $booking = Booking::factory()->confirmed()->create();
 
-    Invoice::factory()->issued()->create([
-        'booking_id' => $booking->id,
+    issuedInvoice($booking, [
         'balance_due_on' => today()->subDays(3),
         'deposit_minor' => 11250,
     ]);
@@ -552,8 +538,7 @@ it('lets a booking switch invoicing off for itself', function () {
         'feature_overrides' => [FeatureKey::Invoicing->value => false],
     ]);
 
-    Invoice::factory()->issued()->create([
-        'booking_id' => $booking->id,
+    issuedInvoice($booking, [
         'balance_due_on' => today()->subDays(3),
         'deposit_minor' => 11250,
     ]);

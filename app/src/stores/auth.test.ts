@@ -1,20 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { sampleMe } from '@/lib/auth.sample'
 import { useAuthStore } from '@/stores/auth'
-import { jsonResponse } from '@/lib/testHelpers'
+import { jsonResponse, stubFetch } from '@/lib/testHelpers'
 
-const fetchMock = vi.fn<typeof fetch>()
+const fetchMock = stubFetch()
 
 beforeEach(() => {
   setActivePinia(createPinia())
-  fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
   document.cookie = 'XSRF-TOKEN=token'
-})
-
-afterEach(() => {
-  vi.unstubAllGlobals()
 })
 
 describe('auth store on web', () => {

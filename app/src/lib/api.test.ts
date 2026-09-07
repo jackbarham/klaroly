@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, api, onUnauthenticated } from '@/lib/api'
-import { jsonResponse } from '@/lib/testHelpers'
+import { jsonResponse, stubFetch } from '@/lib/testHelpers'
 
 // The web branch: platform.ts is not mocked here, and without VITE_TARGET
 // set the app thinks it is the web target.
@@ -9,17 +9,11 @@ function clearCookies(): void {
   document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT'
 }
 
-const fetchMock = vi.fn<typeof fetch>()
+const fetchMock = stubFetch()
 
 beforeEach(() => {
-  fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
   clearCookies()
   onUnauthenticated(() => {})
-})
-
-afterEach(() => {
-  vi.unstubAllGlobals()
 })
 
 function requestAt(index: number): { url: string, init: RequestInit } {

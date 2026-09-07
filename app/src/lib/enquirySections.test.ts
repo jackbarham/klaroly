@@ -1,21 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { allFeaturesOn as allOn } from '@/lib/enquiries.sample'
 import { sectionsFor } from '@/lib/enquirySections'
 import type { FeatureMap } from '@/types/auth'
 
 // Which sections of the booking screen a record has earned, and the rule that
 // beats the stage rule.
-
-const allOn: FeatureMap = {
-  enquiries: true,
-  intake_forms: true,
-  agreements: true,
-  invoicing: true,
-  payment_tracking: true,
-  automation: true,
-  travel_estimates: true,
-  photos: true,
-  feedback_requests: true,
-}
 
 function keys(...args: Parameters<typeof sectionsFor>): string[] {
   return sectionsFor(...args).map((section) => section.key)

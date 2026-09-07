@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
+import { sampleEnquiry } from '@/lib/enquiries.sample'
 import { settle } from '@/lib/testHelpers'
 import { mountWithCleanup } from '@/lib/testMount'
 import EnquiryStageSheet from '@/components/enquiries/EnquiryStageSheet.vue'
@@ -14,23 +15,7 @@ const mount = mountWithCleanup()
 const open = ref(false)
 const moves = ref<{ stage: BookingStage, reason: LostReason | null }[]>([])
 
-const enquiry: Enquiry = {
-  id: 7,
-  stage: 'possible',
-  client_name: 'Imogen Hartwell',
-  contact_id: 10,
-  source: 'web_form',
-  source_booking: null,
-  last_touched_at: new Date(2026, 8, 3, 12).toISOString(),
-  waiting_on: null,
-  total_minor: null,
-  currency: 'GBP',
-  event: null,
-  has_trial: false,
-  lost_reason: null,
-  lost_side: null,
-  clash: null,
-}
+const enquiry = sampleEnquiry({ id: 7, event: null })
 
 const Host = defineComponent({
   setup: () => () => h(EnquiryStageSheet, {

@@ -1,10 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import AttentionView from '@/views/AttentionView.vue'
 import HomeView from '@/views/HomeView.vue'
-import { jsonResponse, settle } from '@/lib/testHelpers'
+import { attentionRow as row, upcomingEvent as event } from '@/lib/home.sample'
+import { jsonResponse, settle, stubFetch } from '@/lib/testHelpers'
 import { mountWithCleanup } from '@/lib/testMount'
 import { activeTabKey, sectionKey } from '@/lib/navigation'
-import type { AttentionRow, HomeMeta, HomeSummary, UpcomingEvent } from '@/types/home'
+import type { HomeMeta, HomeSummary } from '@/types/home'
 
 // The screen as a whole.
 //
@@ -18,48 +19,7 @@ import type { AttentionRow, HomeMeta, HomeSummary, UpcomingEvent } from '@/types
 
 const mount = mountWithCleanup()
 
-function row(id: number, overrides: Partial<AttentionRow> = {}): AttentionRow {
-  return {
-    booking_id: id,
-    waiting_on: 'artist_price',
-    party: 'artist',
-    client_name: `Client ${id}`,
-    contact_id: id,
-    stage: 'possible',
-    currency: 'GBP',
-    event_date: '2027-07-04',
-    trial_date: null,
-    last_touched_at: '2026-09-01T09:00:00.000000Z',
-    created_at: '2026-09-01T09:00:00.000000Z',
-    converted_at: null,
-    sent_at: null,
-    hold_expires_at: null,
-    outstanding_minor: null,
-    invoice_total_minor: null,
-    due_on: null,
-    ...overrides,
-  }
-}
-
-function event(overrides: Partial<UpcomingEvent> = {}): UpcomingEvent {
-  return {
-    event_id: 1,
-    booking_id: 1,
-    type: 'main',
-    label: null,
-    date: '2026-09-12',
-    start_time: '06:30',
-    location_type: 'venue',
-    venue_name: 'Penbury Manor',
-    city: 'Hitchin',
-    client_name: 'Nadia Kerrigan',
-    stage: 'confirmed',
-    party_size: 5,
-    travel_duration_s: null,
-    travel_distance_m: null,
-    ...overrides,
-  }
-}
+const fetchMock = stubFetch()
 
 const emptyMoney: HomeSummary['money'] = {
   currency: 'GBP',
@@ -91,7 +51,7 @@ const meta: HomeMeta = {
 function answer(summary: Partial<HomeSummary>, over: Partial<HomeMeta> = {}): void {
   const attention = summary.attention ?? []
 
-  vi.mocked(globalThis.fetch).mockResolvedValue(jsonResponse(200, {
+  fetchMock.mockResolvedValue(jsonResponse(200, {
     data: { attention, upcoming: summary.upcoming ?? [], money: summary.money ?? emptyMoney },
     meta: {
       ...meta,
@@ -102,12 +62,10 @@ function answer(summary: Partial<HomeSummary>, over: Partial<HomeMeta> = {}): vo
 }
 
 beforeEach(() => {
-  globalThis.fetch = vi.fn()
   window.localStorage.clear()
 })
 
 afterEach(() => {
-  vi.restoreAllMocks()
   window.localStorage.clear()
 })
 

@@ -11,51 +11,30 @@ import {
   showsParty,
   travelMinutes,
 } from '@/lib/homeList'
+import { attentionRow, upcomingEvent } from '@/lib/home.sample'
+import { sampleToday } from '@/lib/testHelpers'
 import type { AttentionRow, UpcomingEvent } from '@/types/home'
 
-const today = new Date(2026, 8, 6)
+const today = sampleToday
 
+// The shared rows, with this file's own differences: a name, a today-dated
+// timestamp, a venue with a town after the comma and a travel estimate.
 function row(overrides: Partial<AttentionRow> = {}): AttentionRow {
-  return {
-    booking_id: 1,
-    waiting_on: 'artist_price',
-    party: 'artist',
+  return attentionRow(1, {
     client_name: 'Rosie Duthie',
-    contact_id: 1,
-    stage: 'possible',
-    currency: 'GBP',
-    event_date: '2027-07-04',
-    trial_date: null,
     last_touched_at: '2026-09-06T09:00:00.000000Z',
     created_at: '2026-09-06T09:00:00.000000Z',
-    converted_at: null,
-    sent_at: null,
-    hold_expires_at: null,
-    outstanding_minor: null,
-    invoice_total_minor: null,
-    due_on: null,
     ...overrides,
-  }
+  })
 }
 
 function event(overrides: Partial<UpcomingEvent> = {}): UpcomingEvent {
-  return {
-    event_id: 1,
-    booking_id: 1,
-    type: 'main',
-    label: null,
-    date: '2026-09-12',
-    start_time: '06:30',
-    location_type: 'venue',
+  return upcomingEvent({
     venue_name: 'Penbury Manor, Hitchin',
-    city: 'Hitchin',
-    client_name: 'Nadia Kerrigan',
-    stage: 'confirmed',
-    party_size: 5,
     travel_duration_s: 2520,
     travel_distance_m: 41400,
     ...overrides,
-  }
+  })
 }
 
 // A translate that returns the key, so a test asserts which key was chosen

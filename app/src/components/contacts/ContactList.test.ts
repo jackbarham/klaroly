@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { element } from '@/lib/testHelpers'
+import { element, sampleToday } from '@/lib/testHelpers'
 import { mountWithCleanup } from '@/lib/testMount'
 import ContactList from '@/components/contacts/ContactList.vue'
 import { groupContacts, matches } from '@/lib/contactList'
@@ -17,7 +17,7 @@ import type { Contact } from '@/types/contacts'
 
 const mount = mountWithCleanup()
 
-const today = new Date(2026, 8, 6)
+const today = sampleToday
 
 function contact(over: Partial<Contact> = {}): Contact {
   return {

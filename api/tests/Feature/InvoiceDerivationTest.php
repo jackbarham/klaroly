@@ -7,21 +7,12 @@ use App\Models\Payment;
 beforeEach(function () {
     actingForAccount();
     $this->booking = Booking::factory()->confirmed()->create();
-    $this->invoice = Invoice::factory()->issued()->create([
-        'booking_id' => $this->booking->id,
-        'total_minor' => 45000,
-        'deposit_minor' => 11250,
-    ]);
+    $this->invoice = issuedInvoice($this->booking, ['total_minor' => 45000, 'deposit_minor' => 11250]);
 });
 
 function pay(Invoice $invoice, int $amountMinor, ?string $note = null): Payment
 {
-    return Payment::factory()->create([
-        'invoice_id' => $invoice->id,
-        'booking_id' => $invoice->booking_id,
-        'amount_minor' => $amountMinor,
-        'note' => $note,
-    ]);
+    return paymentOf($invoice, $amountMinor, ['note' => $note]);
 }
 
 it('starts with nothing paid and everything outstanding', function () {

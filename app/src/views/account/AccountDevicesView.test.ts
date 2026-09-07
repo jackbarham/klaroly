@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { element, jsonResponse, settle } from '@/lib/testHelpers'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { element, jsonResponse, settle, stubFetch } from '@/lib/testHelpers'
 import { mountWithCleanup, type Mounted } from '@/lib/testMount'
 import AccountDevicesView from '@/views/account/AccountDevicesView.vue'
 import type { Device } from '@/types/auth'
@@ -9,18 +9,12 @@ import type { Device } from '@/types/auth'
 // when the caller is a session, and a revoke that failed must leave the row
 // where it is: a device that is still signed in is the wrong thing to hide.
 
-const fetchMock = vi.fn<typeof fetch>()
+const fetchMock = stubFetch()
 
 const mount = mountWithCleanup()
 
 beforeEach(() => {
-  fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
   document.cookie = 'XSRF-TOKEN=token'
-})
-
-afterEach(() => {
-  vi.unstubAllGlobals()
 })
 
 function device(overrides: Partial<Device> = {}): Device {

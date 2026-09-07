@@ -34,14 +34,7 @@ function owedBooking(Contact $contact, string $currency = 'GBP'): Booking
 
 function issue(Booking $booking, int $totalMinor, array $attributes = []): Invoice
 {
-    static $sequence = 0;
-
-    return Invoice::factory()->issued(++$sequence)->create($attributes + [
-        'booking_id' => $booking->id,
-        'currency' => $booking->currency,
-        'total_minor' => $totalMinor,
-        'deposit_minor' => 0,
-    ]);
+    return issuedInvoice($booking, $attributes + ['total_minor' => $totalMinor]);
 }
 
 it('returns nothing for a contact with no bookings', function () {

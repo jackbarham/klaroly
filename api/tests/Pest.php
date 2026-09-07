@@ -6,6 +6,8 @@ use App\Models\AccountUser;
 use App\Models\Booking;
 use App\Models\Contact;
 use App\Models\Event;
+use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\User;
 use App\Support\CurrentAccount;
 use Carbon\CarbonImmutable;
@@ -431,6 +433,43 @@ function coldEnquiry(BookingStage $stage, ?string $date = null): Booking
 {
     return enquiry($stage, $date, [
         'last_touched_at' => now()->subDays(config('bookings.cold_enquiry_days') + 1),
+    ]);
+}
+
+/**
+ * An issued invoice on a booking, numbered so that two on one account cannot
+ * collide: invoices is unique on (account_id, sequence) and the factory's
+ * issued() defaults every one to 1. One counter here replaces a static in two
+ * files and a count() in two more, which were four spellings of the same
+ * workaround. It starts above any number a test still writes by hand.
+ *
+ * Deposit nought and the booking's own currency unless the test says
+ * otherwise, so a test about a balance is not also a test about a deposit.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function issuedInvoice(Booking $booking, array $attributes = []): Invoice
+{
+    static $sequence = 1000;
+
+    return Invoice::factory()->issued(++$sequence)->create($attributes + [
+        'booking_id' => $booking->id,
+        'currency' => $booking->currency,
+        'deposit_minor' => 0,
+    ]);
+}
+
+/**
+ * A payment against an invoice, on the invoice's own booking.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function paymentOf(Invoice $invoice, int $amountMinor, array $attributes = []): Payment
+{
+    return Payment::factory()->create($attributes + [
+        'invoice_id' => $invoice->id,
+        'booking_id' => $invoice->booking_id,
+        'amount_minor' => $amountMinor,
     ]);
 }
 

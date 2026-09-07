@@ -19,10 +19,6 @@ use App\Models\Payment;
  */
 function paidBooking(string $eventDate, int $totalMinor, ?int $paidMinor = null, ?string $paidOn = null, array $invoiceAttributes = []): Booking
 {
-    // invoices is unique on (account_id, sequence), so every one a test creates
-    // has to be numbered.
-    $sequence = Invoice::query()->count() + 1;
-
     $booking = Booking::factory()->confirmed()->create();
     Event::factory()->create(['booking_id' => $booking->id, 'event_date' => $eventDate]);
     BookingLine::factory()->create([
@@ -31,17 +27,10 @@ function paidBooking(string $eventDate, int $totalMinor, ?int $paidMinor = null,
         'unit_price_minor' => $totalMinor,
     ]);
 
-    $invoice = Invoice::factory()->issued($sequence)->create($invoiceAttributes + [
-        'booking_id' => $booking->id,
-        'total_minor' => $totalMinor,
-        'deposit_minor' => 0,
-    ]);
+    $invoice = issuedInvoice($booking, $invoiceAttributes + ['total_minor' => $totalMinor]);
 
     if ($paidMinor !== null) {
-        Payment::factory()->create([
-            'invoice_id' => $invoice->id,
-            'booking_id' => $booking->id,
-            'amount_minor' => $paidMinor,
+        paymentOf($invoice, $paidMinor, [
             'paid_on' => $paidOn ?? currentAccount()->require()->today()->toDateString(),
         ]);
     }
@@ -63,18 +52,10 @@ describe('the feature toggles', function () {
 
         // Would be client_balance and client_deposit with invoicing on.
         $balance = Booking::factory()->confirmed()->create();
-        Invoice::factory()->issued(1)->create([
-            'booking_id' => $balance->id,
-            'deposit_minor' => 0,
-            'balance_due_on' => today()->subDays(5),
-        ]);
+        issuedInvoice($balance, ['balance_due_on' => today()->subDays(5)]);
 
         $deposit = Booking::factory()->confirmed()->create();
-        Invoice::factory()->issued(2)->create([
-            'booking_id' => $deposit->id,
-            'deposit_minor' => 11250,
-            'balance_due_on' => today()->addDays(30),
-        ]);
+        issuedInvoice($deposit, ['deposit_minor' => 11250, 'balance_due_on' => today()->addDays(30)]);
 
         // The presence half: a row invoicing has nothing to do with, so this
         // cannot pass on an empty attention block.
@@ -563,18 +544,8 @@ describe('other currencies', function () {
 
         $abroad = Booking::factory()->confirmed()->create(['currency' => 'EUR']);
         Event::factory()->create(['booking_id' => $abroad->id, 'event_date' => today()->subDays(2)]);
-        $invoice = Invoice::factory()->issued(99)->create([
-            'booking_id' => $abroad->id,
-            'currency' => 'EUR',
-            'total_minor' => 30000,
-            'deposit_minor' => 0,
-        ]);
-        Payment::factory()->create([
-            'invoice_id' => $invoice->id,
-            'booking_id' => $abroad->id,
-            'amount_minor' => 30000,
-            'paid_on' => today()->toDateString(),
-        ]);
+        $invoice = issuedInvoice($abroad, ['total_minor' => 30000]);
+        paymentOf($invoice, 30000, ['paid_on' => today()->toDateString()]);
 
         currentAccount()->clear();
 

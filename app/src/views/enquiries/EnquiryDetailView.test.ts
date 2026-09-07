@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import EnquiryDetailView from '@/views/enquiries/EnquiryDetailView.vue'
-import { jsonResponse, settle } from '@/lib/testHelpers'
+import { jsonResponse, sampleToday, settle, stubFetch } from '@/lib/testHelpers'
 import { mountWithCleanup } from '@/lib/testMount'
+import { sampleEnquiry } from '@/lib/enquiries.sample'
 import type { EnquiryDetail } from '@/types/enquiries'
 
 // The view around the detail: what it draws when the record is there, and
@@ -9,40 +10,12 @@ import type { EnquiryDetail } from '@/types/enquiries'
 
 const mount = mountWithCleanup()
 
-const today = new Date(2026, 8, 6)
+const today = sampleToday
 
-const fetchMock = vi.fn<typeof fetch>()
-
-beforeEach(() => {
-  fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
-})
-
-afterEach(() => {
-  vi.unstubAllGlobals()
-})
+const fetchMock = stubFetch()
 
 function detail(): EnquiryDetail {
-  return {
-    id: 7,
-    stage: 'possible',
-    client_name: 'Imogen Hartwell',
-    contact_id: 10,
-    source: 'web_form',
-    source_booking: null,
-    last_touched_at: new Date(2026, 8, 3, 12).toISOString(),
-    waiting_on: null,
-    total_minor: null,
-    currency: 'GBP',
-    event: null,
-    has_trial: false,
-    lost_reason: null,
-    lost_side: null,
-    clash: null,
-    enquiry_message: null,
-    party_size: null,
-    notes: [],
-  }
+  return { ...sampleEnquiry({ id: 7, event: null }), enquiry_message: null, party_size: null, notes: [] }
 }
 
 describe('the enquiry detail view', () => {

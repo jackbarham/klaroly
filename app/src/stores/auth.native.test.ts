@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import * as tokenStorage from '@/lib/tokenStorage'
 import { useAuthStore } from '@/stores/auth'
+import { stubFetch } from '@/lib/testHelpers'
 
 vi.mock('@/lib/platform', () => ({
   isNative: true,
@@ -11,17 +12,11 @@ vi.mock('@/lib/platform', () => ({
   deviceName: () => 'iPhone or iPad',
 }))
 
-const fetchMock = vi.fn<typeof fetch>()
+const fetchMock = stubFetch()
 
 beforeEach(() => {
   setActivePinia(createPinia())
-  fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
   tokenStorage.clear()
-})
-
-afterEach(() => {
-  vi.unstubAllGlobals()
 })
 
 describe('auth store on native', () => {

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { jsonResponse } from '@/lib/testHelpers'
+import { jsonResponse, stubFetch } from '@/lib/testHelpers'
 import { useBookingsStore } from '@/stores/bookings'
 import type { BookingEvent } from '@/types/bookings'
 
@@ -36,6 +36,8 @@ function event(date: string, over: Partial<BookingEvent> = {}): BookingEvent {
   }
 }
 
+const fetchMock = stubFetch()
+
 let calls: string[] = []
 
 /**
@@ -44,8 +46,8 @@ let calls: string[] = []
  * resolving to undefined.
  */
 function serve(routes: Record<string, unknown>, failing: string[] = []): void {
-  globalThis.fetch = vi.fn((url: string) => {
-    const path = url.replace('http://api.test', '')
+  fetchMock.mockImplementation((input) => {
+    const path = String(input).replace('http://api.test', '')
 
     calls.push(path)
 
@@ -65,7 +67,7 @@ function serve(routes: Record<string, unknown>, failing: string[] = []): void {
     }
 
     return Promise.resolve(jsonResponse(200, { data: routes[match] }))
-  }) as unknown as typeof fetch
+  })
 }
 
 function eventCalls(): string[] {

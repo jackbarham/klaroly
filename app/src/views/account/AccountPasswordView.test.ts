@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { element, jsonResponse, settle, submitForm, typeInto } from '@/lib/testHelpers'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { element, jsonResponse, settle, stubFetch, submitForm, typeInto } from '@/lib/testHelpers'
 import { mountWithCleanup, type Mounted } from '@/lib/testMount'
 import AccountPasswordView from '@/views/account/AccountPasswordView.vue'
 
@@ -7,18 +7,12 @@ import AccountPasswordView from '@/views/account/AccountPasswordView.vue'
 // told what the screen could already see, and a rejected current password
 // landing anywhere other than the field it is about.
 
-const fetchMock = vi.fn<typeof fetch>()
+const fetchMock = stubFetch()
 
 const mount = mountWithCleanup()
 
 beforeEach(() => {
-  fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
   document.cookie = 'XSRF-TOKEN=token'
-})
-
-afterEach(() => {
-  vi.unstubAllGlobals()
 })
 
 interface Screen extends Mounted {

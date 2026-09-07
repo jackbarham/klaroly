@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as auth from '@/lib/auth'
 import { sampleMe } from '@/lib/auth.sample'
 import * as tokenStorage from '@/lib/tokenStorage'
-import { jsonResponse } from '@/lib/testHelpers'
+import { jsonResponse, stubFetch } from '@/lib/testHelpers'
 
 // The native branch of src/lib/auth.ts. Mocking platform.ts is the one
 // approved way to test it.
@@ -14,16 +14,10 @@ vi.mock('@/lib/platform', () => ({
   deviceName: () => 'Android',
 }))
 
-const fetchMock = vi.fn<typeof fetch>()
+const fetchMock = stubFetch()
 
 beforeEach(() => {
-  fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
   tokenStorage.clear()
-})
-
-afterEach(() => {
-  vi.unstubAllGlobals()
 })
 
 function sentBody(index: number): Record<string, unknown> {

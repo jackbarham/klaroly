@@ -85,25 +85,12 @@ function bookingFor(Contact $contact, string $date, array $eventAttributes = [])
  */
 function issuedInvoiceFor(Contact $contact, int $totalMinor): Invoice
 {
-    // invoices is unique on (account_id, sequence), so a test creating more
-    // than one issued invoice needs them to differ. The counter is per test
-    // run and the numbers themselves mean nothing here.
-    static $sequence = 0;
-
-    return Invoice::factory()->issued(++$sequence)->create([
-        'booking_id' => $contact->bookings()->first()->id,
-        'total_minor' => $totalMinor,
-        'deposit_minor' => 0,
-    ]);
+    return issuedInvoice($contact->bookings()->first(), ['total_minor' => $totalMinor]);
 }
 
 function payTowards(Invoice $invoice, int $amountMinor): Payment
 {
-    return Payment::factory()->create([
-        'invoice_id' => $invoice->id,
-        'booking_id' => $invoice->booking_id,
-        'amount_minor' => $amountMinor,
-    ]);
+    return paymentOf($invoice, $amountMinor);
 }
 
 it('returns every contact with every key the app expects', function () {
@@ -491,12 +478,7 @@ describe('outstanding money', function () {
             'booking_id' => $abroad->id,
             'event_date' => today()->addDays(90)->toDateString(),
         ]);
-        Invoice::factory()->issued(2)->create([
-            'booking_id' => $abroad->id,
-            'currency' => 'EUR',
-            'total_minor' => 60000,
-            'deposit_minor' => 0,
-        ]);
+        issuedInvoice($abroad, ['total_minor' => 60000]);
 
         currentAccount()->clear();
 
@@ -521,18 +503,13 @@ describe('outstanding money', function () {
         $contact = contactWithBooking(today()->addDays(30)->toDateString());
         issuedInvoiceFor($contact, 45000);
 
-        foreach (['USD', 'EUR'] as $index => $currency) {
+        foreach (['USD', 'EUR'] as $currency) {
             $booking = Booking::factory()->create([
                 'contact_id' => $contact->id,
                 'stage' => BookingStage::Confirmed,
                 'currency' => $currency,
             ]);
-            Invoice::factory()->issued($index + 2)->create([
-                'booking_id' => $booking->id,
-                'currency' => $currency,
-                'total_minor' => 10000,
-                'deposit_minor' => 0,
-            ]);
+            issuedInvoice($booking, ['total_minor' => 10000]);
         }
 
         currentAccount()->clear();

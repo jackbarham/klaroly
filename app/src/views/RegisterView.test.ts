@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import RegisterView from '@/views/RegisterView.vue'
-import { element, jsonResponse, submitForm, typeInto } from '@/lib/testHelpers'
+import { element, jsonResponse, stubFetch, submitForm, typeInto } from '@/lib/testHelpers'
 import { mountWithCleanup, type Mounted } from '@/lib/testMount'
 
 // The register screen. Three things here are easy to break without anything
@@ -11,20 +11,17 @@ import { mountWithCleanup, type Mounted } from '@/lib/testMount'
 // cannot see; and which field a validation message lands on when the form
 // comes back with one, which now decides which step is shown as well.
 
-const fetchMock = vi.fn<typeof fetch>()
+const fetchMock = stubFetch()
 
 const mount = mountWithCleanup()
 
 beforeEach(() => {
-  fetchMock.mockReset()
-  vi.stubGlobal('fetch', fetchMock)
   vi.useFakeTimers()
   document.cookie = 'XSRF-TOKEN=token'
 })
 
 afterEach(() => {
   vi.useRealTimers()
-  vi.unstubAllGlobals()
 })
 
 // The fields by name, so that a test can name one without counting inputs.

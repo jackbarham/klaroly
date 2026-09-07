@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
 import SectionBand from '@/components/ui/SectionBand.vue'
 import { mountWithCleanup } from '@/lib/testMount'
+import { settle } from '@/lib/testHelpers'
 
 // A band that collapses is a button, so what is tested is that it behaves like
 // one: it says whether it is expanded, and what it controls goes away.
@@ -40,7 +41,7 @@ describe('a section band', () => {
     expect(mounted.host.textContent).toContain('What the section is about.')
 
     button.click()
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await settle()
 
     expect(button.getAttribute('aria-expanded')).toBe('false')
     expect(mounted.host.textContent).not.toContain('What the section is about.')

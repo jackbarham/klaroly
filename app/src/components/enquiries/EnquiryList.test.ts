@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
-import { settle } from '@/lib/testHelpers'
+import { sampleEnquiry as enquiry } from '@/lib/enquiries.sample'
+import { sampleToday, settle } from '@/lib/testHelpers'
 import { mountWithCleanup } from '@/lib/testMount'
 import EnquiryList from '@/components/enquiries/EnquiryList.vue'
 import { groupEnquiries, type EnquiryGroup } from '@/lib/enquiryList'
@@ -12,34 +13,7 @@ import type { Enquiry } from '@/types/enquiries'
 
 const mount = mountWithCleanup()
 
-const today = new Date(2026, 8, 6)
-
-function enquiry(over: Partial<Enquiry> = {}): Enquiry {
-  return {
-    id: 1,
-    stage: 'possible',
-    client_name: 'Imogen Hartwell',
-    contact_id: 10,
-    source: 'web_form',
-    source_booking: null,
-    last_touched_at: new Date(2026, 8, 3, 12).toISOString(),
-    waiting_on: null,
-    total_minor: null,
-    currency: 'GBP',
-    event: {
-      type: 'main',
-      date: '2027-05-29',
-      location_type: 'venue',
-      venue_name: 'Marlbrook Hall',
-      city: 'Ludworth',
-    },
-    has_trial: false,
-    lost_reason: null,
-    lost_side: null,
-    clash: null,
-    ...over,
-  }
-}
+const today = sampleToday
 
 const staged = ref<Enquiry[]>([])
 

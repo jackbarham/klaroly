@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import i18n from '@/i18n'
 import { groupContacts, matches, pillFor, secondLine } from '@/lib/contactList'
 import type { Contact, ContactBooking } from '@/types/contacts'
+import { sampleToday } from '@/lib/testHelpers'
 
 // The rules the contacts list runs on. Each one is a plain function taking
 // plain values, so none of this mounts anything: what is being tested is the
@@ -13,7 +14,7 @@ import type { Contact, ContactBooking } from '@/types/contacts'
 const t = (key: string): string => i18n.global.t(key)
 
 // A fixed today, so nothing in here depends on the day it is run.
-const today = new Date(2026, 8, 6)
+const today = sampleToday
 
 function booking(over: Partial<ContactBooking> = {}): ContactBooking {
   return {
