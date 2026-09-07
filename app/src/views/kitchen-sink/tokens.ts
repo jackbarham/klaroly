@@ -76,7 +76,7 @@ export const colourGroups: ColourGroup[] = [
   },
   {
     title: 'Status',
-    note: 'Only the danger family is in use, on an invalid control and on a form-level error. The rest arrive with the status pill and the booking states.',
+    note: 'All four families are in use, through StatusPill, the form kit and the calendar; each entry says what reads it.',
     tokens: [
       { token: '--danger', className: 'bg-danger', use: "an invalid control's border, and FormError's" },
       { token: '--danger-text', className: 'bg-danger-text', use: 'the words of an error' },

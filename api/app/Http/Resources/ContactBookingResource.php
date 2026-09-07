@@ -45,19 +45,13 @@ class ContactBookingResource extends JsonResource
             // happen on next_booking or last_booking, which are chosen by
             // having a date in the first place.
             'event_type' => $event?->type->value,
-            // A local calendar date, never an instant. The column is a date and
-            // the cast is immutable_date, so formatting it here cannot pass
-            // through a timezone conversion; sending it as anything else would
-            // move an evening event onto the wrong day for the eight months the
-            // clocks are forward.
+            // A local calendar date, never an instant; EventRowFields says why.
             'date' => $event?->event_date->format('Y-m-d'),
             'venue_name' => $event?->venue_name,
             'city' => $event?->city,
             'stage' => $booking->stage->value,
-            // Through BookingPricing, which is the one place a booking's money
-            // is worked out: it honours the pricing mode, the fixed price and
-            // both kinds of discount. Summing the lines here would be a second
-            // answer to a question that already has one.
+            // Through BookingPricing, the one place a booking's money is worked
+            // out; BookingEventResource says why summing the lines would not do.
             'total_minor' => app(BookingPricing::class)->total($booking)->minor,
             'currency' => $booking->currency,
         ];

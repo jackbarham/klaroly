@@ -132,8 +132,8 @@
   --radius-sheet: 1.5rem;
 
   /*
-    The type scale. The app does not use these steps yet: it is still on
-    Tailwind's own sizes, and moving it is the next change.
+    The type scale. Every step but figure is in use; figure is in the theme
+    ahead of the screen that needs it.
   */
   --text-caption: 12px;
   --text-caption--line-height: 16px;

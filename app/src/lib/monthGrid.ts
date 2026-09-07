@@ -68,26 +68,20 @@ export function monthDays(month: Date): GridDay[] {
   const start = startOfWeek(startOfMonth(month), weekOptions)
   const end = endOfWeek(endOfMonth(month), weekOptions)
 
-  return eachDayOfInterval({ start, end }).map((date) => ({
-    date,
-    key: dayKey(date),
-    dayOfMonth: format(date, 'd'),
-    inMonth: isSameMonth(date, month),
-  }))
+  return eachDayOfInterval({ start, end }).map((date) => gridDay(date, isSameMonth(date, month)))
 }
 
-// The seven days of the week `anchor` falls in.
+// The seven days of the week `anchor` falls in. A week strip is not showing a
+// month, so no day in it is an outsider.
 export function weekDays(anchor: Date): GridDay[] {
   return eachDayOfInterval({
     start: startOfWeek(anchor, weekOptions),
     end: endOfWeek(anchor, weekOptions),
-  }).map((date) => ({
-    date,
-    key: dayKey(date),
-    dayOfMonth: format(date, 'd'),
-    // A week strip is not showing a month, so no day in it is an outsider.
-    inMonth: true,
-  }))
+  }).map((date) => gridDay(date, true))
+}
+
+function gridDay(date: Date, inMonth: boolean): GridDay {
+  return { date, key: dayKey(date), dayOfMonth: format(date, 'd'), inMonth }
 }
 
 export interface MonthGrid {

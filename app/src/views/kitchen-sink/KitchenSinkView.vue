@@ -127,7 +127,7 @@ const sections: Section[] = [
   {
     id: 'pills',
     title: 'StatusPill',
-    note: 'A tone, not a state. Which booking mark or enquiry stage reads as success and which as neutral is a screen\'s decision, and no screen has made it yet.',
+    note: 'A tone, not a state. Which booking mark or enquiry stage reads as success and which as neutral is a screen\'s decision: the bookings row and the enquiries rules each carry their own map.',
     component: KsPills,
   },
   {

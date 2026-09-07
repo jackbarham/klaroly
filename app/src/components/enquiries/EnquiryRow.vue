@@ -60,7 +60,7 @@
         type="button"
         aria-haspopup="dialog"
         :aria-label="t('enquiries.row.stage_action', { stage: t(`bookings.stage.${enquiry.stage}`) })"
-        @click.stop.prevent="emit('stage', enquiry, pillElement)"
+        @click.stop.prevent="emit('stage', enquiry, pill)"
       >
         <StatusPill :tone="stageTone">
           {{ t(`bookings.stage.${enquiry.stage}`) }}
@@ -139,7 +139,6 @@ const emit = defineEmits<{
 const { t, n } = useI18n()
 
 const pill = useTemplateRef<HTMLElement>('pill')
-const pillElement = computed(() => pill.value ?? null)
 
 // A lost enquiry has ended, so there is nothing to move it to from here: its
 // pill says which of the two endings it was and is not a control.

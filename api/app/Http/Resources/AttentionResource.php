@@ -12,10 +12,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * **No sentence and no day count.** The wording is British English in the app's
  * locale file: a server that writes UI copy is a server that has to be
  * redeployed to fix a typo. And every "9 days late" or "sent 11 days ago" on
- * this screen is worked out at render with differenceInCalendarDays against the
- * device's own calendar day, for the reason app/src/types/bookings.ts already
- * gives about a tab left open overnight. So this sends the raw material: dates
- * as dates, amounts as minor units, instants as instants.
+ * this screen is worked out at render with differenceInCalendarDays against
+ * meta.today, the account's own day, for the reason HomeResource::with() gives:
+ * the server decided what is overdue on that day, so a phone in another
+ * timezone must not count on its own. So this sends the raw material: dates as
+ * dates, amounts as minor units, instants as instants.
  *
  * **Flat, with every key always present and null where it does not apply.** A
  * discriminated union nested under the value narrows more neatly in TypeScript
@@ -82,11 +83,7 @@ class AttentionResource extends JsonResource
             'stage' => $booking->stage->value,
             'currency' => $booking->currency,
 
-            // A local calendar date, never an instant. The column is a date and
-            // the cast is immutable_date, so formatting it here cannot pass
-            // through a timezone conversion; sending it as anything else would
-            // move an evening event onto the wrong day for the eight months the
-            // clocks are forward.
+            // A local calendar date, never an instant; EventRowFields says why.
             'event_date' => $row->event?->event_date->format('Y-m-d'),
             'trial_date' => $row->trial?->event_date->format('Y-m-d'),
 

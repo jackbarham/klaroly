@@ -36,15 +36,18 @@ use Illuminate\Database\Eloquent\Collection;
  *
  * Scoped by the account global scope, which the `account` middleware binds
  * before this runs. Nothing here writes where('account_id', ...) by hand and
- * nothing reaches for DB::table(): every aggregate below reads like a
- * query-builder job, and written that way it totals every account's money while
- * looking perfectly correct in a development database with one account in it.
+ * nothing reaches for DB::table(), and the same holds in the contacts, events
+ * and enquiries controllers: every aggregate reads like a query-builder job,
+ * and written that way it totals every account's money while looking perfectly
+ * correct in a development database with one account in it.
  *
  * **The cost is the thing to be careful about here.** The waiting-on axis is
  * asked of every live booking rather than of a filtered list, and a naive
  * implementation measured 201 queries for an account with forty of them. The
  * eager load below takes it to a constant; HomeQueryCountTest holds it there
- * with a literal.
+ * with a literal. An unloaded relation is a query per booking, which is
+ * invisible in a demo database and ruinous in a real one, and that is why
+ * every list endpoint loads once for the whole page.
  */
 class HomeController extends Controller
 {
@@ -90,7 +93,7 @@ class HomeController extends Controller
             attention: array_slice($rows, 0, (int) config('bookings.max_attention')),
             attentionTotal: count($rows),
             upcoming: $this->upcoming($today),
-            money: $this->money($account->currency, $today, $rows, $live),
+            money: $this->money($account, $today, $rows, $live),
             features: $this->features->map($account),
             today: $today,
             timezone: $account->timezone,
@@ -149,9 +152,9 @@ class HomeController extends Controller
      * @param  array<int, AttentionRow>  $rows
      * @param  Collection<int, Booking>  $live
      */
-    private function money(string $currency, CarbonImmutable $today, array $rows, Collection $live): MoneySummary
+    private function money(Account $account, CarbonImmutable $today, array $rows, Collection $live): MoneySummary
     {
-        $account = $this->account->require();
+        $currency = $account->currency;
         $invoicing = $this->features->enabled($account, FeatureKey::Invoicing);
         $tracking = $this->features->enabled($account, FeatureKey::PaymentTracking);
 
@@ -179,7 +182,7 @@ class HomeController extends Controller
             owedMinor: $owed === null ? null : $owed['minor'],
             owedCount: $owed === null ? null : $owed['count'],
             snoozedMinor: $invoicing ? $this->snoozed($live, $today, $currency) : null,
-            outstanding: $invoicing ? $this->outstandingTotal($today) : null,
+            outstanding: $invoicing ? $this->outstandingTotal($today, $currency) : null,
         );
     }
 
@@ -272,10 +275,10 @@ class HomeController extends Controller
      * larger than owed_minor: an overdue deposit is late money that is not a
      * balance.
      */
-    private function outstandingTotal(CarbonImmutable $today): OutstandingSplit
+    private function outstandingTotal(CarbonImmutable $today, string $currency): OutstandingSplit
     {
         $invoices = Invoice::query()
-            ->whereHas('booking', fn ($query) => $query->where('currency', $this->account->require()->currency))
+            ->whereHas('booking', fn ($query) => $query->where('currency', $currency))
             ->with(['payments', 'payments.booking'])
             ->get();
 

@@ -154,11 +154,7 @@ class EnquiryResource extends JsonResource
 
         return [
             'type' => $event->type->value,
-            // A local calendar date, never an instant. The column is a date and
-            // the cast is immutable_date, so formatting it here cannot pass
-            // through a timezone conversion; sending it as anything else would
-            // move an evening event onto the wrong day for the eight months the
-            // clocks are forward.
+            // A local calendar date, never an instant; EventRowFields says why.
             'date' => $event->event_date->format('Y-m-d'),
             'location_type' => $event->location_type?->value,
             'venue_name' => $event->venue_name,

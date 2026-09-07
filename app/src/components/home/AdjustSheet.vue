@@ -48,7 +48,6 @@
               <Icon
                 name="grip"
                 class="size-5"
-                aria-hidden="true"
               />
             </button>
 
@@ -107,10 +106,9 @@
 // that differs from the current view is an artist who cannot work out why the
 // block keeps changing back.
 //
-// This is AnchoredSheet's fourth caller, which is what decision 231 said would
-// trigger the extraction: a bottom sheet below lg and a panel under the button
-// at lg, measured at runtime because the button's position depends on the
-// header's width.
+// The panel is ui/AnchoredSheet.vue: a bottom sheet below lg and a panel under
+// the button at lg, measured at runtime because the button's position depends
+// on the header's width.
 import { nextTick, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AnchoredSheet from '@/components/ui/AnchoredSheet.vue'

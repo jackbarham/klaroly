@@ -16,10 +16,8 @@ use Illuminate\Validation\ValidationException;
  * hold any at all.
  *
  * Both are scoped by the account global scope on Event, which the `account`
- * middleware binds before either runs. Neither writes where('account_id', ...)
- * by hand: that would be the second source of truth the scope exists to
- * prevent, and it is the sort of line that goes on looking correct in a
- * development database with one account in it.
+ * middleware binds before either runs; neither writes where('account_id', ...)
+ * by hand, for the reason HomeController gives.
  */
 class EventController extends Controller
 {
@@ -41,17 +39,13 @@ class EventController extends Controller
         $events = $query
             ->with([
                 // Everything a row needs, loaded once for the whole page
-                // rather than once per event. Without this the endpoint issues
-                // a query per event per relation, which is invisible in a demo
-                // database and ruinous in a real one.
+                // rather than once per event.
                 'booking.contact',
                 'booking.lines',
-                // The lines' own way back to their booking, which looks
-                // redundant beside the line above and is not. booking_lines
-                // has no currency column, so MoneyCast resolves a line's
-                // currency through $line->booking, and without this that is a
-                // query per line rather than per request. One extra whereIn
-                // buys back a query for every line in the response.
+                // `lines.booking` looks redundant beside `lines` and is not:
+                // booking_lines has no currency column, so MoneyCast resolves
+                // a line's currency through the booking, and without the
+                // extra hop that is a query per line.
                 'booking.lines.booking',
                 // What the waiting-on state reads, and why the second money
                 // hop is in it, are written once on the resolver.

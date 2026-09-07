@@ -8,9 +8,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Lowercases and trims the email input before anything reads it (decision
- * 84). Applied to every Fortify route and to the mobile token endpoint, so
- * login, registration, password reset and profile update all see the same
- * value. The lower(email) index on users is the backstop, not the mechanism.
+ * 84). Applied to every Fortify route and to every /api route that takes an
+ * email, so login, registration, password reset and profile update all see
+ * the same value. The lower(email) index on users is the backstop, not the
+ * mechanism.
  *
  * normalise() is the one definition of what a normalised address is. The
  * actions and the credential check call it again on their own input, so

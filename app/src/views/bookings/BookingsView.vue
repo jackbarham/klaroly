@@ -108,7 +108,6 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, useId, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { isSameMonth, parseISO, startOfMonth } from 'date-fns'
-import Icon from '@/components/ui/Icon.vue'
 import BookingList from '@/components/bookings/BookingList.vue'
 import BookingsCalendar from '@/components/bookings/BookingsCalendar.vue'
 import { quietActionClasses } from '@/components/bookings/controls'
@@ -122,9 +121,9 @@ const bookings = useBookingsStore()
 
 // Read once, here, rather than calling new Date() in six places, so that every
 // part of the screen agrees about what today is even across midnight.
-const today = ref(new Date())
+const today = new Date()
 
-const month = ref(startOfMonth(today.value))
+const month = ref(startOfMonth(today))
 const selected = ref<Date | null>(null)
 const mode = ref<GridMode>('month')
 const calendarVisible = ref(true)

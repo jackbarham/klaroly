@@ -240,15 +240,16 @@ Hand-written routes live in `routes/api.php` under `/api`:
 
 - Laravel 13 on PHP 8.5 with Postgres. Pest for tests, not PHPUnit. Pint with
   the default preset.
-- Packages in use: Fortify, Sanctum, Cashier, Resend, DomPDF,
-  spatie/icalendar-generator, Sentry.
+- Packages in use: Fortify, Sanctum, Cashier, Resend, Sentry and the AWS SDK
+  behind the `s3` disk. DomPDF and spatie/icalendar-generator are installed
+  ahead of the invoice PDF and calendar work and nothing reads them yet.
 - The locale directory is `lang/en-GB/`. No user-facing string may be a
   literal in a controller, a Blade template, a mail class or a notification.
   Use translation keys only.
 - Key names describe meaning, not content: `booking.deposit_due`, never
   `booking.your_deposit_is_due_soon`.
-- Config comes from `.env`. `.env.example` lists every variable with a
-  one-line comment; keep it complete when you add one.
+- Config comes from `.env`. `.env.example` lists every variable a Klaroly
+  deployment sets, with a one-line comment; keep it complete when you add one.
 - `APP_TIMEZONE=UTC`, `CACHE_STORE=database`, `QUEUE_CONNECTION=database`.
 - **An authenticated write is throttled when it checks a credential or sends
   an email, and not otherwise.** Both are things an attacker can spend on
@@ -309,7 +310,7 @@ Hand-written routes live in `routes/api.php` under `/api`:
   is the fix. The class is never set: the theme is wired and deliberately not
   exposed yet.
 - `accent` is the primary action and nothing else: `AppButton`'s primary
-  variant applies it, and the tab bar's create button is the one hand-rolled
+  variant applies it, and the top bar's create button is the one hand-rolled
   twin of that button, so a screen never decides for itself that something
   deserves colour. `accent-text` is the accent as words, and it is a separate
   token because a fill that can be read on white cannot be read on the dark
@@ -335,25 +336,26 @@ Hand-written routes live in `routes/api.php` under `/api`:
   that list because a control has to be the size it has to be, but keep them
   on the same grid.
 - `env(safe-area-inset-*)` cannot live in `@theme`, so `src/assets/app.css`
-  defines six utilities with `@utility` and they are the only place an inset
-  is read: `page-top`, `page-bottom` (clears the tab bar), `bar-bottom` (where
-  the tab bar floats), `sheet-bottom`, `above-bar` (a sticky row of form
-  actions) and `stick-top` (where a sticky block comes to rest). Compose them
-  with Tailwind variants, for example `max-lg:page-bottom`.
+  defines the inset utilities with `@utility` and they are the only place an
+  inset is read: `page-top`, `page-under-bar` (clears the top bar as well),
+  `page-bottom` (clears the tab bar), `bar-top` (where the top bar's row sits),
+  `bar-bottom` (where the tab bar floats), `sheet-bottom`, `above-bar` (a
+  sticky row of form actions) and `stick-top` (where a sticky block comes to
+  rest). Compose them with Tailwind variants, for example `max-lg:page-bottom`.
   **A sticky block uses `stick-top`, never `top-0`**, which tucks under the
   status bar the moment a native shell asks for an edge-to-edge layout, which
   `viewport-fit=cover` in `index.html` already sets the app up for. It also
   reads `--stick-offset`, for the second sticky block on a screen that has to
   rest under the first rather than behind it; whoever sets that offset owns
   measuring it.
-- The focus ring is a sixth `@utility`, `focus-ring`, written as
+- The focus ring is another `@utility`, `focus-ring`, written as
   `focus-visible:focus-ring` on anything that takes focus and has no edge of
   its own to recolour (a button, a link, a navigation item, a checkbox), and
   as `peer-focus-visible:focus-ring` on the radio card. It reads
   `--border-width-focus` and `--border-focus`, so every ring in the app is one
   rule. A control with a visible edge recolours that edge instead, through
   `edgeClasses` in `src/components/form/field.ts`.
-- `chip` and `chip-danger` are the ninth and tenth, and they are the small
+- `chip` and `chip-danger` are two more, and they are the small
   action on something that already exists: 30px painted, taken to the 44px
   minimum by a pseudo-element whose arithmetic reads `--tap-target-min` and the
   chip's own height, so no number in it stops being true when either moves.
@@ -362,7 +364,7 @@ Hand-written routes live in `routes/api.php` under `/api`:
   on the element type where a class is nothing at all. Focus is deliberately
   not in the utility: a chip carries `focus-visible:focus-ring` in the markup
   like every other ringed control.
-- `check` and `radio` are the seventh and eighth, and they are the tick box
+- `check` and `radio` are two more, and they are the tick box
   and the radio drawn rather than left to the browser. A native control takes
   `accent-color` and nothing else, so its mark is the platform's: heavy, and
   close enough to the edges of a 20px box that the box reads as a solid
@@ -418,9 +420,9 @@ target.
 Where someone can go in the app, written down once. One array, `navigation`,
 with a key, a route name, a locale key for the label, an icon name, a flag for
 the phone tab bar and which half of the sidebar the entry belongs to. The
-create action is in the array with a null route name, in the position it is
-drawn in, which is why the tab bar reads Home, Bookings, the create button,
-Enquiries, More.
+create action is in the array with a null route name and no tab bar flag: it
+is the top bar's accent button on a phone and the sidebar's New button at
+`lg`, so the tab bar reads Home, Bookings, Enquiries, Contacts, More.
 
 The derived lists (`tabBarItems`, `sidebarMain`, `sidebarSecondary`,
 `moreItems`, `createItem`) and the two functions that work out what is current
@@ -456,10 +458,15 @@ navigations are in the DOM at every width and the hidden one is
 screen.
 
 - `AppSidebar.vue`, at `lg` and up: a fixed column that does not collapse,
-  with the New button at the top and sign out at the bottom. It never links
-  to More.
+  with the New button at the top and, at the bottom, the account row that
+  opens `AccountMenu.vue`. It never links to More.
+- `AppTopBar.vue`, below `lg`: the fixed top bar with the screen's title, the
+  notifications button and the create button, which is the accent twin of
+  `AppButton`'s primary variant. `barGlass.ts` is the material the two bars
+  share.
 - `AppTabBar.vue`, below `lg`: a bar that floats clear of the bottom edge,
-  with a raised create button in the middle that is not a destination. The
+  five destinations and nothing else; the create action used to be a raised
+  button in the middle of it and is now in the top bar. The
   pill behind the current item is one element that is measured and moved with
   a transform, never a style on each item and never an animated layout. It is
   measured on the first render, so a deep link lands with it in the right
@@ -509,9 +516,10 @@ Its props are `label` (an already-resolved translation key), `anchorTo`, `align`
 and `widthClass`, the last two required with no default because the callers are
 split between values and a default would promote one of them to a rule by
 accident. **`widthClass` stays a Tailwind width utility rather than a named
-set**, and that is settled rather than deferred: four callers want three widths,
+set**, and that is settled rather than deferred: five callers want three widths,
 and each is an independent constraint rather than a taste. The month jump needs
-320 because three 96px month cells plus their gaps come to it; the two view
+320 because three 96px month cells plus their gaps come to it, and Adjust shares
+that width; the two view
 menus need 300 to stay over a 400px list column; the stage sheet needs 352
 because its rows carry a second line of explanation. Collapsing them to two
 would mean failing one of those to tidy a prop, and naming all three would be
@@ -602,11 +610,13 @@ component should look like in both themes.
 **It is applied.** `src/assets/app.css` carries the two token layers and every
 component reads them, so the rules below are live rather than aspirational.
 `docs/tokens.css` is the record of where the system came from; the app's own
-theme block is what actually runs, and the two differ in one deliberate place,
-which is `--radius-card`.
+theme block is what actually runs. The two differ in `--radius-card` and
+`--duration-base`, both deliberate, and the app's block has grown tokens the
+record never had, so the record is provenance and not a file to paste.
 
-Control heights, the type scale and the button size ramp have not moved yet.
-The app is on the new palette and still on Tailwind's own sizes.
+Control heights and the button size ramp have not moved yet: `AppButton` is
+still on Tailwind's `h-10` and `h-12`. The type scale is in use for every step
+but figure, which waits for the screen that needs it.
 
 The rules:
 
@@ -622,7 +632,8 @@ The rules:
 - **A token the guide specifies stays, even while nothing reads it.** The type
   scale, the spacing levers, the container widths and the solid `success`,
   `warning` and `info` fills are in the theme ahead of the screens that need
-  them, and the kitchen sink says "not used yet" beside each one. **That note
+  them, and the kitchen sink's token page says "Not used yet" beside the
+  colour tokens nothing reads. **That note
   is part of the token's entry and moves when the token is first used**: My
   account put the subtle and text halves of all four status families to work
   through `StatusPill`, and the entries say what uses them now. Removing one is a
@@ -744,7 +755,7 @@ mobile binary, which is the thing being avoided. Follow the same pattern for
 anything else that is web-only.
 
 The service worker is registered by `src/lib/updates.ts`, the one file in
-`src/` that mentions it. `main.ts` loads it, and `App.vue` loads the
+`src/` that touches it. `main.ts` loads it, and `App.vue` loads the
 `UpdateBar` component, with the dynamic-import pattern above, so the mobile
 bundle contains neither. The plugin runs in `prompt` mode: a newer build
 installs and waits, the module checks for one hourly and when the tab comes
@@ -880,6 +891,8 @@ What sits on top of the tables:
 - Config that is not the framework's: `config/billing.php` (trial length),
   `config/features.php` (the default feature map), `config/demo.php` (the
   demo password), `config/contacts.php` (the contacts ceiling),
+  `config/bookings.php` (the enquiries ceiling, the cold threshold, the events
+  caps, the home screen's upcoming count and the intake flag) and
   `config/reserved_usernames.php`. Nothing outside `config/` reads `env()`.
 - Factories for every model, `SystemDefaultsSeeder` (system message and
   contract templates) and `DemoAccountSeeder` (the "Ellie Marsh Makeup"
@@ -912,8 +925,8 @@ What sits on top of the tables:
   of what is tested. Create it once with `createdb klaroly_test`. The
   authentication tests live in `tests/Feature/Auth` and the My Account writes
   in `tests/Feature/Account`. `tests/Pest.php` holds the helpers more than
-  one file needs: `actingForAccount`, `createOwner`, `createCollaborator`,
-  `sessionRow`, `actingAsWebApp` and `registration`.
+  one file needs, from `actingForAccount`, `createOwner` and `actingAsWebApp`
+  to `todayFor`, `enquiry`, `issuedInvoice` and `paymentOf`.
 - **A test that needs a session against `/api/*` uses `actingAsWebApp`.**
   A JSON test request sends no cookies unless it says it is credentialed, and
   Sanctum only starts a session when the referer is one of its stateful
@@ -963,15 +976,16 @@ when it is a relative path.
 
 It also has its shell, and every route behind the sign-in exists as a page.
 Most of the shell is still furniture rather than features: apart from the
-authentication screens, the four My Account pages and `/bookings`, **nothing
-in it calls the API**. A page that has not been built says so. The one place
-invented data survives is `src/lib/contactFixtures.ts`, which stands in for the
-contacts endpoint and is deleted when that endpoint lands; every person, venue
-and address in it is made up, because this screen is what gets screenshotted.
+authentication screens, My Account, Home, Bookings and Enquiries, **nothing in
+it calls the API**. A page that has not been built says so. The one place
+invented data survives is `src/lib/contactFixtures.ts`, which stands in for
+`GET /api/contacts` until the contacts screen is moved onto it; every person,
+venue and address in it is made up, because this screen is what gets
+screenshotted.
 
-- The routes, all children of the layout route: `/`, `/bookings`,
-  `/bookings/:id`, `/enquiries`, `/enquiries/:id`, `/contacts` and
-  `/contacts/:id`, `/more`, `/help`, `/account` and its four pages,
+- The routes, all children of the layout route: `/`, `/attention`,
+  `/bookings`, `/bookings/:id`, `/enquiries`, `/enquiries/:id`, `/contacts`
+  and `/contacts/:id`, `/more`, `/help`, `/account` and its four pages,
   `/settings` and its ten groups, plus `/billing` on the web target. A detail
   route that has not been built echoes its `:id` and looks nothing up;
   `/contacts/:id` is a real page and is a child of `/contacts` rather than a
@@ -981,8 +995,8 @@ and address in it is made up, because this screen is what gets screenshotted.
   which is also the document title, and where a phone's back link goes with
   `meta.backTo`. When a section is really built it gets a view of its own and
   the routes array points at that instead.
-- The pages that are real: `HomeView` (the greeting, the verification banner
-  and an empty state), `MoreView` (the phone's overflow list and sign out),
+- The pages that are real: `HomeView` (the three blocks of business logic
+  section 18, with `/attention` as the second of them uncapped), `MoreView` (the phone's overflow list and sign out),
   the settings index, `/settings/travel`, which is the one honest example of
   the form kit doing a section's work and saves nothing because there is no
   settings API yet, all of My account, `/bookings`, `/contacts` with
@@ -1026,14 +1040,15 @@ query finds an accented name, that the second line drops what it is supposed to
 drop and keeps what it is supposed to keep, that the pill precedence holds and
 both money pills go when the setting is off, that the view settings survive a
 reload, and that they fall back to the defaults when the storage accessor
-itself throws rather than when it is merely empty. Then the four tests that
+itself throws rather than when it is merely empty. Then the five tests that
 read the source of the app rather than run it:
 `boundary.test.ts`, which stops business logic leaking into components,
 `styleRules.test.ts`, which stops a `dark:` variant, an arbitrary value or a
-hex colour reaching a component, `lib/bookings.guards.test.ts` and
-`lib/contacts.guards.test.ts`, which stop a component importing either
-feature's fixtures and stop a day key being built from `toISOString`, and
-`router/routeNames.test.ts`, which fails
+hex colour reaching a component, `lib/bookings.guards.test.ts`,
+`lib/contacts.guards.test.ts` and `lib/enquiries.guards.test.ts`, which stop a
+day key being built from `toISOString`, a component importing the contacts
+fixtures and the enquiries list becoming a listbox, all five on the scaffold
+in `lib/sourceRules.ts`, and `router/routeNames.test.ts`, which fails
 if any route name written down anywhere is not a route that exists. Renaming
 a route is the change that breaks a `router.push` in a screen nobody opened,
 and a route name is a string, so nothing else can catch it. Component tests
@@ -1153,8 +1168,7 @@ prototype both were built against.
   block off is a control that hides an unheld Saturday, which is the amounts-owed
   problem on the screen where it would hurt most. The money period lives on the
   block and not here: one value with two homes is two places to keep in step.
-  It is `AnchoredSheet`'s fourth caller, which is what decision 231 said would
-  trigger the extraction.
+  It is `AnchoredSheet`'s fifth caller.
 - **The reorder works by keyboard as well as by drag**, because a reorder that
   only works by dragging is one half the people cannot do. `preventDefault` on
   `pointerdown` stops the drag becoming a text selection and also stops the
@@ -1723,7 +1737,7 @@ and `docs/home-poc.html` is the prototype it was built against.
   the headline, **so the headline and the sum of the rows agree by construction
   rather than by a test.** It also removes half of decision 2026-09-06.2112:
   "which of two invoices does this row name" stops being a question when the row
-  names none of them, and `WaitingOnResult`'s `about` therefore has to be a
+  names none of them, and `AttentionRow`'s invoices are therefore a
   collection rather than a model.
 - **The row sends raw material and never a sentence or a day count.** The
   wording is British English in the app's locale file, and every "9 days late"
@@ -1963,8 +1977,8 @@ the same question being answered twice.
 ### The bookings screen
 
 `/bookings` is a month calendar and a list, two views of one set of events on
-one screen, per business logic 19.1. It is the first screen built against a
-seam rather than against the API: there is no bookings API yet, so
+one screen, per business logic 19.1. It was the first screen built against a
+seam rather than against the API, and it reads the API now:
 `src/lib/bookings.ts` is its data module, sitting where `src/lib/auth.ts`
 sits: below the store, above `api.ts`, and the only other file that turns a
 URL into a domain shape. It exports `events({ from, to })` and
@@ -2072,13 +2086,14 @@ filter from 19.2, the clash warning from 5.2, and the booking detail screen.
 ### The contacts screen
 
 `/contacts` is a list beside one person's card, and it is the second screen
-built against a seam rather than against the API. There is no contacts
-endpoint yet, so `src/lib/contactFixtures.ts` stands in for one: it exports
-`loadContacts()`, `src/stores/contacts.ts` is its only caller, and a component
-reaching past the store to it is a test failure rather than a convention.
-**That file is deleted when the endpoint lands**, `src/lib/contacts.ts` is
-written the way `src/lib/bookings.ts` is, and nothing else in the feature
-changes.
+built against a seam rather than against the API. The endpoint,
+`GET /api/contacts`, exists now and the screen has not been moved onto it, so
+`src/lib/contactFixtures.ts` still stands in: it exports `loadContacts()`,
+`src/stores/contacts.ts` is its only caller, and a component reaching past the
+store to it is a test failure rather than a convention. **That file is deleted
+when the screen moves**, `src/lib/contacts.ts` is written the way
+`src/lib/bookings.ts` is, the front-end type takes the resource's field names,
+and nothing else in the feature changes.
 
 - **A contact is the person who books and pays, and that is all.** Per schema
   5.7 it holds a name, one email, ONE phone number and an address. Everyone
@@ -2170,7 +2185,7 @@ changes.
   contact with bookings is refused, because schema 5.7 restricts
   `bookings.contact_id`, and that is said as one line at the moment Delete is
   tapped rather than as a disabled button or standing small print. The refusal
-  is `ContactNotice.vue`, a polite live region that takes no focus and clears
+  is the kit's `Notice`, a polite live region that takes no focus and clears
   itself after four and a half seconds. The confirm is
   `ContactDeleteDialog.vue`, a real dialog with a focus trap and no timer,
   because a confirm that vanishes while you are reading it decides for you, and

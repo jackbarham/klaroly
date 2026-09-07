@@ -39,7 +39,6 @@
       <Icon
         name="sliders"
         class="size-4"
-        aria-hidden="true"
       />
       {{ t('home.adjust') }}
     </button>

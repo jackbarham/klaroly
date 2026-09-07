@@ -1,7 +1,7 @@
 <template>
   <RouterLink
     :id="optionId"
-    class="contact-row group flex min-h-16 items-center gap-3 border-b border-border px-6 py-3 transition-colors hover:border-accent focus-visible:focus-ring focus-visible:-outline-offset-2 @split:px-4"
+    class="contact-row flex min-h-16 items-center gap-3 border-b border-border px-6 py-3 transition-colors hover:border-accent focus-visible:focus-ring focus-visible:-outline-offset-2 @split:px-4"
     :class="stateClasses"
     role="option"
     :aria-selected="active"

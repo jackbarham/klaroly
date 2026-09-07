@@ -67,9 +67,8 @@
 // Two taps to any month in any year: pick a year from the strip, then a month
 // from the grid.
 //
-// The panel around it is ui/AnchoredSheet.vue, which the contacts view menu
-// also uses: a bottom sheet below lg and a panel hanging under a measured
-// button at lg. It is left-aligned here because the month title sits near the
+// The panel around it is ui/AnchoredSheet.vue: a bottom sheet below lg and a
+// panel hanging under a measured button at lg. It is left-aligned here because the month title sits near the
 // left of the calendar, so the panel grows rightwards away from it. Everything
 // in this file is about the content: which years the strip offers, which month
 // is shown, and where the strip is scrolled to when it opens.

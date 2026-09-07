@@ -36,11 +36,9 @@ use Illuminate\Support\Collection;
  * two-views-of-one-table framing rather than a second model.
  *
  * Scoped by the account global scope on Booking and Event, which the `account`
- * middleware binds before this runs. Nothing here writes where('account_id',
- * ...) by hand and nothing reaches for DB::table(): the clash counts in
- * particular read like a query-builder job, and written that way they cross
- * accounts while looking perfectly correct in a development database with one
- * account in it.
+ * middleware binds before this runs; nothing here writes where('account_id',
+ * ...) by hand or reaches for DB::table(), for the reason HomeController gives.
+ * The clash counts in particular read like a query-builder job.
  */
 class EnquiryController extends Controller
 {
@@ -109,10 +107,6 @@ class EnquiryController extends Controller
         $total = Booking::query()->whereIn('stage', Booking::LISTED_STAGES)->count();
 
         $enquiries = $this->ordered()
-            // Everything a row needs, loaded once for the whole page rather
-            // than once per enquiry. Without this the endpoint issues a query
-            // per enquiry per relation, which is invisible in a demo database
-            // and ruinous in a real one.
             ->with(self::ROW_RELATIONS)
             ->limit($maximum)
             ->get();

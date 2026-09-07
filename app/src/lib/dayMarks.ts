@@ -119,10 +119,9 @@ function strengthOrder(event: BookingEvent): number {
 }
 
 export function useDayMarks(events: MaybeRefOrGetter<BookingEvent[]>) {
-  // Only the marks. monthsWithWork used to be derived here from the loaded
-  // events, which was true while every event was loaded at once and became
-  // wrong the moment the data was windowed: a derivation can only ever know
-  // about the months it has been given, and the jump sheet's whole job is to
-  // point at the ones it has not. GET /api/events/months answers that instead.
+  // Only the marks. The months with work come from GET /api/events/months
+  // rather than from here: a derivation from loaded events can only know the
+  // months it has been given, and the jump sheet's whole job is to point at
+  // the ones it has not.
   return { marks: computed(() => marksFor(toValue(events))) }
 }

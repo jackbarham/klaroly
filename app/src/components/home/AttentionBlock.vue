@@ -28,7 +28,6 @@
         <Icon
           name="chevron-right"
           class="size-4"
-          aria-hidden="true"
         />
       </RouterLink>
     </BlockHeader>
@@ -77,7 +76,6 @@
     <Icon
       name="check"
       class="size-4 text-success-text"
-      aria-hidden="true"
     />
     {{ t('home.attention.all_clear') }}
   </p>

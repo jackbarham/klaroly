@@ -12,7 +12,6 @@
         <Icon
           name="chevron-right"
           class="size-4"
-          aria-hidden="true"
         />
       </RouterLink>
     </BlockHeader>
@@ -36,7 +35,6 @@
         <Icon
           name="alert"
           class="size-5 shrink-0 text-danger-text"
-          aria-hidden="true"
         />
         <span class="min-w-0 grow">
           <span class="block font-semibold text-danger-text">{{ t('home.money.owed', { amount: amount(money.owed_minor) }) }}</span>
@@ -60,7 +58,6 @@
         <Icon
           name="chevron-right"
           class="size-5 shrink-0 text-text-subtle"
-          aria-hidden="true"
         />
       </RouterLink>
 

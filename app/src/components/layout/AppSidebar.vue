@@ -18,7 +18,6 @@
 
     <AppButton
       class="mt-8 w-full"
-      variant="primary"
       :icon="createItem.icon"
       @click="emit('create')"
     >

@@ -29,14 +29,20 @@ export async function signIn(email: string, password: string, remember: boolean)
       device_name: deviceName(),
     })
 
-    tokenStorage.set(response.token)
-
-    return normaliseMe(response.me)
+    return acceptToken(response)
   }
 
   await api.post('/login', { email, password, remember })
 
   return fetchMe()
+}
+
+// A token response is the phone's whole sign-in: keep the token and hand back
+// the person it belongs to.
+function acceptToken(response: TokenResponse): Me {
+  tokenStorage.set(response.token)
+
+  return normaliseMe(response.me)
 }
 
 export async function register(fields: RegisterFields): Promise<Me> {
@@ -63,9 +69,7 @@ export async function register(fields: RegisterFields): Promise<Me> {
       device_name: deviceName(),
     })
 
-    tokenStorage.set(response.token)
-
-    return normaliseMe(response.me)
+    return acceptToken(response)
   }
 
   await api.post('/register', body)

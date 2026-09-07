@@ -26,7 +26,6 @@
 
     <div class="mt-6 flex flex-wrap justify-center gap-3">
       <AppButton
-        variant="primary"
         @click="emit('create')"
       >
         {{ t('home.first_run.add_booking') }}

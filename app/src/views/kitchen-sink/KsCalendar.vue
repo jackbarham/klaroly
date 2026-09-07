@@ -183,10 +183,9 @@
 <script setup lang="ts">
 // The bookings screen's components, in every state they have.
 //
-// The demo events are written out here rather than taken from
-// src/lib/bookingFixtures.ts, because a component may not reach the fixtures
-// and this page is no exception: src/lib/bookings.guards.test.ts would fail,
-// and it would be right to.
+// The demo events are written out here. The bookings feature has no fixtures
+// file: its events come from the API, and this page builds the few it needs
+// to show every state.
 import { computed, ref } from 'vue'
 import BookingList from '@/components/bookings/BookingList.vue'
 import BookingRow from '@/components/bookings/BookingRow.vue'

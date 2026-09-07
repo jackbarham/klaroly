@@ -33,7 +33,6 @@
     <Icon
       name="chevron-right"
       class="size-5 shrink-0 text-text-subtle"
-      aria-hidden="true"
     />
   </li>
 </template>

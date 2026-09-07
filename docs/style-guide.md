@@ -1,7 +1,9 @@
 # Klaroly style guide
 
 Extracted from Lemon Squeezy's application UI on 4 September 2026.
-Companion files: `tokens.css`, `kitchen-sink.html`, `style-guide-screens/`.
+Companion files: `tokens.css` and `style-guide-screens/` here. `kitchen-sink.html`,
+the static rendering the screens were captured from, lives in the project folder
+outside this repository; the live equivalent is the app's `/kitchen-sink` route.
 
 ---
 
@@ -22,7 +24,8 @@ actually used, means designing from evidence.
 So the borrowed system goes in wholesale now, and the file is structured so that
 replacing it later is a small job rather than a rewrite. That is what the two
 token layers are for. When the real brand work happens, it changes the semantic
-layer in `tokens.css` and nothing else. No component is touched.
+layer in `app/src/assets/app.css`, of which `tokens.css` is the record, and
+nothing else. No component is touched.
 
 **A future session should not mistake any of this for a finished brand.** If you
 are reading this and wondering whether the purple is Klaroly's colour: it is not.
@@ -342,7 +345,7 @@ and 3% would leave the panel with no edge at all.
 | Page gutter | 40px desktop, 16px phone | |
 | Page header to content | 40px | |
 | Header bar | none from `lg` up, 52px below it | The sidebar is full height, so a wide screen has no top bar. A phone has one, and it is the only place this differs by width. See the phone chrome section |
-| Control heights | 32 / 40 / 48px | Small, default, large |
+| Control heights | 36 / 48 / 56px | Small, default, large. **Klaroly's ramp, not theirs**: at source they are 32 / 40 / 48. `AppButton` is still on Tailwind's 40 and 48 until the ramp is adopted |
 | Minimum tap target | 44px | **Klaroly rule, not theirs** |
 
 Breakpoints are stock Tailwind: 640, 768, 1024, 1280.
@@ -549,7 +552,7 @@ reason is given.
 
 ### Text input
 
-40px tall, 8px 16px padding, 8px radius. **The border is not a border.** It is a
+48px tall, 8px 16px padding, 8px radius. **The border is not a border.** It is a
 1px inset box-shadow, which is why the control does not shift by a pixel when it
 gains a focus ring.
 
@@ -1237,6 +1240,9 @@ before the control was removed, with no component edited:
 | Input border | 1px | 2px | 1px |
 | Input height | 40px | 40px | 36px |
 | Field gap | 24px | 24px | 12px |
+
+The heights in that table are the source's. Klaroly's control ramp is 36 / 48 /
+56, per the layout table above.
 
 One thing did have to be fixed to get there. The input was initially 42px tall
 while the button beside it was 40px, because the border was adding to the height.

@@ -138,7 +138,7 @@ const route = useRoute()
 
 // Read once, here, rather than calling new Date() in six places, so that every
 // part of the screen agrees about what today is even across midnight.
-const today = ref(new Date())
+const today = new Date()
 
 const query = ref('')
 const listId = useId()
@@ -152,7 +152,7 @@ const visible = computed(() => enquiries.enquiries.filter((enquiry) => matches(e
 const groups = computed(() => groupEnquiries(
   visible.value,
   enquiries.settings.sort,
-  today.value,
+  today,
   enquiries.settings.showLost,
 ))
 

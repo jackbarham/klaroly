@@ -27,7 +27,6 @@
         <Icon
           name="chevron-right"
           class="size-4"
-          aria-hidden="true"
         />
       </RouterLink>
     </BlockHeader>

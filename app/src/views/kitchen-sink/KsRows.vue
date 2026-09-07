@@ -80,8 +80,8 @@
 
 <script setup lang="ts">
 // A list and a table of the same three bookings, with the pill in place in
-// both. None of this is real: there is no bookings API and no screen behind
-// these rows yet.
+// both. None of this is real: the rows are invented so that every tone is on
+// the page at once.
 import type { PillTone } from '@/components/ui/StatusPill.vue'
 import { tableCellClasses, tableRowClasses, type TableColumn } from '@/components/ui/table'
 

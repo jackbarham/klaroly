@@ -261,14 +261,15 @@ export const routes: RouteRecordRaw[] = [
   },
 ]
 
+// The layout route, which the two conditional additions below hang off.
+const layout = routes[routes.length - 1]
+
 // Billing exists only on the web target. __WEB_TARGET__ is a compile-time
 // constant (see vite.config.ts), so on the mobile build this block is dead
 // code and the billing chunk is never emitted. The import must stay dynamic
 // and inside this branch for that to hold; a static import at the top of the
 // file would keep the code in the mobile binary.
 if (__WEB_TARGET__) {
-  const layout = routes[routes.length - 1]
-
   layout.children?.push({
     path: 'billing',
     name: 'billing',
@@ -286,8 +287,6 @@ if (__WEB_TARGET__) {
 // import.meta.env.DEV is a compile-time constant, so this branch is dead code
 // in a build and neither the page nor the link is shipped.
 if (import.meta.env.DEV) {
-  const layout = routes[routes.length - 1]
-
   layout.children?.push({
     path: 'kitchen-sink',
     name: 'kitchen-sink',

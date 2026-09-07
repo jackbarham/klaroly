@@ -31,6 +31,7 @@ class UpcomingEventResource extends JsonResource
     public function toArray(Request $request): array
     {
         $booking = $this->booking;
+        $travel = app(Features::class)->enabled($booking->account, FeatureKey::TravelEstimates, $booking);
 
         return [
             'event_id' => $this->id,
@@ -47,8 +48,8 @@ class UpcomingEventResource extends JsonResource
             // them unused in v1), and null as well when the artist has travel
             // estimates switched off, because a figure from a feature she has
             // turned off is one she has said she does not want.
-            'travel_duration_s' => $this->travel(FeatureKey::TravelEstimates) ? $this->travel_duration_s : null,
-            'travel_distance_m' => $this->travel(FeatureKey::TravelEstimates) ? $this->travel_distance_m : null,
+            'travel_duration_s' => $travel ? $this->travel_duration_s : null,
+            'travel_distance_m' => $travel ? $this->travel_distance_m : null,
         ];
     }
 
@@ -57,10 +58,5 @@ class UpcomingEventResource extends JsonResource
         $count = $this->booking->partyMembers->count();
 
         return $count === 0 ? null : $count;
-    }
-
-    private function travel(FeatureKey $key): bool
-    {
-        return app(Features::class)->enabled($this->booking->account, $key, $this->booking);
     }
 }

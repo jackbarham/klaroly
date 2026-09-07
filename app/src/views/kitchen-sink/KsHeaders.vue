@@ -71,6 +71,6 @@
 // h1 with it. That is four more h1 elements than a page should have, and it
 // is the price of showing the component rather than re-drawing it.
 //
-// The actions slot is shown here for the first time: no screen in the app
-// passes one yet.
+// The actions slot is what the bookings screen passes its calendar controls
+// through.
 </script>

@@ -31,7 +31,7 @@
       </AppButton>
     </p>
 
-    <template v-else-if="summary">
+    <template v-else-if="home.summary">
       <FirstRun
         v-if="home.isEmptyAccount"
         @create="create = true"
@@ -79,7 +79,7 @@
         >
           <AttentionBlock
             v-if="key === 'attention'"
-            :rows="summary.attention"
+            :rows="home.summary.attention"
             :today="home.today"
             :limit="previewLimit(home.settings.previewCount)"
             :total="home.attentionTotal"
@@ -87,15 +87,15 @@
 
           <NextUpBlock
             v-else-if="key === 'next'"
-            :events="summary.upcoming"
+            :events="home.summary.upcoming"
             :today="home.today"
           />
 
           <MoneyBlock
             v-else
-            :money="summary.money"
+            :money="home.summary.money"
             :period="home.settings.period"
-            @period="setPeriod"
+            @period="home.update({ period: $event })"
           />
         </div>
       </div>
@@ -121,7 +121,7 @@
 // One document scroll container, as everywhere else. Nothing on this screen is
 // its own scroller, which is what lets a band heading be sticky inside its own
 // group without pinning itself to the top of the page.
-import { computed, onMounted, ref, shallowRef } from 'vue'
+import { onMounted, ref, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AdjustSheet from '@/components/home/AdjustSheet.vue'
@@ -135,7 +135,6 @@ import VerificationBanner from '@/components/VerificationBanner.vue'
 import { previewLimit, type BlockKey } from '@/lib/homeView'
 import { useAuthStore } from '@/stores/auth'
 import { useHomeStore } from '@/stores/home'
-import type { PeriodKey } from '@/types/home'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -147,9 +146,6 @@ const adjustOpen = ref(false)
 const adjustAnchor = shallowRef<HTMLElement | null>(null)
 const create = ref(false)
 const verifiedMessage = ref(false)
-
-const summary = computed(() => home.summary)
-
 
 /**
  * Which grid cell each block takes above the split, and nothing below it.
@@ -172,10 +168,6 @@ const splitPlacement: Record<BlockKey, string> = {
 function openAdjust(anchor: HTMLElement | null): void {
   adjustAnchor.value = anchor
   adjustOpen.value = true
-}
-
-function setPeriod(period: PeriodKey): void {
-  home.update({ period })
 }
 
 // The verification link in the email ends on this page with ?verified=1. The

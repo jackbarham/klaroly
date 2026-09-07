@@ -141,7 +141,7 @@ const router = useRouter()
 
 // Read once, here, rather than calling new Date() in six places, so that every
 // part of the screen agrees about what today is even across midnight.
-const today = ref(new Date())
+const today = new Date()
 
 const query = ref('')
 const listId = useId()
@@ -152,7 +152,7 @@ onMounted(() => {
 
 const visible = computed(() => contacts.contacts.filter((contact) => matches(contact, query.value)))
 
-const groups = computed(() => groupContacts(visible.value, contacts.settings.sort, today.value))
+const groups = computed(() => groupContacts(visible.value, contacts.settings.sort, today))
 
 // The same people again, flat, which is the order the arrow keys walk. It
 // comes from the groups rather than from `visible` so that the cursor moves in

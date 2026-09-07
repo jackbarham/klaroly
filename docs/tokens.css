@@ -1,16 +1,15 @@
 /* ============================================================================
-   STAGED, NOT YET APPLIED.
-   This file has not replaced app/src/assets/app.css. The app still runs on the
-   placeholder palette described under "App rules" in CLAUDE.md. Applying this
-   is one change: swap the theme block and re-point every component in the same
-   commit. Do not part-apply it.
+   Klaroly design tokens: the September 2026 source extract.
 
-   Klaroly design tokens
-   Tailwind v4 @theme block. Paste into src/assets/app.css.
+   Extracted from Lemon Squeezy's application UI (app.lemonsqueezy.com) on
+   4 September 2026, as a PLACEHOLDER SKIN and not Klaroly's identity. See
+   style-guide.md for the status note and the reasoning.
 
-   Extracted from Lemon Squeezy's application UI (app.lemonsqueezy.com),
-   4 September 2026. This is a PLACEHOLDER SKIN, not Klaroly's identity.
-   See style-guide.md for the status note and the reasoning.
+   This is the record of where the system came from and not the file that
+   runs. app/src/assets/app.css carries the live theme block, which started
+   from this and has moved on: --radius-card and --duration-base differ there
+   on purpose, and it has grown tokens this record never had. Do not paste this
+   over it.
 
    TWO LAYERS, KEPT STRICTLY SEPARATE:
      Layer 1  PRIMITIVES  raw scales. Never referenced by a component.

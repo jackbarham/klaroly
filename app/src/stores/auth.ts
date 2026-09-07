@@ -22,10 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // A 401 from any request means the session or token is gone. Clearing
   // the state here is enough: the router guard sends the person to login.
-  onUnauthenticated(() => {
-    me.value = null
-    status.value = 'signed_out'
-  })
+  onUnauthenticated(setSignedOut)
 
   function setSignedIn(value: Me): void {
     me.value = value
@@ -37,9 +34,10 @@ export const useAuthStore = defineStore('auth', () => {
     status.value = 'signed_out'
   }
 
-  // A signed-in person with no account cannot use the app. Their session
-  // or token is ended and the login screen explains why.
-  async function signOutWithoutAccount(): Promise<void> {
+  // Ends the session or token and clears this device whatever the API said:
+  // the credential may already be gone, which is the outcome wanted anyway.
+  // The notice is what the login screen then says about it.
+  async function endSession(noticeKey: string): Promise<void> {
     try {
       await auth.signOut()
     } catch {
@@ -47,7 +45,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     setSignedOut()
-    notice.value = 'account.no_membership'
+    notice.value = noticeKey
+  }
+
+  // A signed-in person with no account cannot use the app. Their session
+  // or token is ended and the login screen explains why.
+  function signOutWithoutAccount(): Promise<void> {
+    return endSession('account.no_membership')
   }
 
   // Called once, before the first navigation. Whatever happens, the app
@@ -92,16 +96,8 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // Never throws: whatever the API said, this device is signed out.
-  async function signOut(): Promise<void> {
-    try {
-      await auth.signOut()
-    } catch {
-      // The session or token may already be gone, which is the outcome
-      // wanted anyway.
-    }
-
-    setSignedOut()
-    notice.value = 'auth.signed_out'
+  function signOut(): Promise<void> {
+    return endSession('auth.signed_out')
   }
 
   async function refresh(): Promise<void> {

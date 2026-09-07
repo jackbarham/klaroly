@@ -14,8 +14,9 @@ use Illuminate\Notifications\Notification;
  * out about a change they did not make, and it explains why every other
  * device has just been signed out.
  *
- * Sent by ResetUserPassword and UpdateUserPassword, so both the web routes
- * and the mobile twins are covered. Never sent from the forgot-password
+ * Sent by App\Services\PasswordChanger, which both Fortify actions call, so
+ * the web routes and the mobile twins are covered. Never sent from the
+ * forgot-password
  * request itself, which would reveal whether an address exists.
  */
 class PasswordChanged extends Notification implements ShouldQueue

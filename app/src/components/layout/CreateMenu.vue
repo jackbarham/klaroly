@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-// What the New button and the tab bar's plus button both open. One
+// What the sidebar's New button and the top bar's create button both open. One
 // component: on a phone the sheet slides up from the bottom edge, on a wide
 // screen the same panel is a menu under the sidebar's New button, and which
 // one it is comes from the width alone. See Sheet.vue.

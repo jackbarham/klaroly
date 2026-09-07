@@ -795,17 +795,6 @@ class DemoAccountSeeder extends Seeder
     }
 
     /**
-     * Create a booking with its main event, optional trial event at the
-     * studio, party, lines, notes and extra contacts.
-     *
-     * @param  array<string, mixed>  $attributes
-     * @param  array{date: CarbonImmutable, venue: array{0: string, 1: string, 2: string, 3: string}, start: string, ready: string}  $main
-     * @param  array<int, array{0: string, 1: string}>  $party  name and rate card row
-     * @param  array<int, array{0: string, 1: int}>  $lines  rate card row and quantity
-     * @param  array<int, string>  $notes
-     * @param  array<int, array{0: BookingContactRole, 1: string, 2: string|null, 3: string|null}>  $extraContacts
-     */
-    /**
      * Compute hold_expires_at the way a real stage change would, rather than
      * writing the column out by hand.
      *
@@ -850,6 +839,17 @@ class DemoAccountSeeder extends Seeder
         ];
     }
 
+    /**
+     * Create a booking with its main event, optional trial event at the
+     * studio, party, lines, notes and extra contacts.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @param  array{date: CarbonImmutable, venue: array{0: string, 1: string, 2: string, 3: string}, start: string, ready: string}  $main
+     * @param  array<int, array{0: string, 1: string}>  $party  name and rate card row
+     * @param  array<int, array{0: string, 1: int}>  $lines  rate card row and quantity
+     * @param  array<int, string>  $notes
+     * @param  array<int, array{0: BookingContactRole, 1: string, 2: string|null, 3: string|null}>  $extraContacts
+     */
     private function booking(
         string $contactKey,
         array $attributes,
@@ -1030,7 +1030,7 @@ class DemoAccountSeeder extends Seeder
 
             // Backdate the paperwork to when the booking was confirmed, so the
             // due dates read sensibly against the event.
-            $issuedOn = ($booking->confirmed_at ?? $booking->converted_at ?? now())->toImmutable()->startOfDay();
+            $issuedOn = ($booking->confirmed_at ?? $booking->converted_at ?? now())->startOfDay();
             $invoice->forceFill([
                 'issued_on' => $issuedOn,
                 'deposit_due_on' => $issuedOn->addDays(7),
@@ -1077,7 +1077,7 @@ class DemoAccountSeeder extends Seeder
      */
     private function seedAgreements(): void
     {
-        $template = ContractTemplate::query()
+        $template = ContractTemplate::withoutGlobalScope('account')
             ->whereNull('account_id')
             ->where('market', 'GB')
             ->where('vertical', SystemDefaultsSeeder::VERTICAL)
@@ -1086,7 +1086,7 @@ class DemoAccountSeeder extends Seeder
 
         foreach ([6, 7, 8, 9, 11, 12, 13] as $index) {
             $booking = $this->bookings[$index];
-            $signedAt = ($booking->confirmed_at ?? now())->toImmutable();
+            $signedAt = $booking->confirmed_at ?? now();
 
             $this->agreement($booking, $template, 1, AgreementStatus::Signed, $signedAt);
         }
@@ -1096,7 +1096,7 @@ class DemoAccountSeeder extends Seeder
         // the new version" described an unsigned agreement the data did not
         // have. A seeder whose fixtures describe a state the rows do not hold is
         // decision 220's failure in prose rather than in columns.
-        $this->agreement($this->bookings[7], $template, 2, AgreementStatus::Sent, null, now()->subDays(6)->toImmutable());
+        $this->agreement($this->bookings[7], $template, 2, AgreementStatus::Sent, null, now()->subDays(6));
 
         /*
          * **Booking 10 is the one that makes client_signature reachable**, and
@@ -1116,7 +1116,7 @@ class DemoAccountSeeder extends Seeder
          * above the signature branch and a provisional booking still owing one
          * reports the deposit instead.
          */
-        $this->agreement($this->bookings[10], $template, 1, AgreementStatus::Sent, null, now()->subDays(11)->toImmutable());
+        $this->agreement($this->bookings[10], $template, 1, AgreementStatus::Sent, null, now()->subDays(11));
     }
 
     private function agreement(

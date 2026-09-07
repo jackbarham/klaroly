@@ -38,7 +38,10 @@ class EventIndexRequest extends BaseRequest
                     return;
                 }
 
-                if ($this->to() !== null && $this->to()->lessThan($this->from())) {
+                $from = $this->from();
+                $to = $this->to();
+
+                if ($to !== null && $to->lessThan($from)) {
                     $validator->errors()->add('to', __('bookings.range_backwards'));
 
                     return;
@@ -46,11 +49,11 @@ class EventIndexRequest extends BaseRequest
 
                 // Only when both ends are given: an omitted `to` is unbounded
                 // on purpose, and the row cap is what guards that call.
-                if ($this->to() === null) {
+                if ($to === null) {
                     return;
                 }
 
-                if ($this->from()->diffInDays($this->to()) > config('bookings.max_span_days')) {
+                if ($from->diffInDays($to) > config('bookings.max_span_days')) {
                     $validator->errors()->add('to', __('bookings.range_too_wide', [
                         'days' => config('bookings.max_span_days'),
                     ]));

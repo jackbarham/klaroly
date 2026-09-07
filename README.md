@@ -111,24 +111,24 @@ npm test
 
 | Folder | What is in it |
 | --- | --- |
-| `lib/` | Everything that is not a component. The data layer is `api.ts` (the only caller of `fetch`) and the two modules that use its verbs, `auth.ts` and `bookings.ts`; a screen may not import any of them, and `boundary.test.ts` works out that list rather than holding one. `contactFixtures.ts` sits in the same place for contacts and is temporary: it stands in for an endpoint that does not exist yet, only the store may call it, and it goes when the endpoint lands. Above that layer sit `verification.ts` and `form.ts`, which a screen may import because they go through a store. The rest is `platform.ts`, `navigation.ts` (the one list of destinations), `dialog.ts` (the focus trap every modal shares), `monthGrid.ts` and `dayMarks.ts` (the calendar's arithmetic), `contactList.ts` and `contactView.ts` (the contacts list's rules and its four saved view settings), and `testMount.ts` and `testHelpers.ts` |
-| `stores/` | Pinia. `auth.ts` is the only way a screen reads or changes who is signed in; `bookings.ts` is the only way a screen reads the calendar's events; `contacts.ts` is the only way a screen reads the contacts list, and it also holds the four view settings |
+| `lib/` | Everything that is not a component. The data layer is `api.ts` (the only caller of `fetch`) and the modules that use its verbs, `auth.ts`, `bookings.ts`, `enquiries.ts` and `home.ts`; a screen may not import any of them, and `boundary.test.ts` works out that list rather than holding one. `contactFixtures.ts` sits in the same place for contacts and is temporary: it stands in for `GET /api/contacts`, which exists and the screen has not been moved onto yet, only the store may call it, and it goes when the screen moves. Above that layer sit `verification.ts`, `form.ts`, `splitList.ts` and `routeId.ts`, which a screen may import. The rest is `platform.ts`, `navigation.ts` (the one list of destinations), `dialog.ts` (the focus trap every panel shares), `monthGrid.ts` and `dayMarks.ts` (the calendar's arithmetic), `contactList.ts`, `enquiryList.ts`, `enquirySections.ts` and `homeList.ts` (each screen's rules), `contactView.ts`, `enquiryView.ts` and `homeView.ts` (each screen's saved view settings, on `viewSettings.ts`), `eventLine.ts` and `money.ts` (the formatting the screens share), and the test-only `testMount.ts`, `testHelpers.ts`, `sourceRules.ts` and `*.sample.ts` |
+| `stores/` | Pinia. `auth.ts` is the only way a screen reads or changes who is signed in; `bookings.ts`, `contacts.ts`, `enquiries.ts` and `home.ts` are the only way a screen reads each of those screens' data, and each holds that screen's view settings |
 | `router/` | One explicit routes array. Everything behind the sign-in is a child of the layout route |
-| `components/layout/` | The app shell: `AppLayout`, `AppSidebar`, `AppTabBar`, `CreateMenu`, `SettingsNav` |
+| `components/layout/` | The app shell: `AppLayout`, `AppSidebar`, `AppTopBar`, `AppTabBar`, `AccountMenu`, `CreateMenu`, `SectionNav`, and `barGlass.ts`, the material the two bars share |
 | `components/ui/` | PageHeader, Card, EmptyState, AppButton, IconButton, Sheet, AnchoredSheet, Notice, Icon, StatusPill, ListRow, DataTable, SectionBand. Registered globally by `components/kit.ts`, so no screen imports them. `Sheet` and `AnchoredSheet` are the two panel shapes: Sheet opens at one of two fixed sidebar geometries, AnchoredSheet under a trigger whose rectangle it measures |
 | `components/bookings/` | The bookings screen: `MonthGrid` (presentational, and it has never heard of a booking), `BookingsCalendar`, `MonthJumpSheet`, `BookingList`, `BookingRow`. Not in the global kit, because they belong to one screen |
 | `components/enquiries/` | The enquiries screen: `EnquiryFilterBar`, `EnquiryViewMenu`, `EnquiryList`, `EnquiryRow`, `EnquiryStageSheet` (the stage change, which is the interaction the feature turns on) and `EnquiryDetail`. Not in the global kit |
+| `components/home/` | The home screen: its three blocks and their rows, the header, the Adjust sheet and the first-run state. Not in the global kit |
 | `components/contacts/` | The contacts screen: `ContactFilterBar`, `ContactViewMenu`, `ContactList`, `ContactRow`, `ContactDetail` and `ContactDeleteDialog` (a real dialog, because a confirm must not vanish while you read it). Also not in the global kit |
 | `components/form/` | FormSection, FormField, FormActions, FormError, RadioCard and the controls, also global. FormField owns the label, hint, error and id wiring; the controls do not |
 | `views/` | One file per page. Pages that are not built yet share `PlaceholderView.vue` |
-| `types/` | The shapes the API returns: `auth.ts` for the signed-in person, `bookings.ts` for a calendar event, `contacts.ts` for a contact and their bookings |
+| `types/` | The shapes the API returns: `auth.ts` for the signed-in person, `bookings.ts` for a calendar event, `contacts.ts` for a contact and their bookings, `enquiries.ts` for an enquiry and its detail, `home.ts` for the home screen's payload |
 | `locales/` | `en-GB.json`. Every user-facing string is a key here |
 | `assets/app.css` | The `@theme` block, which is where every colour, font, radius and spacing step is defined |
 
-Two rules worth knowing before you open any of it: a component or a view
-never calls the API (it goes through a store, and `src/lib/boundary.test.ts`
-enforces that), and the shell is greyscale (the `--color-neutral-*` tokens
-only), because the brand work has not landed yet.
+One rule worth knowing before you open any of it: a component or a view
+never calls the API. It goes through a store, and `src/lib/boundary.test.ts`
+enforces that.
 
 **The bookings screen reads the API.** `src/lib/bookings.ts` calls
 `GET /api/events` and `GET /api/events/months`, `src/stores/bookings.ts` holds

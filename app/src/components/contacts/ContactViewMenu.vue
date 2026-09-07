@@ -80,9 +80,8 @@
 // It stays open while any of them change, which is the point: the list redraws
 // underneath and each setting is judged by its effect rather than by its name.
 //
-// The panel around it is ui/AnchoredSheet.vue, which the month jump sheet also
-// uses: a bottom sheet below lg and a panel hanging under a measured button at
-// lg. It is right-aligned here so that three hundred pixels of panel stay over
+// The panel around it is ui/AnchoredSheet.vue: a bottom sheet below lg and a
+// panel hanging under a measured button at lg. It is right-aligned here so that three hundred pixels of panel stay over
 // the 400px list column rather than spilling across the detail beside it.
 // Everything in this file is about the content.
 import { computed, useId } from 'vue'

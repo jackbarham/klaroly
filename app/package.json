@@ -8,7 +8,7 @@
     "dev": "VITE_TARGET=web vite",
     "build": "VITE_TARGET=web vue-tsc --build && VITE_TARGET=web vite build",
     "build:mobile": "VITE_TARGET=mobile vue-tsc --build && VITE_TARGET=mobile vite build",
-    "preview": "vite preview",
+    "preview": "VITE_TARGET=web vite preview",
     "typecheck": "vue-tsc --build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

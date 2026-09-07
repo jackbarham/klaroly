@@ -14,10 +14,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  * its computed fields.
  *
  * Scoped by the account global scope on Contact and Event, which the `account`
- * middleware binds before this runs. Nothing here writes where('account_id',
- * ...) by hand and nothing reaches for DB::table(): the aggregates below read
- * like query-builder jobs, and written that way they cross accounts while
- * looking perfectly correct in a development database with one account in it.
+ * middleware binds before this runs; nothing here writes where('account_id',
+ * ...) by hand or reaches for DB::table(), for the reason HomeController gives.
  */
 class ContactController extends Controller
 {
@@ -44,23 +42,17 @@ class ContactController extends Controller
         $contacts = $this->ordered()
             ->with([
                 // Everything a contact needs, loaded once for the whole page
-                // rather than once per contact. Without this the endpoint
-                // issues a query per contact per relation, which is invisible
-                // in a demo database and ruinous in a real one.
+                // rather than once per contact.
                 'bookings.events',
                 'bookings.lines',
-                // The lines' own way back to their booking, which looks
-                // redundant beside the line above and is not. booking_lines has
-                // no currency column, so MoneyCast resolves a line's currency
-                // through $line->booking, and without this that is a query per
-                // line rather than per request.
+                // `lines.booking` looks redundant beside `lines` and is not:
+                // booking_lines has no currency column, so MoneyCast resolves
+                // a line's currency through the booking, and without the
+                // extra hop that is a query per line.
                 'bookings.lines.booking',
                 'bookings.invoices.payments',
-                // The same trap again, one level deeper and for the same
-                // reason: payments has no currency column either, so summing
-                // what has been paid resolves each payment's currency through
-                // its booking. This is the load that keeps the money on this
-                // screen free rather than a query per payment.
+                // The same trap one level deeper; WaitingOnResolver::RELATIONS
+                // carries the explanation.
                 'bookings.invoices.payments.booking',
             ])
             ->limit($maximum)

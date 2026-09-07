@@ -40,8 +40,8 @@
 
 <script setup lang="ts">
 // A bottom sheet below lg and a panel hanging under a measured button at lg
-// and up. The month jump sheet and the contacts view menu are both this, and
-// the enquiries screen brings two more.
+// and up. Five panels are this: the month jump sheet, the two view menus, the
+// stage sheet and the home screen's Adjust.
 //
 // **It is not ui/Sheet.vue and it must not become it.** Sheet's desktop anchor
 // is a closed set of two fixed sidebar geometries, written as classes and
@@ -91,12 +91,12 @@ const props = defineProps<{
    * Required rather than defaulted, because the callers are split between
    * widths and a default would promote one of them to a rule by accident.
    *
-   * **A string rather than a named set, and that is settled.** Four callers
+   * **A string rather than a named set, and that is settled.** Five callers
    * want three widths, and each is an independent constraint rather than a
    * taste: the month jump needs 320 because three 96px month cells plus their
-   * gaps come to it, the two view menus need 300 to stay over a 400px list
-   * column, and the stage sheet needs 352 because its rows carry a second line
-   * of explanation. Collapsing them would mean failing one of those
+   * gaps come to it, and Adjust shares that width; the two view menus need 300
+   * to stay over a 400px list column; and the stage sheet needs 352 because its
+   * rows carry a second line of explanation. Collapsing them would mean failing one of those
    * constraints to tidy a prop, and naming all three would be the size scale
    * this component deliberately does not have.
    *
