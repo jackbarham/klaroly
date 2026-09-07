@@ -974,955 +974,184 @@ the form kit like every other screen. The router guard awaits
 visitor to `/login?redirect=` and follows that redirect after sign-in only
 when it is a relative path.
 
-It also has its shell, and every route behind the sign-in exists as a page.
-Most of the shell is still furniture rather than features: apart from the
-authentication screens, My Account, Home, Bookings and Enquiries, **nothing in
-it calls the API**. A page that has not been built says so. The one place
-invented data survives is `src/lib/contactFixtures.ts`, which stands in for
-`GET /api/contacts` until the contacts screen is moved onto it; every person,
-venue and address in it is made up, because this screen is what gets
-screenshotted.
+The screens, and what each reads:
 
-- The routes, all children of the layout route: `/`, `/attention`,
-  `/bookings`, `/bookings/:id`, `/enquiries`, `/enquiries/:id`, `/contacts`
-  and `/contacts/:id`, `/more`, `/help`, `/account` and its four pages,
-  `/settings` and its ten groups, plus `/billing` on the web target. A detail
-  route that has not been built echoes its `:id` and looks nothing up;
-  `/contacts/:id` is a real page and is a child of `/contacts` rather than a
-  sibling, so the two share one mount.
-- Every page that has not been built is one shared `PlaceholderView.vue`: a
-  header and a card saying so. A route names its title with `meta.titleKey`,
-  which is also the document title, and where a phone's back link goes with
-  `meta.backTo`. When a section is really built it gets a view of its own and
-  the routes array points at that instead.
-- The pages that are real: `HomeView` (the three blocks of business logic
-  section 18, with `/attention` as the second of them uncapped), `MoreView` (the phone's overflow list and sign out),
-  the settings index, `/settings/travel`, which is the one honest example of
-  the form kit doing a section's work and saves nothing because there is no
-  settings API yet, all of My account, `/bookings`, `/contacts` with
-  `/contacts/:id`, and `/enquiries` with `/enquiries/:id`, which is the first
-  screen in the app that writes to a booking.
-- **My account is the first section that reads and writes real data.** Its
-  index is a list built from `accountGroups`, and its four pages are: your
-  details, which is one form over two endpoints and sends only the half that
-  changed; your password, which keeps you signed in on this device and says
-  the others were not; devices, which lists the tokens from
-  `GET /api/auth/tokens` and revokes one at a time; and email and marketing,
-  which is read-only apart from a resend and one consent toggle that saves the
-  moment it is thrown and goes back if the request fails.
-- The document title comes from the route's locale key, there is a skip link
-  to `<main>`, every route has one `<h1>` in it, and both navigations are
-  real `<nav>` landmarks. **On Contacts that one `<h1>` is the section's, and
-  it stays "Contacts" at every width**, including a phone showing one person's
-  card. The alternative was a heading that became the person's name below the
-  split, and which of the two it is cannot be known without measuring, because
-  the split is a container query. So the card's name is an `<h2>` and the way
-  back to the list is a link at the top of it.
+- Home, at `/` and `/attention`: built, on `GET /api/home`.
+- Bookings, at `/bookings`: built, on `GET /api/events` and
+  `GET /api/events/months`. `/bookings/:id` echoes its id and looks nothing up.
+- Enquiries, at `/enquiries` and `/enquiries/:id`: built, on all three
+  enquiry routes, and the first screen that writes to a booking.
+- Contacts, at `/contacts` and `/contacts/:id`: built, still on
+  `src/lib/contactFixtures.ts`. `GET /api/contacts` exists and the screen has
+  not been moved onto it.
+- My account: its four pages read and write real data through the routes in
+  the table above.
+- Settings: the index and `/settings/travel` are real, and the latter saves
+  nothing because there is no settings API. More is real. Every other page is
+  `PlaceholderView.vue`, which says so.
 
-Vitest covers what will actually break: the navigation config's derived
-lists and its idea of what is current, that both navigations render one item
-per entry and mark the right one, that the pill resolves on a deep link,
-the sheet's open, close and focus behaviour, FormField's wiring, that a
-button says it is busy while its request is in flight, that a rejected field
-puts the message on that field and moves focus to it, that a second submit
-sends nothing while the first is still going, that the username check is
-announced in words as well as drawn, and, on My account, that the details form
-sends only the half that changed and says which of its two requests failed,
-that a password mismatch is caught before any request, that the devices list
-gets its empty state, its unrevokable current row and a revoke that keeps a
-row it could not remove, and that the consent toggle sends on change and goes
-back on a failure. On Contacts it covers the rules rather than the rendering,
-because all of them are plain functions: that recency puts an upcoming booking
-above a past one and orders upcoming ascending, that A to Z sorts on the
-surname where there is one and puts everybody without one in Other, that three
-digits match a number stored with spaces and two do not, that an unaccented
-query finds an accented name, that the second line drops what it is supposed to
-drop and keeps what it is supposed to keep, that the pill precedence holds and
-both money pills go when the setting is off, that the view settings survive a
-reload, and that they fall back to the defaults when the storage accessor
-itself throws rather than when it is merely empty. Then the five tests that
-read the source of the app rather than run it:
-`boundary.test.ts`, which stops business logic leaking into components,
-`styleRules.test.ts`, which stops a `dark:` variant, an arbitrary value or a
-hex colour reaching a component, `lib/bookings.guards.test.ts`,
-`lib/contacts.guards.test.ts` and `lib/enquiries.guards.test.ts`, which stop a
-day key being built from `toISOString`, a component importing the contacts
-fixtures and the enquiries list becoming a listbox, all five on the scaffold
-in `lib/sourceRules.ts`, and `router/routeNames.test.ts`, which fails
-if any route name written down anywhere is not a route that exists. Renaming
-a route is the change that breaks a `router.push` in a screen nobody opened,
-and a route name is a string, so nothing else can catch it. Component tests
-mount through `src/lib/testMount.ts`, a few lines of `createApp` with the
-real router, i18n, pinia and the global kit, because there is no component
-testing library and there is not going to be one.
+Two rules the screens share. A route names its title with `meta.titleKey`,
+which is also the document title, and where a phone's back link goes with
+`meta.backTo`. Every route has one `<h1>`, there is a skip link to `<main>`,
+and both navigations are real `<nav>` landmarks.
+
+### The feature records
+
+Each screen and endpoint has a record under `docs/` of the decisions it was
+built on: the measurements, the decision numbers, and what was tried and
+removed. The rules those records established are stated here, and the
+reasoning behind each one is in the file it links to. A change to a screen is
+a change to its record.
 
 ### The home screen
 
-`/home` is business logic section 18's three blocks in one payload, and
-`/attention` is the second of them without its cap. `docs/home-poc.html` is the
-prototype both were built against.
+`docs/home-screen.md`. The rules it established:
 
-- **Next up, Attention, Money, and the artist reorders them in Adjust.** Next up
-  leads on a tone judgement rather than a measurement: the first thing an artist
-  meets should be the next two weddings, not a list of things they have not
-  done. Both arrangements were measured and both put something from every block
-  above the fold once Attention is capped, so once both work the pleasant one
-  wins. **Blocks do not rearrange themselves**: the order is fixed and blocks
-  drop out of it, because a screen that rearranges depending on how the week is
-  going is a screen nobody can learn.
-- **The empty-block rule.** Attention and Next up disappear when empty. **Money
-  never does**, and it is never removed by a feature toggle either (decision
-  2026-09-06.1946): 21.2 says a toggle removes items from *the attention block*,
-  named, and a booking carries a price whether or not anybody raised an invoice
-  for it. What the toggles take away is the cash half, one figure at a time.
-- **`/attention` is a route and not a view flag** (decision 2026-09-06.1942): a
-  notification can link straight to it, the back gesture works, and a flag
-  cannot be linked to. It costs **one line in `navigation.ts`'s `sectionKey`
-  map**, `attention: 'home'`, with `booking: 'bookings'` as the precedent. That
-  line is the only thing between correct and silently broken: without it
-  `activeTabIndex` is minus one and the tab bar's pill hides with no error
-  anywhere, which is why it has a test.
-- **The attention list is one component rendered TWICE on /home**, capped and
-  uncapped, with the container query choosing. The reason is not the cap: it is
-  that **the band headings differ in TEXT rather than in visibility.** "2 need
-  you" below the split and "4 need you" above it cannot be produced by clipping
-  one rendered list, so no amount of CSS on a single render works. It is also
-  what the prototype measured. Anybody tempted to collapse it to one render
-  should read that sentence rather than the duplication.
-- **jsdom evaluates no container queries**, so both copies are in the DOM under
-  test and `@split:hidden` hides neither. Row counts and band headings are
-  therefore asserted in `AttentionList.test.ts` with an explicit limit, where
-  there is one of everything, and `HomeView.test.ts` asserts only which blocks
-  and which wrappers exist. A row count on the mounted screen would see double
-  and could pass while the screen is wrong.
-- **The cut is made on the array's order and the grouping happens after it.**
-  The endpoint returns decision 217's precedence, so the first N are the N most
-  urgent. Grouping first and cutting each group gives four of the artist's own
-  rows and no client group at all, so an overdue balance can never reach the
-  preview. That was a real bug found by building the prototype and the order of
-  those two steps in `attentionGroups()` is the whole fix.
-- **The band headings count what is drawn; "See all N" carries the real
-  total.** A heading reading "4 need you" above two rows reads as a broken list,
-  and a preview quietly showing four of eight would be the amounts-owed switch
-  problem on the screen where it would hurt most. There is no second See all
-  under the rows: two links to the same place four rows apart reads as a
-  mistake.
-- **The DOM order is the artist's order.** An earlier version fixed the DOM and
-  moved blocks with CSS `order`, which reads correctly and tabs wrongly: focus
-  order and screen-reader order follow the DOM, so an artist who put Money first
-  would hear Attention first. It is grid placement instead, with
-  `home-columns` in `app.css` for the two columns, because
-  `styleRules.test.ts` bans an arbitrary value in a component and the rail's
-  width wants one home.
-- **The row is a link and not a `<button>`** (decision 240), even though nothing
-  on it is interactive yet, so the two inline writes can be added beside it
-  rather than rebuilding the markup.
-- **Neither inline write is built, and that is the recommendation rather than a
-  deferral** (decision 2026-09-06.2350). Decision 27's argument is that an
-  artist who cannot stop the chasers marks the invoice paid and the earnings
-  figures quietly become wrong; **a Snooze that visibly does nothing causes the
-  harm it was designed to prevent.** A test asserts no row carries an action,
-  named against the two values that will get one, so the day they land it says
-  where. Decision 2026-09-06.1950's measurement was taken with a button on all
-  eight rows and says nothing about two on two: **re-measure at 375px when the
-  writes land.**
-- **The only thing that wears a colour is money that is genuinely late.** Two
-  things were drawn and removed for this and both would be added back by
-  somebody who had not watched them fail: a coloured dot per row, which the band
-  heading two lines above already says, and a call time in warning colour, which
-  calls an early start a fault. `--warning-text` reads red.
-- **Both lines are built here and the API sends no copy.** Every day count is
-  derived at render with `differenceInCalendarDays` against **`meta.today`, the
-  account's day, not the device's**: the server already decided what is overdue
-  using that day, so a phone in another timezone doing its own arithmetic would
-  put a number on a row that the money block disagrees with. The device's day is
-  the fallback and is only reachable before the first response.
-- **A deposit that is not paid is not necessarily overdue.** The resolver's
-  deposit branch fires as soon as one is uncovered, without waiting for a due
-  date, so there are two sentences and `sentenceKey()` picks by whether it is
-  actually late. And the day lines pluralise on three forms, because "Arrived 0
-  days ago" on the morning something lands reads as a bug rather than as today.
-- **The venue is not on any attention row** (decision 2026-09-06.1956): it was
-  on the money rows and is what pushed five of eight second lines over at 375px.
-- **Next up sends six and draws three**, which is the division of labour the
-  endpoint intends. Measured rather than assumed: a row is about a hundred
-  pixels at 375px, so six fill the screen alone and push every attention row
-  below the fold. **The party is drawn on main events only**, because
-  `party_size` is the whole booking's party and on a trial it would say "Bride
-  and 6" for an appointment that is usually one person. The venue is shortened
-  by `eventLine.ts`'s `venueShort`, shared with the two list screens rather than
-  written a third time.
-- **Two traps in the money object, both additions waiting to be made by
-  mistake.** `outstanding.snoozed_minor` is a **subset** of `overdue_minor`, not
-  a third bucket: due plus overdue is the whole of outstanding. And `owed_minor`
-  and `overdue_minor` answer different questions — owed is balances past their
-  date on weddings that have happened, overdue also counts unpaid deposits — so
-  they are never drawn as a figure and its total. `snoozed_minor` sits under the
-  headline and only above zero, because an escape hatch that silently shrinks a
-  figure teaches artists to distrust the figure.
-- **`MoneyBlock` takes no feature flags at all**, which is the strongest form of
-  "reads the response and never the auth store": the payload's own nulls carry
-  the toggles, so there is nothing to consult a store about. The period selector
-  governs three figures and not five, and the line under the grid says so.
-- **Adjust is two settings and must not grow a third.** A switch that turns a
-  block off is a control that hides an unheld Saturday, which is the amounts-owed
-  problem on the screen where it would hurt most. The money period lives on the
-  block and not here: one value with two homes is two places to keep in step.
-  It is `AnchoredSheet`'s fifth caller.
-- **The reorder works by keyboard as well as by drag**, because a reorder that
-  only works by dragging is one half the people cannot do. `preventDefault` on
-  `pointerdown` stops the drag becoming a text selection and also stops the
-  handle taking focus, so focus is given back by hand; without it the keyboard
-  half is dead after any tap. `v-for` with a stable key moves the DOM nodes
-  rather than recreating them, so the handle somebody is holding survives.
-- **`permutationOf` joined `src/lib/viewSettings.ts`** rather than living beside
-  this screen's settings: it is the same category as `oneOf`, and a permutation
-  cannot be checked as a list of allowed values, because three known keys with a
-  duplicate would render one block three times and lose two. The three
-  `*View.ts` files stay three: the mechanism is shared and no value is.
-- **The quiet week draws one line, "Nothing needs you today"**, rather than
-  nothing at all (decision 2026-09-06.1948). An artist used to seeing four
-  things who suddenly sees none cannot tell a clear week from a bug. The empty
-  account is a different state: every block empty and every figure nought, so
-  the screen is a first-run state instead of three empty blocks.
-
-Not built on that screen: the two inline writes, which need endpoints that do
-not exist; Export, which points at Settings for now; and the first-run buttons,
-which open the create sheet because neither creating a booking nor creating an
-enquiry is a screen yet. Deliberately not built: search (18.4, which wants
-decision 102's projection table), the notification bell (decision 106, open),
-and live travel time on a Next up row.
+- Attention and Next up disappear when they are empty. Money never does, and no
+  feature toggle removes it: the toggles take the cash half away one figure at
+  a time.
+- The blocks keep a fixed order and drop out of it. They never rearrange
+  themselves.
+- `/attention` is a route, not a view flag, and it needs its line in
+  `sectionKey` or the tab bar's pill hides with no error anywhere.
+- The attention list is cut on the array's order first and grouped after, so
+  the preview cannot lose the client group. The band headings count what is
+  drawn and "See all N" carries the real total.
+- The DOM order is the artist's order, by grid placement and never CSS `order`.
+- Every day count is computed at render against `meta.today`, the account's
+  day, never the device's.
+- Only money that is genuinely late wears a colour.
+- Adjust is two settings and must not grow a third. The money period lives on
+  the block.
 
 ### The enquiries screen
 
-`/enquiries` is a list beside one enquiry's card, the third screen on the
-contacts shape and the first that reads two endpoints.
+`docs/enquiries-screen.md`. The rules it established:
 
-- **The list is not a listbox, and that is the one thing here not to copy from
-  contacts.** Business logic 5.1 puts a control inside the row, the stage pill,
-  and an ARIA option may not contain interactive content: a button inside one
-  is either flattened out of the accessibility tree or stops its parent being
-  an option, and which a browser does is not ours to choose (decision 240).
-  Worse, the pattern could never reach the pill anyway, because
-  `aria-activedescendant` moves a virtual cursor and a control needs real
-  focus. So it is a plain `role="list"` of `role="listitem"`, each row's main
-  target a real link, the pill a real button whose click never reaches it, and
-  a roving tabindex moving real focus. The filter field is an ordinary search
-  input with no combobox role. `src/lib/enquiries.guards.test.ts` fails if a
-  listbox, an option or an `aria-activedescendant` ever appears in the feature,
-  because the next person building a list here will open `ContactList.vue`
-  first.
-- **Two requests, and they are two for different reasons.** `GET /api/enquiries`
-  is one payload held whole in memory, with every sort, group and filter in the
-  browser: no pagination, no virtualisation, no debounce and no spinner, which
-  is what makes it work with no signal. `GET /api/enquiries/{id}` is a second
-  request because it carries the original message, and five hundred pasted
-  WhatsApp threads is not a list payload. **Opening a row draws the header from
-  the list row it already has** and fills the rest in when the detail arrives;
-  every field in 19.3's header is on the row, so there is no empty state and no
-  spinner in between.
-- **Three orders, and the default is neglect.** Staleness runs oldest-touched
-  first in bands, with a pinned group of `new` above all of them, newest first
-  (decision 236): a brand new enquiry has the freshest timestamp in the list and
-  would sort to the bottom, which is exactly backwards, because it is the one
-  nobody has looked at. Stage runs the pipeline, oldest-touched inside each.
-  Wedding date runs soonest first. `lost` comes out before any of the three and
-  goes back on the end under "Not going ahead", because left in it would sort
-  into Gone quiet and read as work to do; the heading cannot be "Closed",
-  which is taken by done and paid.
-- **Gone quiet is not computed here.** A row is in that band when its
-  `waiting_on` is `artist_enquiry_cold`, which the server resolved. The other
-  two boundaries are fixed at two and eight days. The threshold never reaches
-  the client, which is the point: it is one number read once, on the server, and
-  this screen cannot disagree with the Home attention block about it. A test
-  puts a forty-day-old row with a null `waiting_on` in a warmer band, which is
-  the assertion a client-side threshold would fail.
-- **Colour on the row means attention, not stage.** Warning and danger are
-  reserved for the staleness figure and the clash line, and the stages take the
-  quieter families: accent for New, because "nobody has looked at this" is the
-  one stage that is a call to act, then neutral, info and success in pipeline
-  order (decision 2026-09-06.1803). An earlier version had Possible on warning
-  and it read as an alarm about a good thing, because `--warning-text` is
-  `--color-warning-800` and reads red.
-- **The stage pill IS the control** (decision 2026-09-06.1802). Tapping it opens
-  a sheet with the four live stages, a rule, then Convert to booking and This
-  one is not going ahead. Making the thing the eye already goes to tappable
-  costs nothing on the row; a named advance chip beside it truncated five more
-  second lines out of fourteen at 375px.
-- **The ending is a second view inside the same sheet**, listing the nine
-  reasons under two headings. The heading carries the side, so no reason has to
-  name who did it, and the two rows both reading "Another reason" are not a
-  duplication: which heading a reason sits under is the fact being recorded.
-  Endings are two taps deliberately: 5.1 asks for one tap to Possible and
-  nothing asks for one tap to an ending.
-- **A sheet that swaps its own contents calls `refocus()`** (decision
-  2026-09-06.1513). Going back from the reasons view hides the Back button, and
-  if that button had focus, focus falls to the body and Escape silently stops
-  closing the sheet. `useDialogBehaviour` exposes `refocus()` and
-  `AnchoredSheet` hands it on, so the mechanism stays where finding the first
-  focusable element already lives and the decision stays with the only thing
-  that knows its content changed. A test asserts it, and fails without it.
-- **The second line is always the date and the place, and "No date yet" is a
-  first-class value.** A row that says nothing where a date goes reads as a bug
-  in the app rather than as a fact about the wedding. The shortening is
-  `src/lib/eventLine.ts`, shared with the contacts row, because those three
-  rules were measured once at 375px. "and a trial" is appended from the
-  payload's `has_trial`, which the row cannot work out from `event`: that
-  carries the main day, so a booking with a trial in March and the wedding in
-  May would otherwise look exactly like one with no trial.
-- **`total_minor` null and zero are different facts and this screen is the
-  first to render the difference.** No figure at all on a row nobody has
-  priced, "No price yet" on its detail, and "£0" for a job somebody is doing
-  for nothing.
-- **The clash line describes the DATE, not the record.** It appears on a row
-  whose own stage holds no calendar mark: an enquiry at `in_conversation`
-  carries nothing per `strengthByStage`, and it still reports the confirmed
-  booking and the two others on its Saturday. A deliberate departure from the
-  calendar's rule. Five wordings, cut down because "Already booked, and two
-  others want this date" truncates on every frame including the 400px column.
-  It is not a warning and it prevents nothing.
-- **The detail is the booking screen, not a second layout.** Business logic 4.3
-  is one bookings table with a stage column, so there is no enquiry detail to
-  keep in step with a booking one; what this renders is 19.3's header and
-  summary against a record where most of it is empty. **A section appears when
-  the stage makes it the next useful thing and carries the action when it is
-  empty** (decision 2026-09-06.1806), and one sentence at the foot says what is
-  still to come rather than nine empty headings pushing the five-in-the-morning
-  summary below the fold.
-- **The feature map is checked before the stage, and that is not an
-  optimisation.** Business logic 21 and 6: with invoicing off nothing is ever
-  waiting on a deposit, so a section for a switched-off feature is never drawn
-  at any stage. Gating the other way round would draw one the moment a record
-  converted. `src/lib/enquirySections.ts` owns both rules and is tested without
-  mounting anything.
-- **Five view settings on the device**, in one localStorage key: the sort, and
-  switches for the source line, the quoted totals, the clash line and the
-  archive. The mechanism is `src/lib/viewSettings.ts`, shared with contacts;
-  none of the values is. Five is close to the limit for one menu and a sixth
-  needs an argument.
-- **Both panels are `AnchoredSheet`, both `align="right"`**, because the view
-  button sits at the right of the list column and so does the stage pill on a
-  row.
-
-Not built yet on that screen: the price flow behind "Build a price", adding an
-enquiry, and the follow-up reminder from 5.6.4. Deliberately not built:
-bulk actions with a checkbox column, saved filters, replying from the list and
-source analytics, all of which are what a list like this grows by default and
-which thirty rows do not need.
+- The list is a `role="list"` of `role="listitem"`, never a listbox: a control
+  inside a row rules the option pattern out, and
+  `src/lib/enquiries.guards.test.ts` fails on a listbox, an option or
+  `aria-activedescendant` anywhere in the feature.
+- Gone quiet is the server's `waiting_on`. The client computes no cold
+  threshold of its own.
+- Colour on a row means attention, not stage: warning and danger are reserved
+  for the staleness figure and the clash line.
+- The stage pill is the control, and an ending is two taps.
+- A sheet that swaps its own contents calls `refocus()`.
+- "No date yet" is a first-class value, and `total_minor` null and nought
+  render as different facts.
+- Which detail sections to draw is decided by the feature map before the
+  stage, in `src/lib/enquirySections.ts`.
 
 ### The bookings endpoints
 
-`GET /api/events` and `GET /api/events/months` are what the bookings screen
-reads. `App\Http\Controllers\EventController` serves both.
+`docs/bookings-endpoints.md`. The rules it established:
 
-- **The row says where from `location_type`, not from whether the venue
-  columns are null.** `base`, `client` and `venue` per schema 5.9, and null for
-  nobody-has-said. The columns cannot tell "not known" from "at her own place",
-  because a trial at base has a null venue and a null city, its address being
-  in settings, and so does a wedding whose venue is not settled: reading the
-  nulls alone said "Venue not given" on every trial. Every branch returns a
-  place rather than a phrase, because the line is a run of places separated by
-  middots. Business logic 4.1 calls these "at artist", "at client" and "at
-  venue"; that disagreement is listed in section 0 of that document.
-- **The unit is an event, not a booking**, so four fields on each row are
-  per-booking and two events of one booking repeat them. That is deliberate:
-  nesting a booking object would make the list sort, group and filter through
-  a level of indirection it never needs. The shape is
-  `app/src/types/bookings.ts`, and the key list in
-  `tests/Feature/Bookings/EventIndexTest.php` is pinned to it so the two
-  cannot drift in silence.
-- **`from` defaults to today and `to` is unbounded when omitted.** The first
-  call the app makes is today with no `to`, which is not laziness: the list
-  groups upcoming work into this week, this month, next three months and
-  later, and "later" cannot be computed from a subset. The window is the
-  fallback for navigating backwards, not the primary mechanism.
-- **The cost is capped, because an endpoint whose cost its caller sets is one
-  somebody trips over.** `config/bookings.php` holds a span cap of 1830 days,
-  applied only when both ends are given, and a row cap of 2000, checked with
-  an indexed count before the fetch. Neither can fire on the call the app
-  makes by itself.
-- **Ordering is total**: `event_date`, then `start_time` with nulls last, then
-  `id`. The list renders in this order and must not sort again, and without
-  the final `id` two events at the same time could swap between requests.
-- **The months summary is presence, not counts**, has no parameters, and is
-  **invalidated by writes rather than cached for a session**: any write that
-  creates, moves or deletes an event date makes it stale. Its `select
-  distinct` goes through the model and never `DB::table('events')`, which
-  would bypass the account scope and return every account's months while
-  looking perfectly correct in a one-account development database. There is a
-  test for exactly that, separate from the windowed endpoint's.
-- **`App\Services\WaitingOnResolver` is axis two of the lifecycle** (business
-  logic section 6), takes a booking and returns an enum, because the Home
-  attention block in 18.1 is the same calculation. Precedence is a list in one
-  place, first match wins: not held, balance, deposit, **enquiry cold**,
-  price, review, signature, form. Cold sits above price because the two
-  collide at Possible, where an enquiry with no quote is both unpriced and,
-  once it has sat long enough, cold: with price first the cold value could
-  never be reported there, and Possible is where most enquiries sit.
-  Suppression by feature is inside each branch, not a filter over the top, so
-  with invoicing off the money checks never run rather than running and having
-  their answers discarded.
-- **Cold fires at every live enquiry stage, not only Possible.** It was
-  narrowed to Possible when the home screen was the only consumer, and the
-  enquiries endpoint widened it to `Booking::ENQUIRY_STAGES` through
-  `isEnquiry()`: a quote sent three weeks ago with no reply and a conversation
-  that has gone silent are both things the artist has not done, which is what
-  the axis is for. It stops at the enquiry boundary, so a provisional booking
-  left alone for a month is not cold, and a test asserts that as well as the
-  widening. Resolving it on the server is what lets the enquiries screen's
-  "Gone quiet" group be simply every row whose `waiting_on` is
-  `artist_enquiry_cold`, with `bookings.cold_enquiry_days` read once and never
-  reaching the client.
-- **An archived booking waits on nobody.** `lost` and `cancelled` return null
-  from a guard at the top of `for()`, before the precedence list runs, because
-  nobody is going to act on either. It is a guard rather than a filter over the
-  answer: this is where the question is answered, and a caller discarding an
-  answer it did not want would be a second opinion held somewhere else. Without
-  it a lost enquiry carrying an agreement that was sent and never signed
-  reported `client_signature` on a row the artist had already closed.
-- **Two of the eight values are unreachable on purpose.** `client_form` and
-  `artist_review` both need `intake_forms`, which is schema section 7.4:
-  designed, not migrated. The branches exist and return nothing, and a test
-  asserts they are unreachable by design rather than by accident.
-- **Eager load or this becomes the slowest thing in the app.** A test asserts
-  the query count does not grow with the number of events. One eager load
-  looks redundant and is not: `booking.lines.booking` is there because
-  `booking_lines` has no currency column, so `MoneyCast` resolves a line's
-  currency through its booking, and without it that is a query per line.
+- A row says where from `location_type`, never from whether the venue columns
+  are null.
+- The unit is an event, and a booking's per-booking fields repeat on each of
+  its events.
+- `from` defaults to today and `to` is unbounded when omitted. The span and row
+  caps in `config/bookings.php` never fire on the call the app makes by itself.
+- Ordering is total: `event_date`, then `start_time` with nulls last, then
+  `id`. The list renders in that order and must not sort again.
+- The months summary is presence, goes through the model and never
+  `DB::table()`, and is invalidated by writes rather than cached.
+- `App\Services\WaitingOnResolver` is the one place the waiting-on axis is
+  computed. Its precedence is a list, first match wins, suppression by feature
+  is inside each branch, `lost` and `cancelled` wait on nobody, and cold fires
+  at every live enquiry stage.
+- Eager load what the resolver reads, including `lines.booking` and
+  `invoices.payments.booking`, and hold the query count with a literal.
 
 ### The contacts endpoint
 
-`GET /api/contacts` is what the contacts screen reads.
-`App\Http\Controllers\ContactController` serves it.
+`docs/contacts-endpoint.md`. The rules it established:
 
-- **No parameters, no pagination and no filter, and that is the design.** The
-  screen holds the whole list in memory and does its own sorting, grouping and
-  filtering with no round trip, which is what makes the filter box instant and
-  what makes the screen work with no signal. A page size or a search parameter
-  would buy nothing and would take that away.
-- **The ceiling is a flag, not a 422.** `config/contacts.php` caps the response
-  at 1000 and the meta block carries `total`, `returned` and `truncated`. This
-  is the opposite call from the events row cap, and deliberately: a caller that
-  sends no parameters cannot ask for less, so refusing would leave the one
-  account with five thousand contacts looking at a dead screen. Measured against
-  the demo seeder a contact costs about 750 bytes uncompressed and 134
-  compressed, so the cap is roughly 750KB on the wire before gzip and 130KB
-  after.
-- **Ordering is work ahead of you first and soonest first, then history newest
-  first, then everybody with neither.** It is not the arbitrary "activity
-  descending" it could have been: because a contact with a future date sorts
-  above every contact without one, a truncated response is the useful end of the
-  list rather than a slice, and the server's order matches the screen's default
-  so a future consumer gets it free. Ties break on id, so two identical requests
-  render identically.
-- **The event a booking carries depends on why it is being shown**, and
-  `App\Services\ContactActivity` is the one place that decides. `bookings[]`
-  shows the main day, because a list of somebody's work is a list of the jobs
-  and a trial is part of one of them; `next_booking` shows the soonest future
-  event of **any type**, because that field answers when the artist next sees
-  this person, so on 1 August a contact with a trial on the 15th reads "15 Aug,
-  trial"; `last_booking` is the most recent past event of any type. A booking
-  with no main day, a standalone trial or a shoot, falls back to its earliest
-  event. All three render through one `ContactBookingResource` taking a
-  `BookingOccasion`, so the three cannot drift.
-- **`outstanding` is an array and nothing depends on its order.** One entry per
-  currency, because schema section 8 forbids summing across them, and each entry
-  carries `is_account_currency` so the client selects rather than trusting a
-  position. "The account's currency is first" would be a correctness contract
-  carried by array position with nothing asserting it, and it would break the
-  first time somebody added an ORDER BY for an unrelated reason. Sorted by
-  currency code anyway, so two identical requests render identically. Empty when
-  nothing is owed: not null, and not a zero entry.
-- **`App\Services\OutstandingBalances` groups, it does not calculate.**
-  `App\Models\Invoice` already owns an invoice's balance in `outstandingMinor()`
-  and `isOverdue()`, so re-deriving it here would be a second answer to a
-  question that already has one, the same way summing booking lines would be a
-  second answer to `BookingPricing`.
-- **The ordering is the one rule written twice**, in SQL in the controller
-  because ordering must happen before the limit, and in PHP in `ContactActivity`
-  because that is what fills the fields. A test asserts the server's order is
-  the order you get by sorting the payload's own `next_booking` and
-  `last_booking`, which is what holds the two together.
-- **Nothing indexes the sort key and the test says so.** It is a correlated
-  subquery, so Postgres computes it per contact and sorts the results; what is
-  indexed is the lookup inside it, `bookings (account_id, contact_id)` then
-  `events (booking_id)`, both already in schema section 9. The plan test asserts
-  those two by name **and** asserts the sort is a sort, so nobody reads it as a
-  promise the ordering is cheap. It only means anything against realistic row
-  counts: an earlier version passed while proving nothing, because with one
-  booking in the table Postgres had sequentially scanned that too.
+- No parameters, no pagination and no filter, and the ceiling is a flag in
+  `meta`, not a 422.
+- Ordering is work ahead of you first and soonest first, then history newest
+  first, then everybody with neither, ties on id.
+- `App\Services\ContactActivity` is the one place that decides which event a
+  booking is shown by.
+- `outstanding` is an array with one entry per currency, each carrying
+  `is_account_currency`, and nothing depends on its order.
+  `App\Services\OutstandingBalances` groups and never recalculates a balance.
+- The ordering is written in SQL and in PHP, and a test holds the two
+  together.
 
 ### The enquiries endpoint
 
-`GET /api/enquiries` is what the enquiries screen reads.
-`App\Http\Controllers\EnquiryController` serves it.
+`docs/enquiries-endpoint.md`. The rules it established:
 
-- **There is no enquiries table and there never will be.** Business logic 4.3
-  is one bookings table with a stage column and every other field nullable, and
-  the interface shows enquiries and bookings as two lists filtered on stage.
-  This route returns bookings, and calling it `/enquiries` is the same
-  two-views-of-one-table framing rather than a second model.
-- **The boundary is provisional, not confirmed** (decision 235). Enquiries are
-  `new`, `in_conversation`, `possible` and `quoted`, plus `lost`, which is
-  archived and comes back so the screen can show it behind a switch. Everything
-  from `provisional` onwards is the bookings list. Converting is the artist's
-  own tap: it moves the record to provisional there and then, and it is
-  reversible until something is signed. Nothing in the system ever promotes an
-  enquiry on its own, and a deposit arriving cannot, because a deposit cannot
-  arrive against a record with no invoice. Signing and depositing turn
-  provisional into confirmed, and what that changes is the calendar mark, not
-  which list the record is in. The stage set is `Booking::ENQUIRY_STAGES` plus
-  `Lost`, so a fifth live stage is one edit rather than two.
-- **One row per enquiry, not one per event** (decision 234), and this is the one
-  place the endpoint must not copy `GET /api/events`. That one returns a row per
-  event because the calendar's unit is a day; here the unit is the
-  conversation, for two reasons that are both ordinary rather than edge cases.
-  An enquiry often has no date at all, and "next summer, we have not booked the
-  venue yet" is one of the most winnable kinds there is, which an events-shaped
-  payload cannot represent because there is no row. And an enquiry with a trial
-  and a wedding is still one conversation, where two rows would mean two
-  staleness figures reading the same number and two chances to reply twice to
-  the same person.
-- **No parameters, no pagination, no filter and deliberately no `stage`.** Same
-  design as contacts: the screen holds the whole list and sorts, groups and
-  filters it in the browser. A stage parameter in particular would be a second
-  way of saying what the stage set already says, and the screen's groups are
-  the waiting-on axis and the staleness bands rather than the stage.
-- **Staleness is the order, and New is pinned above it** (decision 236).
-  `last_touched_at` ascending, so the top of the list is the thing nobody has
-  touched for longest, which is what the screen is for. But an enquiry at `new`
-  has the freshest timestamp in the list and would sort to the bottom, which is
-  exactly backwards, because it is the one nobody has looked at. So `new` sorts
-  above everything, newest first, `lost` sorts last however it is ordered among
-  itself, and the tie-break is `id`. The screen re-sorts anyway; this exists for
-  the truncation rule and for a total, stable order, exactly as the contacts
-  ordering does.
-- **The ceiling is a flag, not a 422**, at `bookings.max_enquiries`, with
-  `total`, `returned` and `truncated` in the meta block, for the reason contacts
-  gives: a caller that sends no parameters cannot ask for less. The ordering is
-  what makes it survivable, because `lost` sorts last and the archive is the
-  unbounded half. The cap is in `config/bookings.php` rather than a
-  `config/enquiries.php` of its own, which is the opposite call from contacts
-  and for the reason that justified that one: it is about nouns. A contact is a
-  different thing from a booking; an enquiry is the same noun at an earlier
-  stage, and `cold_enquiry_days`, the number the screen turns on most, already
-  lives in that file.
-- **The row carries one `event`, not the enquiry's events**: the main day, or
-  the earliest when there is no main one, chosen by
-  `App\Services\ContactActivity::mainEvent()` so the enquiries row and the
-  contacts card cannot show one booking under two different dates. It carries
-  `location_type` for the reason `GET /api/events` already found, that the venue
-  columns cannot tell "nobody has said" from "at her own place", and it does not
-  carry `start_time`, because an enquiry rarely has a call time and the row does
-  not show one. **The limitation that comes with one date: an enquiry with a
-  trial in March and a wedding in May is checked for a clash on May only.** A
-  trial-date clash is the calendar's job, and a test says so.
-- **`waiting_on` comes from `App\Services\WaitingOnResolver` and nothing
-  computes it twice.** This endpoint is why `enquiryCold()` was widened from
-  Possible to every live enquiry stage; see the bookings-endpoints section
-  above.
-- **`clash` is `{confirmed, provisional, others}` or null**, per business logic
-  5.2 and decision 2026-09-06.1804, where `others` counts other enquiries at
-  `possible` or `quoted` on the same date. Null when the date carries nothing
-  else, when the enquiry has no date, and when the enquiry is `lost`, because
-  lost has released the date. Two things about it are decisions rather than
-  details. **The counts describe what is ALREADY on the date**, so a row whose
-  own stage holds nothing still gets them: an `in_conversation` enquiry carries
-  no calendar mark and still reports the confirmed booking and the two possible
-  enquiries sitting on its Saturday, which is a deliberate departure from the
-  calendar's rule. And **the stage buckets are the calendar's own**, taken from
-  `strengthByStage` in `app/src/lib/dayMarks.ts`: `confirmed`, `completed` and
-  `closed` are filled, `provisional` is a ring, `possible` and `quoted` are the
-  badge, and `new`, `in_conversation`, `lost` and `cancelled` are nothing.
-  Reasoning it out again as "completed and closed are in the past" would be
-  nearly always true and enforced by nothing, and the first booking marked
-  completed with its date still ahead would have this list and the calendar
-  describing the same Saturday differently, which is the exact failure the
-  counts exist to prevent.
-- **The clash is one query for every date in the payload, then matched in
-  memory.** Counting per row is the obvious N+1 and it is the worse kind,
-  because it grows with the number of distinct dates rather than with the number
-  of rows, so it survives every test written against a handful of enquiries
-  sharing one Saturday. `EnquiryIndexTest` holds the query count flat against
-  both.
-- **`source_booking` is an object, not an id beside a copy of itself.** It
-  carries the id, the client's name and that booking's date, which is enough to
-  say "met at Elspeth Rowntree's wedding", and its date is chosen by the same
-  `mainEvent()` the row uses.
-- **How an enquiry ended is a reason with a side, not a stage** (decision
-  2026-09-06.1512). `App\Enums\LostReason` gives `bookings.lost_reason` its
-  nine values and `side()` returns `App\Enums\EndingSide`. A tenth stage would
-  have bought the same label and charged for it in `strengthByStage`, in
-  `WaitingOnResolver`, in both list filters, in the stage check constraint and
-  in every future test of whether a record is still live; the two endings behave
-  identically, and the only thing that differs is who decided. The payload sends
-  `lost_reason` as the key and `lost_side` beside it, because the side is a fact
-  about the record and the label is wording, and facts come from the server.
-  **The column has no check constraint yet**: the enum holds the line at the
-  application boundary and the constraint goes in with the schema rewrite rather
-  than as an ALTER migration of its own, generated from
-  `LostReason::checkConstraintSql()`.
-- **Nothing writes `where('account_id', ...)` by hand and nothing reaches for
-  `DB::table()`.** The clash query in particular reads like a query-builder job,
-  and written that way it counts every account's bookings while looking
-  perfectly correct in a development database with one account in it. It is
-  built from `Event::query()` so the global scope comes with it, and the
-  soft-delete check on the joined `bookings` is written out because a join does
-  not carry the joined model's scopes. There is a test that another account's
-  booking on the same date is not counted.
-
-- **`total_minor` is null when nobody has priced the enquiry**, and nought only
-  when somebody has priced it at nothing. A total of nought and no price are
-  different facts and the screen says so: "No price yet" against an enquiry
-  nobody has quoted, which is most of them, and "£0" against a job somebody is
-  doing for nothing. Neither the total nor the stage can separate them, since an
-  enquiry at Possible can carry a price and one at Quoted can have had its lines
-  deleted, so the predicate is `App\Services\BookingPricing::isPriced()` and it
-  lives beside the sum it qualifies. A resource asking "are the lines empty"
-  would be a second definition of priced. **`GET /api/events` and
-  `GET /api/contacts` still send nought for both**, and adopting `isPriced()`
-  there is a one-line change in each plus an edit to two front-end types, which
-  is a change to their own contracts and belongs in their own prompts.
-- **The currency is sent whether or not there is a price**, because it is a fact
-  about the booking rather than about the price: a job in euros nobody has
-  quoted is still a job in euros.
+- There is no enquiries table and there never will be. The route returns
+  bookings at `Booking::ENQUIRY_STAGES` plus `lost`, and the boundary is
+  provisional: nothing in the system promotes an enquiry on its own.
+- One row per enquiry, never one per event.
+- No parameters and no `stage` filter. Staleness is the order, New is pinned
+  above it, `lost` sorts last, and the ceiling is a flag in `meta`.
+- `waiting_on` comes from `WaitingOnResolver` and is computed nowhere else.
+- `clash` describes what is already on the date, uses the calendar's own
+  stage buckets from `strengthByStage`, and is one query for every date in the
+  payload.
+- How an enquiry ended is `lost_reason` with `lost_side`, not a stage.
+- Nothing writes `where('account_id', ...)` by hand; the clash query is built
+  from `Event::query()`.
+- `total_minor` is null when nobody has priced the enquiry,
+  `BookingPricing::isPriced()` decides, and the currency is sent regardless.
 
 ### The enquiry detail and the stage write
 
-`GET /api/enquiries/{booking}` and `PATCH /api/enquiries/{booking}`, both on
-`App\Http\Controllers\EnquiryController` beside the list.
+`docs/enquiry-detail-and-stage-write.md`. The rules it established:
 
-- **The detail is a resource composing the list's resource, not a second
-  answer.** `EnquiryDetailResource` resolves `EnquiryResource` and spreads it,
-  then adds `enquiry_message`, `party_size` and `notes`. So the detail cannot
-  decide which event a booking means, what it is waiting on or what it clashes
-  with for itself. The two alternatives were both ways for it to: one resource
-  with the extra fields would make every row in a five-hundred-row list pay for
-  a notes load, or make one resource read a flag two ways, which is what
-  `ContactBookingResource`'s own docblock rejects; two independent shapes would
-  give the detail its own copy of three computed answers. A test asserts the
-  detail's list half is identical to the list's row for the same record.
-- **`enquiry_message` is why the detail route exists.** Business logic 5.5.1
-  keeps the source on the record so that when an extraction is wrong the artist
-  can see what it was working from, and it is the difference between a name from
-  four months ago and a conversation that can be picked up. It is also a pasted
-  WhatsApp thread, which is exactly why it is not on the list: 19.3's no-signal
-  rule is about the booking screen on a wedding morning, not a detail opened by
-  tapping a row.
-- **`party_size` is null at zero, never nought.** A party of nobody is not
-  something anybody books, so a nought could only mean "the party sheet is
-  empty", which is "not known yet" wearing a number. Same rule as `total_minor`,
-  one field along.
-- **`notes` is the booking's stream only.** Schema 5.17 makes both `booking_id`
-  and `contact_id` nullable with a check that one is set, so a note can belong
-  to the person rather than to the job; that one is not a note about this
-  enquiry and belongs on the contact's card. Each entry carries `id`, `body` and
-  `created_at` as a UTC instant. No author, because collaborators do not exist
-  in v1 and every note is the owner's.
-- **The write is one route taking a stage, not `/convert` and `/lost`.** Named
-  routes are how a state machine is expressed, and this matrix is deliberately
-  not one: any of the six stages moves to any other and the artist decides. The
-  day somebody adds a precondition to a `/convert` route because the route's
-  existence invites one, decision 235 has quietly acquired an inference. The
-  side effects also argue for it, being symmetric: `converted_at` is set on the
-  way into provisional and cleared on the way out, so one write does both and
-  splitting it would put the clearing half where nobody looking at `/convert`
-  would find it.
-- **It is not a general booking update.** It names `stage` and `lost_reason`,
-  reads only `validated()`, and a test asserts the contact, the currency, the
-  message, the dates, the lines and the hold are all unchanged after a write
-  that tried to send them.
-- **`Booking::LISTED_STAGES` and `Booking::SETTABLE_STAGES`, and the asymmetry
-  between them is deliberate.** The list and the detail read show five stages,
-  the four live plus `lost`. The write accepts six, those plus `provisional`,
-  because converting is reversible until something is signed (business logic
-  5.3). **So after converting, the client holds an object it may PATCH back but
-  may not GET.** That is right rather than an oversight: an undo works because it
-  PATCHes, and a refresh 404s because the row belongs to the bookings list now.
-  It is also exactly what a front-end developer meets at eleven at night, which
-  is why it is here.
-- **A booking at confirmed or beyond is refused with a 422, not a 403**, and the
-  refusal lives in `UpdateEnquiryStageRequest::after()`. The caller is allowed to
-  be here; the record is the wrong kind, and changing the stage of a signed job
-  through a route built for a list of maybes is a downgrade. A policy would
-  answer the wrong question. The error hangs off `stage` because that is the
-  only field the request has, so the field is where the message renders rather
-  than a claim the value sent was invalid; `EventController::refuseIfTooMany()`
-  puts a range-size error on `from` for the same reason.
-- **`lost_reason` is `prohibited_unless` rather than `missing_unless`.** A
-  reason sent with any other stage is refused; an explicit `null` is not,
-  because a client that always sends both fields and puts null in the second
-  when there is no reason is saying something true.
-- **Both validation rules are built from the enums**, `Rule::enum(...)->only(...)`
-  against `Booking::SETTABLE_STAGES`, never a list of values typed a second
-  time, which is the rule the check constraints already follow.
-- **`hold_expires_at` is not set on converting, and `artist_not_held` is
-  therefore unreachable in real use.** Schema 5.8 calls that column the
-  provisional hold and `WaitingOnResolver::notHeld()` reads it, but there is no
-  hold-length setting anywhere: `account_settings` has `deposit_due_days` and
-  `balance_due_days_before` and nothing about a hold. So the highest-precedence
-  value on the waiting-on axis, the one that sits above money because the date
-  itself can be lost, now fires only for rows a seeder sets by hand. That is a
-  gap in the settings table rather than in this route, and it is the fourth
-  setting found with nowhere to live after the cold-enquiry threshold, the base
-  location's name and the intake-available flag.
+- The detail resource composes the list resource and computes nothing of its
+  own.
+- The write is one route taking a stage, never `/convert` and `/lost`, and it
+  is not a general booking update.
+- `Booking::LISTED_STAGES` and `Booking::SETTABLE_STAGES` differ by
+  `provisional`: after converting, the client holds an object it may PATCH
+  back but may not GET.
+- A booking at confirmed or beyond is refused with a 422 on `stage`, from the
+  request's `after()`, not a 403.
+- `lost_reason` is `prohibited_unless`, and both rules are built from the
+  enums rather than a second list of values.
 
 ### The home endpoint
 
-`GET /api/home` is what the home screen reads: business logic section 18's
-three blocks in one payload. `App\Http\Controllers\HomeController` serves it,
-and `docs/home-poc.html` is the prototype it was built against.
+`docs/home-endpoint.md`. The rules it established:
 
-- **One route rather than three, and the reason is not caching.** Decision
-  2026-09-06.1954 makes the owed headline the sum of the attention block's
-  `client_balance` rows, so three routes would mean either the money one
-  recomputing every booking's waiting-on state to produce one number, or the
-  client summing the rows itself and holding the definition of a money figure
-  in the front end. That Home is the screen which most has to work with no
-  signal (business logic 23.2) is the second reason and not the first.
-- **The cost is the thing to be careful about, and it is worse here than on the
-  enquiries list.** That one asks the waiting-on axis of a list filtered to the
-  enquiry stages; this asks it of every live booking on the account. Measured
-  naive: **201 queries for forty live bookings.** The eager load is the
-  enquiries one plus `contact`, and the two hops that always look redundant are
-  needed for the third time, `lines.booking` and `invoices.payments.booking`.
-  `HomeQueryCountTest` pins the whole endpoint at **34 queries**, asserted both
-  as a literal and as identical at three bookings and at forty. **Two
-  assertions, because they catch different failures**: the flat-growth one
-  catches an N+1, and the literal catches somebody adding a fifth
-  constant-cost aggregate, which the flat-growth one stays green through. The
-  same second half was added to `EventIndexTest` in the same change.
-- **`WaitingOnResolver` needed no change to be fed a preloaded collection**, and
-  the endpoint asks it and takes what it says. Feature suppression is part of
-  that calculation rather than a filter over the top of it (business logic 6 and
-  21), so nothing here filters afterwards on an opinion of its own, and nothing
-  re-guards `lost` and `cancelled`. The controller does exclude them from the
-  query, which is not a second opinion: the resolver answers null for both, and
-  this is the query declining to ask about rows whose answer is known.
-- **A fourth `MoneyCast` currency trap, found by the query-count test.**
-  `payments` has no currency column, so a payment fetched without its booking
-  costs a query each. `PaymentsReceived` already joins `bookings` to filter the
-  currency, so it selects `bookings.currency` into the row: the cast looks at
-  the row's own `currency` attribute first and never reaches for the relation.
-  Cheaper than eager loading the booking, and worth knowing as the other way out
-  of this trap.
-- **The attention block is capped at 100 and it is NOT naturally bounded.** It
-  reads as the artist's open workload, so forty-ish, and that intuition is
-  wrong: `artist_enquiry_cold` fires on every live enquiry nobody has touched
-  for `cold_enquiry_days`, so an artist who does not open the app for a month
-  has every one of them on the list. The cap is applied after the ordering, so
-  what survives is the most urgent, and the tail dropped is `client_signature`
-  and never an overdue balance.
-- **Decision 217's precedence is the array's order**, and it matters more here
-  than on the enquiries list because of the cap: the phone previews four rows,
-  so an array grouped by party would put four of the artist's own rows at the
-  top and an overdue balance could never reach the preview. That was a real bug,
-  found by building the prototype. The order lives on `App\Enums\WaitingOn` as
-  `precedence()` and `rank()`, beside the resolver's own list of checks, because
-  they are the same decision applied to one booking and to many. Ties inside one
-  value are oldest first, on whichever timestamp that value is about: sorting
-  everything on `last_touched_at` would put the least overdue balance above the
-  most overdue one.
-- **A row's money is the BOOKING's, not one invoice's** (decision
-  2026-09-06.2212). Schema 5.15 allows a second invoice to be raised manually,
-  so a booking with two overdue balances is a supported state, and the row was
-  always one per booking while its money was per invoice: in that state it named
-  one of the two and the owed headline, being the sum of the rows, under-
-  reported by the other. `outstanding_minor` is now the booking's total overdue
-  balance, `invoice_total_minor` the sum of those invoices' totals, and `due_on`
-  the earliest of their due dates, so "£540 of £1,200 · 16 days late" is a true
-  sentence about the booking and the sixteen days is the oldest overdue invoice
-  on it, which is the number an artist says out loud when chasing. The sums live
-  on `App\Support\AttentionRow` and the controller reads the same methods for
-  the headline, **so the headline and the sum of the rows agree by construction
-  rather than by a test.** It also removes half of decision 2026-09-06.2112:
-  "which of two invoices does this row name" stops being a question when the row
-  names none of them, and `AttentionRow`'s invoices are therefore a
-  collection rather than a model.
-- **The row sends raw material and never a sentence or a day count.** The
-  wording is British English in the app's locale file, and every "9 days late"
-  is worked out at render with `differenceInCalendarDays`. `outstanding_minor`
-  and `due_on` read against the balance or against the deposit and `waiting_on`
-  says which, which is one question asked of a different part of one invoice
-  rather than a field meaning two things. **No venue on a row**, which is a
-  finding rather than an omission: it was on the money rows first and is what
-  pushed a fifth row past the fold at 375px.
-- **`party` is sent rather than parsed off the front of the value.** Same rule
-  as `lost_side`: the party is a fact about the record and the heading beside it
-  is wording. `App\Enums\WaitingParty` is its own enum and deliberately not
-  `EndingSide`, which happens to have the same two values and means something
-  else.
-- **The money block is never removed by a feature toggle** (decision
-  2026-09-06.1946, correcting an earlier reading of 21.2). What a toggle removes
-  is named there as items from the *attention* block. A booking carries a price
-  whether or not anybody raised an invoice for it, so the toggles take the cash
-  half away one figure at a time: invoicing off nulls `owed_minor` and
-  `outstanding`, and payment tracking off as well turns the period figure into
-  booked value. **`basis` says which**, so the screen cannot draw "Received: £0"
-  on an account that records no payments, and no figure is ever communicated by
-  an absent key.
-- **`snoozed_minor` is decision 27's own reason for existing.** That decision
-  says an artist who can only stop the chasers by marking an invoice paid will
-  mark it paid, and the earnings figures then quietly become wrong. The snooze
-  is the honest escape hatch, and one that silently shrinks the headline teaches
-  artists to distrust the headline instead. So the money a snooze took out of
-  `owed_minor` is named once beside it. It reads the same live bookings the
-  attention rows came from, so it costs no query and cannot count a lost
-  booking. It totals invoices, and so does the headline now that a row's money
-  is the booking's, so the two are the same shape: this is the money that would
-  have been in the headline had nobody snoozed it.
-- **A snoozed invoice is still overdue, and `Invoice` now says the two things
-  separately.** `isPastDue()` is the date question, `isSnoozed()` is the pause,
-  and `isOverdue()` is both, unchanged. Without the split, `OutstandingBalances`
-  had to classify snoozed money as merely "due", which reports a fortnight-late
-  balance as if it were not late. `outstanding.snoozed_minor` is therefore a
-  **subset of `overdue_minor`, never a third bucket**: due plus overdue is the
-  whole of outstanding, and the snoozed figure names the part of overdue nobody
-  is being chased for. `balanceIsPastDue()` is the balance half of the same
-  question, which is the half the owed headline is about.
-- **All four periods come back at once**, computed from one query over the
-  widest window and bucketed in PHP. The selector then works with no signal, and
-  the endpoint's cost stops being something its caller sets. **Every period ends
-  today**, so a wedding later this month is in `booked_ahead_minor` rather than
-  in `this_month`: a period figure looks backwards and the as-of-today figures
-  look forwards.
-- **Under `booking_value`, a booking counts under its main day**, chosen by
-  `ContactActivity::mainEvent()` so one booking cannot appear under two dates
-  anywhere in the app. The three candidates answer three different questions:
-  the main date is what was worked, `created_at` is what came in and
-  `converted_at` is what was sold, and the count and the average change meaning
-  with each. The main date wins because booked value is the accrual twin of cash
-  received and has to look at the same window from the other side, so the two
-  are comparable the day an artist switches payment tracking on. **A booking
-  with no event belongs to no period and is in none of them**, which is a real
-  row rather than an edge case.
-- **All three period figures share one basis**, so the average always equals the
-  value divided by the count. A cash figure beside an accrual count under one
-  heading would be two answers to different questions with nothing saying so.
-- **Money is filtered to the account currency and says so.** Schema section 8
-  allows either that or grouping, and a headline cannot be an array.
-  `excludes_other_currencies` is what stops the figure being a silent lie on an
-  account with a job abroad.
-- **`owed_minor` is summed before the cap**, from every `client_balance` row
-  rather than the ones that survived it, and that is the resolution of a real
-  collision between decision 2026-09-06.1954 and the cap. The figure is the size
-  of the problem rather than the size of the visible list, and
-  `meta.attention.truncated` is what tells the screen the rows under it are not
-  all of them. `outstanding` is its own query and a different question: a
-  booking with an invoice due next month is outstanding and waiting on nobody,
-  so `overdue_minor` is usually larger than `owed_minor` because an overdue
-  deposit is late money that is not a balance.
-- **Six upcoming events**, where the screen draws three. Sending exactly three
-  is how an endpoint becomes one screen's private API, and it leaves nothing
-  behind when a same-day event passes. The unit is the event, so a trial and a
-  wedding of one booking are two rows. `party_size` is a count and never words,
-  null at nought for the reason the enquiry detail's own `party_size` gives.
-  Travel is seconds and metres, null while schema 5.9 calls those columns unused
-  and null as well when the artist has travel estimates switched off.
-- **`meta.today` and `meta.timezone` earn their place**: every detail line is a
-  day count the client computes, and a phone in another timezone computes a
-  different one from the same instant than the server used to decide what is
-  overdue.
-- **`business_year` reads `account_settings.business_year_start_month` and
-  `business_year_start_day`**, which already existed and default to 6 April. The
-  only real requirement in `BusinessPeriods` is the 29 February clamp: Carbon
-  overflows rather than refusing, so an artist on a 29 February business year
-  would have it start on 1 March in three years out of four with nothing
-  reporting it.
-- The services, each owning one question: `App\Services\AttentionRows` (the
-  precedence and the record each value is about), `App\Services\BusinessPeriods`
-  (a calendar, not money), `App\Services\PaymentsReceived` (cash in, on the
-  payment date), `App\Services\BookingValue` (what a set of bookings is worth,
-  through `BookingPricing` rather than re-deriving a total). `OutstandingBalances`
-  was **widened rather than twinned**: its new `total()` is the same rule as
-  `for()` at a different scope, and an `OutstandingTotals` beside it would be two
-  places to change one rule. The two shapes stay two, because a contact row shows
-  one pill and a headline shows two figures.
-- **Which values a real account can reach today: six of eight.**
-  `artist_review` and `client_form` both need `intake_forms`, which is schema 7.4
-  and designed rather than migrated, so decision 219 stands them down whatever
-  the toggle says. The demo account reaches **five**: it has no agreement at
-  `sent`, so `client_signature` is unreachable on it until the seeder changes.
+- One route rather than three: the owed headline is the sum of the
+  `client_balance` rows.
+- Every live booking is loaded with the resolver's relations, and
+  `HomeQueryCountTest` pins the count both as a literal and as flat.
+- The attention block is capped after the ordering, and decision 217's
+  precedence lives on `App\Enums\WaitingOn`.
+- A row's money is the booking's, summed on `App\Support\AttentionRow`, and
+  the headline reads the same methods.
+- A row sends raw material and never a sentence or a day count; `party` is
+  sent rather than parsed.
+- The money block is never removed by a toggle, `basis` says what the period
+  figure is, and no figure is communicated by an absent key.
+- `outstanding.snoozed_minor` is a subset of `overdue_minor`, never a third
+  bucket, and `owed_minor` is summed before the cap.
+- All four periods come back at once, every period ends today, and under
+  `booking_value` a booking counts under its main day.
+- Money is filtered to the account currency and `excludes_other_currencies`
+  says so.
 
 ### The soft hold, its length and its writer
 
-`bookings.hold_expires_at` is business logic 5.1's soft hold and 5.3's real one.
-Until `App\Services\SoftHold` existed nothing in the application wrote it, so
-`artist_not_held` — **first in decision 217's precedence, above money, because
-the date itself can be lost** — could only fire for rows a seeder set by hand.
-The top row of the home screen's attention list was fiction.
+`docs/soft-hold.md`. The rules it established:
 
-- **`account_settings.hold_days`, defaulting to 14.** A column rather than a
-  config entry, which is the opposite call from decision 218 and turns on a
-  three-way distinction between those entries: `cold_enquiry_days` is a
-  threshold on the app's own nagging with no settled home, `intake_available` is
-  a fact about whether a table exists, and the three caps are endpoint costs.
-  None is per-account by design and this one is, so config would be a
-  placeholder for a decision already taken. It is also structurally identical to
-  `deposit_due_days` and `balance_due_days_before`, and neither of those waited
-  for a settings screen.
-- **Fourteen days, and the demo fixtures had already assumed it.** The two rows
-  that used to carry a hand-written hold were `converted_at` plus ten and minus
-  five against conversions four and twenty days old, which is a fourteen-day
-  hold written out longhand. It is deliberately **not** `cold_enquiry_days`,
-  which is 21: one asks how long a date is being held, the other how long a
-  conversation has been silent.
-- **A service called explicitly, not a model event**, and `touchActivity()` is
-  the deciding precedent rather than the hook's awkwardness: this codebase has
-  already answered "how do you make sure every writer does a thing to a booking"
-  once, with an explicit method plus a written rule. A hook here and a method
-  there would be two answers to one question. **Every write path that changes a
-  stage calls `SoftHold`**, the same rule `last_touched_at` carries.
-- **One rule, three outcomes, expressed as a comparison of hold classes.**
-  `App\Enums\HoldClass` is none, soft or firm, and `classOf()` is a `match`
-  with no default, so a new `BookingStage` cannot be added without answering the
-  question. The class going **up** starts a hold; a class of **none** clears it;
-  anything else leaves it alone.
-- **What falls out of that, and each is a decision.** Possible to Quoted does
-  not restart the clock, because both hold softly. Converting to Provisional
-  does, because 5.3 says the soft hold *becomes* a real one and without it a
-  thirteen-day-old hold would say "not held" the morning after it was pencilled
-  in. **Undoing a conversion leaves the hold exactly as it was**: a class that
-  went down and is still holding, so clearing it would be false and restarting
-  it would let an artist extend a hold for ever by converting and un-converting.
-- **`confirmed`, `completed`, `closed` and `cancelled` hold nothing**, and that
-  is a rule rather than a technicality: a date that is signed and deposited is
-  not being held pending anything, so the column means precisely one thing.
-  **Nothing writes those four stages today** — every occurrence in `app/` is a
-  read, and `PATCH /api/enquiries` caps at `SETTABLE_STAGES` — so the branch is
-  unreachable. It is written now because business logic 4.4 makes confirmation a
-  transition triggered by a signature and a covered deposit, so whatever records
-  those is the writer, and it calls `SoftHold` like every other one. Without it,
-  the resolver's stage guard would be the only thing keeping `artist_not_held`
-  off a signed wedding, which is one question answered in two places.
-- **The hold never releases itself.** Nothing runs on a timer, and nothing moves
-  a stage, clears a date or frees a Saturday when a hold lapses. Expiry changes
-  what the app says and never what the data is: 5.2 is explicit that the app
-  warns and never blocks, and an artist who lost a date because software decided
-  a hold had lapsed has lost a wedding to a feature.
-- **Storing the expiry rather than deriving it from `converted_at` plus the
-  setting** is what makes a policy change non-retroactive for free: an artist
-  who shortens her hold in March has not retrospectively expired a date she
-  pencilled in February.
-- **The seeder computes its holds through the same service.** A seeder that
-  hand-sets a column the app computes is decisions 220 and 227 arriving a third
-  time, and it would be worst here, where the whole point is that
-  `artist_not_held` was fiction. `SoftHold` therefore takes the day the
-  transition happened, defaulting to the account's today: computed from today it
-  could only ever produce live holds, and a seeder wanting the lapsed case would
-  be straight back to writing the column by hand. The demo now carries **seven
-  computed holds, none hand-set**, two of them lapsed.
-- **Two defects in the read side, found by building the write side.**
-  `holdHasExpired()` used `isPast()` on a date cast, so a hold was dead from one
-  second after midnight on its own expiry day — a fourteen-day hold lasting
-  thirteen. And it compared against UTC, the last comparison of a stored date
-  against the present still doing so after `Invoice::isOverdue()`,
-  `OutstandingBalances` and `BusinessPeriods` all moved off it. It now takes the
-  day to judge against, like `isOverdue()`, and `WaitingOnResolver` passes the
-  one it already computes. **Neither could be reached by any existing test,
-  because every fixture set the hold a day or more either side of today and none
-  touched the boundary** — decision 197's lesson again, that a test which never
-  touches the edge is documentation rather than a guard.
+- `account_settings.hold_days`, defaulting to 14, is the hold length.
+- Every write path that changes a stage calls `App\Services\SoftHold`,
+  explicitly, the way it calls `touchActivity()`.
+- The rule is a comparison of `App\Enums\HoldClass`: a class going up starts a
+  hold, a class of none clears it, anything else leaves it alone.
+- The hold never releases itself. Expiry changes what the app says, never the
+  data.
+- The expiry is stored, not derived, and the seeder computes its holds through
+  the same service.
 
 ### `last_touched_at`, and the rule that keeps it true
 
@@ -1947,260 +1176,53 @@ and the row's position in the list asserted to move with it.
 
 ### What the contacts work found in the bookings endpoint
 
-Two defects, both fixed here rather than left for later, because both are about
-the same question being answered twice.
+`docs/bookings-endpoint-defects.md`. The rules it established:
 
-- **`Invoice::paidMinor()` ignored an eager-loaded relation.** It ran its own
-  `sum()` query every time it was asked, and `WaitingOnResolver` asks it two or
-  three times per invoice through `outstandingMinor()` and `depositCovered()`.
-  So `GET /api/events` had been paying a query per invoice since it was written,
-  on a relation it had already paid to load. It now reads the loaded relation
-  when there is one.
-- **Fixing that moved the N+1 rather than removing it**, which is the same trap
-  a third time: summing `Money` touches `MoneyCast`, `payments` has no currency
-  column, so each payment resolved its currency through its booking.
-  `EventController` now loads `booking.invoices.payments.booking` beside the
-  `booking.lines.booking` that was already there for the identical reason.
-  `EventIndexTest` holds the query count flat against the money on a booking,
-  and **that test's first version passed against the unfixed model**: the
-  resolver returns on the first invoice waiting on something, so with unpaid
-  invoices it looked at one however many there were. It takes settled invoices
-  past their due date to make both loops run to the end.
-- **`isOverdue()` compared against a UTC day.** `APP_TIMEZONE` is UTC, so for
-  the last hour of a British summer evening an invoice due today read as
-  overdue while the artist was still on the day it was due. It now takes the day
-  to judge against, and `WaitingOnResolver` was moved to the account's timezone
-  in the same change. Fixing only one would have left the app with two answers
-  to "is this overdue", and for that hour the bookings screen would have said no
-  while the contacts screen said yes.
+- `Invoice::paidMinor()` reads the loaded relation when there is one.
+- `invoices.payments.booking` is eager loaded beside `lines.booking`, for the
+  same reason: neither table has a currency column.
+- `isOverdue()` takes the day to judge against, and it is the account's.
 
 ### The bookings screen
 
-`/bookings` is a month calendar and a list, two views of one set of events on
-one screen, per business logic 19.1. It was the first screen built against a
-seam rather than against the API, and it reads the API now:
-`src/lib/bookings.ts` is its data module, sitting where `src/lib/auth.ts`
-sits: below the store, above `api.ts`, and the only other file that turns a
-URL into a domain shape. It exports `events({ from, to })` and
-`eventMonths()`, both unwrapping the `data` envelope.
+`docs/bookings-screen.md`. The rules it established:
 
-**The unit is an event, not a booking.** A booking is one record at a stage
-and its dates live in `events`, normally a trial and a `main`, so a row in the
-list and a mark on a day are both an event carrying its booking's stage,
-client and total. `src/types/bookings.ts` is that view model in **snake_case**,
-matching the API and `src/types/auth.ts` before it, and every field in it is a
-column in `docs/database-schema.md`: the wedding day is `main` and there is no
-`wedding` type, money is `total_minor` beside its `currency`, and
-`last_touched_at` is the UTC instant rather than a day count, which would go
-stale in an open tab. **Timestamps are parsed, never compared as strings**: the
-API sends microseconds, which is Laravel's correct ISO 8601, and the same
-moment can be written more than one way.
-
-- **The store holds a list of loaded ranges, not one span.** The first load
-  asks from the first of the current month forward, so a normal session makes
-  one call and never another. It sends `from` rather than letting the API
-  default to today, because the calendar opens on the current month and that
-  month starts before today: with the default, a Saturday already worked would
-  draw as empty, which is a lie about the artist's own diary rather than a gap
-  in a feature. The default stays right for every other caller. Moving to a month outside
-  what is held fetches that month with a month either side and merges by event
-  id. The list of ranges is not tidiness: the jump sheet advertises every
-  month the account has ever worked, and a contiguous backfill from today to
-  January 2020 is past the API's span cap, so it would be refused and the month
-  the artist asked for would never load.
-- **The range guard lives in the store, and it is asked about the month, not
-  the window fetched around it.** The scroll sync changes the month as the
-  artist scrolls, so `ensureMonthLoaded` is called constantly and must be free
-  when there is nothing to do. Testing the padded window instead puts its start
-  before today, nothing ever looks loaded, and scrolling forward fires a
-  request per month.
-- **A window failure never clears the list.** `status` covers the first load
-  and `windowStatus` a window, so a month that would not load is a month with
-  no marks, which is recoverable, rather than an empty screen, which is not.
-
-- **A mark answers one question: is this day spoken for.** So a stage that no
-  longer holds the date carries nothing. `confirmed`, `completed` and `closed`
-  are a filled circle, `provisional` is a ring, `possible` and `quoted` are a
-  count badge that appears *alongside* either rather than instead of one, and
-  `new`, `in_conversation`, `lost` and `cancelled` carry no mark at all.
-  `in_conversation` has none because business logic 5.1 puts the soft hold at
-  Possible, and cancelled has none because the date is free again. The three
-  differ by shape before they differ by colour, because roughly one man in
-  twelve cannot separate them by hue. Strength is computed in
-  `src/lib/dayMarks.ts` and never stored, per schema section 8.
-- **`MonthGrid.vue` has never heard of a booking.** It takes a month, a marks
-  map keyed `'YYYY-MM-DD'`, a selected day and a density, and emits a date.
-  That is what would let it draw availability or blocked-out days later: a
-  caller with a different idea of what a day means builds a different map.
-- **The grid is built by walking calendar dates, never by adding 24 hours,**
-  and a day key is `format(d, 'yyyy-MM-dd')`, never `toISOString()`, which is
-  UTC and would file an evening event under the previous day for the eight
-  months the clocks are forward. `src/lib/monthGrid.ts` is the only place
-  either happens, and the guard test bans `toISOString` everywhere in the
-  feature except the fixtures, where it serialises a UTC instant and is
-  correct. **The obvious version of the DST test cannot fail**: both British
-  clock changes are on a Sunday, so with Monday-first weeks they are always
-  the last day of their week, and a naive build anchored at midnight survives
-  the spring forward too. It is the October month grid that breaks, repeating
-  the 25th, and that is the assertion carrying the weight.
-- A month renders the four, five or six rows it actually needs and is never
-  padded to 42 cells. On a 375px phone a row saved is 49px, which is most of
-  another booking on screen.
-- **The two halves sync in one direction only.** Scrolling the list moves the
-  calendar; nothing the calendar does ever scrolls the list, and anything the
-  calendar drives holds the sync off for 450ms so the two cannot chase each
-  other. The scroll handler changes the month and nothing else, so the list's
-  props do not change and Vue leaves it alone: a full re-render would rebuild
-  the list and throw away the scroll position the handler is reading from.
-  The sync is off in week mode, because a seven-day strip cannot meaningfully
-  follow a list spanning three months.
-- **The month's height is animated by a watcher, not by the caller.** There
-  are five ways to change the month, the arrows, the swipe, a day in the
-  padding, the jump sheet and Today, and the first version wrapped only the
-  one that went through the tap handler.
-- The layout switches on a **container query** at `--container-split`, not a
-  media query, so the calendar is a band above the list below it and a column
-  beside it above. The container is `<main>`, which is the viewport minus the
-  sidebar once the sidebar appears, so at 1024px the screen is stacked with a
-  688px container: the calendar therefore carries a maximum width, or it draws
-  97px cells and pushes the list off the bottom.
-- **The list's group headings rest under the calendar, not behind it.** Both
-  are sticky, so on a phone, where the calendar is a band across the top, a
-  heading pinned to the same line is invisible. The list wrapper sets
-  `--stick-offset` from a measurement, and the test is geometric rather than a
-  second copy of the breakpoint: if the calendar's right edge is left of the
-  list they are side by side and the offset is zero. Each band is also its own
-  list item wrapping its own rows, because a sticky element is bounded by its
-  containing block, and in one flat list every heading pins to the top of the
-  page at once and only paint order decides which is visible.
-- **`MonthJumpSheet.vue` is the year strip and the month grid, and nothing
-  else.** The panel around it is `ui/AnchoredSheet.vue`, aligned left because
-  the month title sits near the left of the calendar, so the panel grows
-  rightwards away from it. What stays in the file is content: which years the
-  strip offers, which month is shown, and centring the strip on the current
-  year when it opens.
-
-Not built yet on that screen: the Upcoming, Past and All tabs and the status
-filter from 19.2, the clash warning from 5.2, and the booking detail screen.
+- The unit is an event. `src/types/bookings.ts` is snake_case and every field
+  in it is a schema column, and timestamps are parsed, never compared as
+  strings.
+- The store holds a list of loaded ranges, the first load asks from the first
+  of the current month, the range guard lives in the store, and a window
+  failure never clears the list.
+- A mark answers whether a day is spoken for. Strength is computed in
+  `src/lib/dayMarks.ts` and never stored, and `MonthGrid.vue` knows nothing of
+  bookings.
+- The grid walks calendar dates, and a day key is `format(d, 'yyyy-MM-dd')`,
+  never `toISOString()`. `src/lib/monthGrid.ts` is the only place either
+  happens.
+- The two halves sync in one direction, and the month's height is animated by
+  a watcher.
+- The layout is a container query at `--container-split`, and the group
+  headings rest under the calendar through `--stick-offset`.
 
 ### The contacts screen
 
-`/contacts` is a list beside one person's card, and it is the second screen
-built against a seam rather than against the API. The endpoint,
-`GET /api/contacts`, exists now and the screen has not been moved onto it, so
-`src/lib/contactFixtures.ts` still stands in: it exports `loadContacts()`,
-`src/stores/contacts.ts` is its only caller, and a component reaching past the
-store to it is a test failure rather than a convention. **That file is deleted
-when the screen moves**, `src/lib/contacts.ts` is written the way
-`src/lib/bookings.ts` is, the front-end type takes the resource's field names,
-and nothing else in the feature changes.
+`docs/contacts-screen.md`. The rules it established:
 
-- **A contact is the person who books and pays, and that is all.** Per schema
-  5.7 it holds a name, one email, ONE phone number and an address. Everyone
-  else on the day is a party member or a booking contact and neither appears
-  here. `src/types/contacts.ts` is the view model, in **snake_case** like
-  `types/bookings.ts` and `types/auth.ts` before it, and it imports `EventType`
-  and `BookingStage` rather than declaring them again: the wedding day is
-  `main` and there is no `wedding` value here either.
-- **`last_name` is nullable and the whole feature has to mean it.** Somebody
-  with one name sorts under that name, takes one initial rather than two, and
-  is never filed under a dash. A to Z puts everybody without a surname in one
-  final Other group rather than sprinkling them through the letters under their
-  first initial, because a list that files Anna under A next to Adebayo is a
-  list where half the As are surnames and cannot be scanned.
-- **`outstanding` is an array of `{currency, minor, overdue}`, not a figure and
-  a flag.** Schema section 8 is explicit that money is grouped by currency and
-  never summed across it, and a contact with one job abroad has a balance that
-  cannot be written as one number. The flat version had no way to say so: it
-  would have reported a figure in the wrong currency while looking correct.
-  `overdue` belongs to the amount rather than to the person, because a contact
-  can owe an overdue balance on last June's wedding and a deposit that is not
-  due until spring. `booking_count`, `next_booking` and `last_booking` are
-  computed by the API and arrive on the payload; nothing derives them in a
-  component, and `next_booking` and `last_booking` are whole objects so a list
-  payload could drop the `bookings` array entirely.
-- **One payload, and every sort, group and filter happens in the browser.** Two
-  hundred contacts after five years is about fifty kilobytes, so there is no
-  pagination, no infinite scroll, no virtualisation and no spinner. The filter
-  box is a FILTER and not a search: it narrows rows already in memory, with no
-  request, which is why it has no debounce and no minimum length.
-- **The filter's two rules that are not obvious.** A number is matched with the
-  non-digits stripped from both sides, but only once three digits have been
-  typed, because with fewer every contact whose number contains that run
-  matches and the list appears not to filter at all. Text is matched folded
-  through NFD, so an unaccented query finds an accented name.
-- **The row's second line is always the nearest booking, never the phone
-  number**, and it is shortened deliberately rather than left to truncate: the
-  event label goes when the event is the main one, the year goes when it is
-  this year, and only the part of the venue before the first comma is used. All
-  three drop the part that would survive a truncation while the identifying
-  part would not.
-- **One pill at most, in precedence order**: overdue, then owing, then a
-  confirmed future booking. Both money pills go when the amounts-owed setting
-  is off and the row then falls through to Upcoming, because switching money
-  off is a request to hide figures and not a request to hide the diary.
-- **The line-shortening and the settings mechanism are both shared now.**
-  `venueShort` and the date-and-place line moved to `src/lib/eventLine.ts` when
-  the enquiries row needed the same three rules, and the localStorage reader
-  moved to `src/lib/viewSettings.ts` when the enquiries menu needed the same
-  wrapped accessor and per-field checking. Both kept `contactList.ts` and
-  `contactView.ts`'s public surfaces exactly, so every contacts test passes
-  unchanged, which is the bar an extraction has to clear: one that edits its
-  own tests has stopped being one.
-- **The four view settings live on the device, in one localStorage key.** Not
-  on the account, not in a column, no request. Every read and write is wrapped,
-  and not only the parse: a private window and a browser blocking site data
-  make the accessor itself throw before there is any JSON to fail on, so a try
-  around `JSON.parse` alone would still take the screen down. Each field is
-  checked rather than cast, so a `sort` written by an older build cannot reach
-  the sort function.
-- **The list is a listbox and the filter field is its combobox.** Arrowing has
-  to leave focus in the field, so the arrow keys move a cursor the field points
-  at with `aria-activedescendant` and never move focus. Each band is a
-  `role="group"` named by its own heading, which is both the valid ARIA
-  structure and what gives each sticky heading its own containing block: in one
-  flat list every heading pins to the same line at once and only paint order
-  decides which is visible. `aria-selected` is the keyboard cursor and
-  `aria-current` is whose card is open, because on a wide screen both are on
-  screen at once and they mean different things.
-- **The split is the same container query the calendar uses**,
-  `--container-split`, on `<main>`. Below it the two columns are one at a time,
-  done by hiding one rather than by a second route. The list column is a fixed
-  **400px**, and the number was measured: at 360 three of the twenty-two demo
-  rows cut their second line, worst by 32 pixels, because a pill takes about
-  ninety; at 380 one row is still 12 short; at 400 nothing truncates. It costs
-  the detail forty pixels, which at an 834px tablet leaves it 362 and still
-  comfortable.
-- **One document scroll container, as everywhere else.** The detail is
-  `position: sticky` with `align-self: start`, so the list scrolls and the card
-  stays put with no height worked out from the viewport, and a card taller than
-  the list simply scrolls with the page, which is right.
-- **`ContactViewMenu.vue` is the four settings and nothing else.** The panel
-  around it is `ui/AnchoredSheet.vue`, aligned right so that three hundred
-  pixels of panel stay over the list column rather than spilling across the
-  detail. **This is where "extract from two, never from one" was paid off**:
-  the rule used to say a third panel of this shape was the moment to extract
-  one, and the enquiries screen bringing two more is what made it that moment.
-- **The refusal and the confirm are two different controls.** Deleting a
-  contact with bookings is refused, because schema 5.7 restricts
-  `bookings.contact_id`, and that is said as one line at the moment Delete is
-  tapped rather than as a disabled button or standing small print. The refusal
-  is the kit's `Notice`, a polite live region that takes no focus and clears
-  itself after four and a half seconds. The confirm is
-  `ContactDeleteDialog.vue`, a real dialog with a focus trap and no timer,
-  because a confirm that vanishes while you are reading it decides for you, and
-  an irreversible action inside a live region is markup that tells a screen
-  reader it is a passive announcement.
-- **The chip is a class in `app.css`, beside `check` and `radio`**, not a
-  component: half its uses are ordinary links (`tel:`, `sms:`, `mailto:` and a
-  maps URL, the same at both sizes with nothing sniffing the platform) and half
-  are buttons. It completes a grammar the rest of the app should follow: a
-  filled accent button makes something new, a subtle accent chip acts on what
-  is already there, and the danger chip is destructive.
-
-Not built yet on that screen: adding, editing and saving a contact to the
-phone, which all need endpoints or flows that do not exist, and the two
-create buttons on the card, which carry the same TODO `CreateMenu` does.
+- A contact is the person who books and pays, and that is all. `last_name` is
+  nullable and the whole feature has to mean it.
+- `outstanding` is an array of amounts per currency, never a figure and a flag.
+- One payload, and every sort, group and filter happens in the browser. The
+  filter box is a filter, with no request behind it.
+- The row's second line is always the nearest booking, and there is one pill
+  at most, in precedence order.
+- The view settings live on the device in one localStorage key, with every
+  read and write wrapped, and each field checked rather than cast.
+- The list is a listbox and the filter field is its combobox; `aria-selected`
+  is the keyboard cursor and `aria-current` is whose card is open.
+- There is one document scroll container.
+- The refusal and the confirm are two different controls: a polite live region
+  and a real dialog.
+- The chip is a class in `app.css`, not a component.
 
 Not built yet: passkeys and two-factor enforcement (configured, unused),
 Sign in with Apple or Google, switching between accounts, collaborator
