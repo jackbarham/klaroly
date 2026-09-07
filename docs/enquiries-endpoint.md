@@ -128,7 +128,9 @@
   would be a second definition of priced. **`GET /api/events` and
   `GET /api/contacts` still send nought for both**, and adopting `isPriced()`
   there is a one-line change in each plus an edit to two front-end types, which
-  is a change to their own contracts and belongs in their own prompts.
+  is a change to their own contracts and belongs in their own prompts. That was
+  still so on 7 September 2026: both resources call `BookingPricing::total()`
+  unconditionally.
 - **The currency is sent whether or not there is a price**, because it is a fact
   about the booking rather than about the price: a job in euros nobody has
   quoted is still a job in euros.

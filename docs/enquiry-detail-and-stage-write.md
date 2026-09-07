@@ -67,13 +67,12 @@
 - **Both validation rules are built from the enums**, `Rule::enum(...)->only(...)`
   against `Booking::SETTABLE_STAGES`, never a list of values typed a second
   time, which is the rule the check constraints already follow.
-- **`hold_expires_at` is not set on converting, and `artist_not_held` is
-  therefore unreachable in real use.** Schema 5.8 calls that column the
-  provisional hold and `WaitingOnResolver::notHeld()` reads it, but there is no
-  hold-length setting anywhere: `account_settings` has `deposit_due_days` and
-  `balance_due_days_before` and nothing about a hold. So the highest-precedence
-  value on the waiting-on axis, the one that sits above money because the date
-  itself can be lost, now fires only for rows a seeder sets by hand. That is a
-  gap in the settings table rather than in this route, and it is the fourth
-  setting found with nowhere to live after the cold-enquiry threshold, the base
-  location's name and the intake-available flag.
+- **`hold_expires_at` is written on every stage change by
+  `App\Services\SoftHold`, and `account_settings.hold_days` is its length.**
+  When this route was written neither existed: no write path set the column,
+  so `artist_not_held` could only fire for rows a seeder set by hand, and the
+  hold length was a setting with nowhere to live. That is what changed, and
+  `docs/soft-hold.md` is the record of it. The write here calls `SoftHold` the
+  way it calls `touchActivity()`, so the highest-precedence value on the
+  waiting-on axis, the one that sits above money because the date itself can be
+  lost, is reachable in real use.

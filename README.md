@@ -133,7 +133,8 @@ enforces that.
 **The bookings screen reads the API.** `src/lib/bookings.ts` calls
 `GET /api/events` and `GET /api/events/months`, `src/stores/bookings.ts` holds
 the result, and components read the store. There are no fixtures left.
-`CLAUDE.md` covers how the two halves fit together.
+`docs/bookings-screen.md` and `docs/bookings-endpoints.md` cover how the two
+halves fit together.
 
 **The contacts screen is not on its endpoint yet.** `GET /api/contacts` now
 exists and returns the whole list in one payload, but the screen still reads
@@ -158,10 +159,11 @@ and the one record open, and components read the store.
 
 The list is one payload and the detail is a second request, and the split is
 deliberate: a pasted WhatsApp thread across five hundred rows is not a list
-payload, so the list is the half that has to work with no signal. `CLAUDE.md`
-covers the rest, including why this list is not a listbox and the one asymmetry
-worth knowing before you meet it: after converting, the client holds an object
-it may PATCH back but may not GET.
+payload, so the list is the half that has to work with no signal.
+`docs/enquiries-screen.md` and `docs/enquiry-detail-and-stage-write.md` cover
+the rest, including why this list is not a listbox and the one asymmetry worth
+knowing before you meet it: after converting, the client holds an object it may
+PATCH back but may not GET.
 
 **Signing in locally.** With the API seeded (`php artisan db:seed`), open
 http://app.klaroly.test/login and sign in as `ellie@example.com` with the
