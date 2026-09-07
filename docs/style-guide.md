@@ -492,10 +492,10 @@ DOM at every width: which one shows is Tailwind's `lg` variant and nothing else.
 | Element | Value |
 | --- | --- |
 | Top bar | 52px row, full width, `top: 0` with the top inset as padding so the glass covers the status bar |
-| Top bar title | `--text-section` at 500, `text-strong`, truncates. The route's own name, and the business name on Summary alone |
+| Top bar title | `--text-section` at 500, `text-strong`, truncates. The route's own name, on every route with no exception |
 | Top bar actions | A pill at the right holding the bell and the accent New button, each 38px painted and 44px to hit |
-| Tab bar | 60px, `--radius-pill`, inset 16px from both edges, floating `--bar-gap` above the bottom edge |
-| Tab item | 48px, 20px icon over a 12px label, with the sliding pill behind the current one |
+| Tab bar | 60px, `--radius-pill`, inset 32px from both edges, floating `--bar-gap` above the bottom edge |
+| Tab item | 48px, a 28px icon and no label, with the sliding pill behind the current one |
 | Glass | `surface-raised` at 60%, `blur(24px) saturate(180%)` |
 
 **One material for both bars**, exported once from
@@ -536,13 +536,30 @@ bar off the bottom of a desktop window.
 above it, so its padding has to clear the indicator with a gap of its own, and
 `sheet-bottom` is a sum for that reason.
 
+**The tab bar carries icons and no words.** Five labels at 375px is what held
+the icon down to 20px; without them it is 28px, and the bar gives back a
+spacing step at each end because a row of five pictures does not need the width
+that five pictures over five words did. **Each item's name moves to
+`aria-label`** rather than going away: the label was the only thing that ever
+said which one this is, and five unlabelled pictures announce nothing at all.
+
+**That is what the top bar's title is now for.** It used to say the business
+name on Summary alone, on the argument that identity was worth one screen and
+the tab bar said which list you were in underneath. The tab bar says nothing
+now, so this line is the only thing on a phone naming the screen you are on,
+and Summary cannot be the one screen that does not say its own name. Identity
+is the sidebar's account row at `lg`, and the business name is not on a phone
+at all.
+
 **The page heading gives way below `lg`.** The bar already says which screen
 this is, so `PageHeader`'s `h1` is `sr-only` there: off the screen, still in the
 accessibility tree, so every route keeps exactly one `h1` and the bar can be an
 ordinary line of text rather than a second competing heading. The back link, the
-description and the actions slot are unaffected. Summary is the exception, and
-deliberately: its bar says the business name and its own header says what the
-screen is, so the two are not repeating each other.
+description and the actions slot are unaffected. **`HomeHeader` follows the same
+rule**, and used to be the exception to it for exactly as long as the bar above
+it said something different: with both saying the screen's name, "Summary" over
+"Your summary" is the repetition this rule exists to stop. Its row stays, at
+44px with the border and Adjust in it, because Adjust has to live somewhere.
 
 **Create is in the top bar, not the tab bar.** The centre of a tab bar is the
 easiest target on a phone and the top right is the hardest, so this costs

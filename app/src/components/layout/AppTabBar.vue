@@ -8,10 +8,18 @@
     accent circle in the middle of this bar and is now the accent button in
     AppTopBar, so the bar is five equal items with no interruption: it is a
     list of places you can go, which is the one thing it is for.
+
+    **Icons alone, with no labels under them.** Five words at 375px is what
+    held the icon down to 20px, and without them the picture can be the size it
+    wants to be. What the words were doing is done by the top bar instead,
+    which names the screen you are on: this bar says where you can go, and the
+    bar above says where you are.
+
+    Inset 32px rather than 16 for the same reason. A row of five pictures does
+    not need the width that five pictures over five words did.
   -->
   <nav
-    class="fixed z-10 bar-bottom lg:hidden"
-    :class="insetClasses"
+    class="fixed inset-x-8 z-10 bar-bottom lg:hidden"
     :aria-label="t('nav.primary_label')"
   >
     <!--
@@ -43,34 +51,26 @@
         class="flex flex-1 justify-center"
       >
         <!--
-          The icon is 20px rather than 24. The item is still h-12 inside an
-          h-16 bar, so the tap target has not moved: what the smaller icon
-          buys is room for a five-item bar to keep its labels at 375px.
+          The icon is 28px. The item is still h-12 inside an h-16 bar, so the
+          tap target has not moved and the pill behind it is unchanged: what
+          dropping the labels bought is spent on the picture rather than on the
+          target.
 
-          TEMPORARY: the three bindings below are the tab bar trial, switched
-          from the bottom of the More page. See src/lib/tabBarTrial.ts. When
-          the choice is made the winner becomes the only treatment here and
-          the bindings become plain classes again.
-
-          The label keeps its accessible name when the words go: a bar of five
-          unlabelled pictures says nothing to a screen reader, so the icons-only
-          treatment moves the name to aria-label rather than dropping it.
+          **The name moves to aria-label rather than going away.** A bar of
+          five unlabelled pictures says nothing at all to a screen reader, and
+          the label was the only thing that ever said which one this is.
         -->
         <RouterLink
-          class="relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-full transition-colors focus-visible:focus-ring"
-          :class="isCurrent(item) ? 'font-medium text-accent-text' : 'text-text-muted'"
+          class="relative flex h-full w-full items-center justify-center rounded-full transition-colors focus-visible:focus-ring"
+          :class="isCurrent(item) ? 'text-accent-text' : 'text-text-muted'"
           :to="{ name: item.routeName }"
           :aria-current="isCurrent(item) ? 'page' : undefined"
-          :aria-label="showLabels ? undefined : t(item.labelKey)"
+          :aria-label="t(item.labelKey)"
         >
           <Icon
             :name="item.icon"
-            :class="iconClasses"
+            class="h-7 w-7"
           />
-          <span
-            v-if="showLabels"
-            :class="labelClasses"
-          >{{ t(item.labelKey) }}</span>
         </RouterLink>
       </div>
     </div>
@@ -98,7 +98,6 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { barGlassClasses } from '@/components/layout/barGlass'
 import { activeTabIndex, activeTabKey, tabBarItems, type Destination } from '@/lib/navigation'
-import { tabBarStyle } from '@/lib/tabBarTrial'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -110,23 +109,6 @@ const pillLeft = ref(0)
 const pillWidth = ref(0)
 
 const activeIndex = computed(() => activeTabIndex(route.name))
-
-// TEMPORARY, the tab bar trial. Item width is flex-1 and the bar's height is
-// fixed, so none of this moves the pill and nothing has to be measured again.
-const showLabels = computed(() => tabBarStyle.value !== 'icons')
-
-const iconClasses = computed(() => ({
-  current: 'h-5 w-5',
-  larger: 'h-5.5 w-5.5',
-  icons: 'h-7 w-7',
-}[tabBarStyle.value]))
-
-// With no labels the bar does not need the width, so it gives back a spacing
-// step at each end. The pill follows on its own: the ResizeObserver above is
-// watching the bar, and this changes the bar's width.
-const insetClasses = computed(() => (tabBarStyle.value === 'icons' ? 'inset-x-8' : 'inset-x-4'))
-
-const labelClasses = computed(() => (tabBarStyle.value === 'larger' ? 'trial-label' : 'text-xs'))
 
 const pillStyle = computed(() => ({
   '--pill-x': `${pillLeft.value}px`,
@@ -199,16 +181,5 @@ watch(activeIndex, async () => {
   .pill {
     transition: none;
   }
-}
-
-/*
-  TEMPORARY, the tab bar trial. 11px is not a step on the type scale, and a
-  treatment that may not survive the week should not put a token in the style
-  guide that nothing ends up reading. If this one wins, this becomes a token
-  and this block goes with the rest of the trial.
-*/
-.trial-label {
-  font-size: 11px;
-  line-height: 16px;
 }
 </style>

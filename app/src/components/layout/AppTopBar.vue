@@ -107,7 +107,6 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import Icon from '@/components/ui/Icon.vue'
 import Sheet from '@/components/ui/Sheet.vue'
 import { createItem } from '@/lib/navigation'
-import { useAuthStore } from '@/stores/auth'
 
 const emit = defineEmits<{
   create: []
@@ -115,7 +114,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const route = useRoute()
-const auth = useAuthStore()
 
 const notificationsOpen = ref(false)
 
@@ -124,27 +122,19 @@ const notificationsOpen = ref(false)
 const stuck = ref(false)
 
 // The screen's name, from the route's own locale key, so a page added anywhere
-// arrives in this bar with nothing to wire up.
+// arrives in this bar with nothing to wire up. Every route, with no exception.
 //
-// Home is the exception and says the business name instead. The reasoning is
-// the prototype's: identity is worth one screen rather than five, and what an
-// artist wants at the top of a list is which list they are in. Home is
-// therefore the one screen with two rows of chrome, this bar and HomeHeader's
-// own "Your summary" with Adjust beside it, and that is deliberate rather than
-// an oversight: the two say different things, and moving Adjust is content
-// work. Worth looking at again once Home has been seen on a phone.
-//
-// The screen name is also the fallback, so the bar reads "Summary" rather than
-// nothing in the moment before GET /api/me answers.
-const title = computed(() => {
-  const name = typeof route.meta.titleKey === 'string' ? t(route.meta.titleKey) : ''
-
-  if (route.name !== 'home') {
-    return name
-  }
-
-  return auth.me?.account.name || auth.me?.user.name || name
-})
+// **Home used to say the business name here and no longer does.** That was
+// worth a screen while the tab bar carried five words: identity had nowhere
+// else to sit, and the bar underneath already said which list you were in. The
+// tab bar is five unlabelled icons now, so this line is the only thing on a
+// phone that says which screen you are looking at, and spending it on the
+// business name would leave Home the one screen that does not say its own
+// name. Identity is the account row in the sidebar at lg, and the business
+// name is not on a phone at all.
+const title = computed(() => (
+  typeof route.meta.titleKey === 'string' ? t(route.meta.titleKey) : ''
+))
 
 function onScroll(): void {
   stuck.value = window.scrollY > 4

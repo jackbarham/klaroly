@@ -17,12 +17,6 @@
         sheet. Both bars are one material, exported once from barGlass.ts.
       </p>
       <p>
-        TEMPORARY: the tab bar is being trialled in three treatments, and the
-        one it is drawing right now is whichever is chosen at the bottom of the
-        More page. So the bar around this page may not be the 20px icon over a
-        12px label the style guide describes. See src/lib/tabBarTrial.ts.
-      </p>
-      <p>
         SectionNav is not fixed, so it is shown below as it really is. It is
         drawn beside a page in a section that is itself a list of pages, from
         the lg breakpoint up, which the travel settings page shows in place.

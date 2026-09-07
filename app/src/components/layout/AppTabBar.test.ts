@@ -8,6 +8,14 @@ function pill(host: HTMLElement): HTMLElement | null {
   return host.querySelector('.pill')
 }
 
+// Which item is which, read the way a screen reader reads it. The bar draws
+// icons and no words, so aria-label is the only thing that says what any of
+// these five are, and a test that went on reading textContent would compare
+// five empty strings and pass whatever the bar was labelled.
+function name(item: Element | null): string {
+  return item?.getAttribute('aria-label') ?? ''
+}
+
 const mount = mountWithCleanup()
 
 describe('the tab bar', () => {
@@ -24,8 +32,14 @@ describe('the tab bar', () => {
     // in that goes nowhere.
     expect(mounted.host.querySelectorAll('nav button')).toHaveLength(0)
 
-    expect(Array.from(links).map((link) => link.textContent?.trim()))
+    // The same five names asserted present as accessible names and absent as
+    // words on the screen. Either on its own is happy with a bar that has lost
+    // both: an empty textContent proves nothing about what was announced, and
+    // a label nobody can see is the whole design here rather than a slip.
+    expect(Array.from(links).map(name))
       .toEqual(['Summary', 'Bookings', 'Enquiries', 'Contacts', 'More'])
+
+    expect(Array.from(links).map((link) => link.textContent?.trim())).toEqual(['', '', '', '', ''])
   })
 
   it('marks the current destination and nothing else', async () => {
@@ -34,7 +48,7 @@ describe('the tab bar', () => {
     const current = mounted.host.querySelectorAll('[aria-current="page"]')
 
     expect(current).toHaveLength(1)
-    expect(current[0].textContent?.trim()).toBe('Summary')
+    expect(name(current[0])).toBe('Summary')
   })
 
   it('lands on the right item when the app is opened straight at a deep route', async () => {
@@ -43,7 +57,7 @@ describe('the tab bar', () => {
     const current = mounted.host.querySelectorAll('[aria-current="page"]')
 
     expect(current).toHaveLength(1)
-    expect(current[0].textContent?.trim()).toBe('Enquiries')
+    expect(name(current[0])).toBe('Enquiries')
 
     expect(pill(mounted.host)?.style.display).not.toBe('none')
   })
@@ -51,7 +65,7 @@ describe('the tab bar', () => {
   it('marks Contacts, now that the bar has an item for it', async () => {
     const mounted = await mount(AppTabBar, '/contacts')
 
-    expect(element(mounted.host, '[aria-current="page"]').textContent?.trim()).toBe('Contacts')
+    expect(name(element(mounted.host, '[aria-current="page"]'))).toBe('Contacts')
   })
 
   // The detail page is the reason sectionKey exists: before Contacts was a tab
@@ -59,7 +73,7 @@ describe('the tab bar', () => {
   it('marks Contacts on one person\'s page too', async () => {
     const mounted = await mount(AppTabBar, '/contacts/7')
 
-    expect(element(mounted.host, '[aria-current="page"]').textContent?.trim()).toBe('Contacts')
+    expect(name(element(mounted.host, '[aria-current="page"]'))).toBe('Contacts')
   })
 
   it('marks More on a section the bar has no item for', async () => {
@@ -68,7 +82,7 @@ describe('the tab bar', () => {
     const current = mounted.host.querySelectorAll('[aria-current="page"]')
 
     expect(current).toHaveLength(1)
-    expect(current[0].textContent?.trim()).toBe('More')
+    expect(name(current[0])).toBe('More')
   })
 
   it('hides the pill when no item matches the route', async () => {

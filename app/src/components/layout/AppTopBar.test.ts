@@ -10,9 +10,11 @@ import type { Me } from '@/types/auth'
 
 const mount = mountWithCleanup()
 
-// The bar names the account on the home route, so a test of it has to put a
-// signed-in person in the store. The store is created by the pinia the mount
-// installs, which is why this runs after the mount rather than before.
+// The bar no longer reads the store at all, but the tests still sign somebody
+// in: the one below about Home is only worth anything if there is a business
+// name sitting there for the bar to have used and not used. The store is
+// created by the pinia the mount installs, which is why this runs after the
+// mount rather than before.
 async function mountSignedIn(path: string, me: Me = sampleMe, props: Record<string, unknown> = {}): Promise<Mounted> {
   const mounted = await mount(AppTopBar, path, props)
 
@@ -48,10 +50,19 @@ afterEach(async () => {
 })
 
 describe('the top bar', () => {
-  it('says the business name on Home, because that is the one screen identity is worth', async () => {
+  // Home used to be the exception here and say the business name. The tab bar
+  // carries no words now, so this line is the only thing on a phone naming the
+  // screen, and Home cannot be the one screen that does not say its own.
+  //
+  // The person is signed in on purpose, and the second assertion is what makes
+  // the first mean anything: a bar that said Summary because nobody was loaded
+  // would pass a bare check for Summary just as happily as one that had stopped
+  // reading the account.
+  it('says the screen name on Home, with a business name loaded and going unused', async () => {
     const mounted = await mountSignedIn('/')
 
-    expect(title(mounted)).toBe('Ellie Marsh Makeup')
+    expect(title(mounted)).toBe('Summary')
+    expect(sampleMe.account.name).toBe('Ellie Marsh Makeup')
   })
 
   it('says the screen name everywhere else', async () => {
@@ -66,14 +77,6 @@ describe('the top bar', () => {
     const mounted = await mountSignedIn('/settings/travel')
 
     expect(title(mounted)).toBe('Travel')
-  })
-
-  // Before GET /api/me answers there is no business name, and a blank bar on
-  // the screen the app opens at would read as a broken app.
-  it('falls back to the screen name on Home while nobody is loaded yet', async () => {
-    const mounted = await mount(AppTopBar, '/')
-
-    expect(title(mounted)).toBe('Summary')
   })
 
   it('is not a heading, because the page under it still owns its h1', async () => {

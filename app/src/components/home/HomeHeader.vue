@@ -17,14 +17,19 @@
     notifications are; where the bell lives is not.
 
     **On a phone this bar is the second row of chrome**, under the top bar's
-    52px, and that is deliberate. The top bar says the business name on this
-    screen alone and this says what the screen is, so the two are not repeating
-    each other, and Adjust needs somewhere to live. It is 44px against the
-    twelve this bar was cut by to gain a row, so it is worth looking at again
-    once Home has been used on a phone.
+    52px, and it holds Adjust and nothing visible besides. The heading goes
+    sr-only there, which is what PageHeader does on every other screen and what
+    this one was exempt from for exactly as long as the top bar said something
+    else: that bar said the business name on this screen alone, so the two were
+    not repeating each other. It says "Summary" now, because the tab bar
+    carries no words to say it instead, and "Summary" over "Your summary" is
+    the repetition the rule exists to stop.
+
+    The row itself stays rather than collapsing, because Adjust has to live
+    somewhere and the border is what separates it from the blocks below.
   -->
   <header class="-mx-6 mb-4 flex h-11 items-center justify-between gap-4 border-b border-border px-6 lg:h-13">
-    <h1 class="text-lg font-semibold text-text-strong lg:text-xl">
+    <h1 class="text-lg font-semibold text-text-strong max-lg:sr-only lg:text-xl">
       {{ t('home.summary_title') }}
     </h1>
 
